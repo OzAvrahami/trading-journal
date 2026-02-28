@@ -1,0 +1,113 @@
+# Trading Journal
+
+A production-grade Day Trading Journal web application.
+
+## Stack
+
+- **Frontend:** React + Vite + TailwindCSS + TanStack Query + Recharts
+- **Backend:** Node.js + Express + PostgreSQL
+- **Auth:** JWT (access token + httpOnly refresh cookie)
+
+## Project Structure
+
+```
+trading-journal/
+  client/   → React + Vite (JavaScript)
+  server/   → Node.js + Express (JavaScript)
+  shared/   → Zod schemas, constants, calculation utils
+```
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL (local or Supabase)
+
+### 1. Clone and install
+
+```bash
+git clone <repo>
+cd trading-journal
+
+# Install all dependencies
+npm run install:all
+```
+
+### 2. Configure environment
+
+**Server:**
+```bash
+cp .env.example server/.env
+# Edit server/.env — set DATABASE_URL and JWT_SECRET
+```
+
+**Client:**
+```bash
+cp client/.env.example client/.env
+# VITE_API_URL is already set to http://localhost:3001 for dev
+```
+
+### 3. Run migrations
+
+Make sure your PostgreSQL database exists, then:
+
+```bash
+npm run migrate
+```
+
+### 4. Start development servers
+
+Open two terminals:
+
+```bash
+# Terminal 1 — API server (port 3001)
+npm run dev:server
+
+# Terminal 2 — Vite dev server (port 5173)
+npm run dev:client
+```
+
+Open http://localhost:5173
+
+## API Endpoints
+
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/api/auth/signup` | Public | Register |
+| POST | `/api/auth/login` | Public | Login |
+| POST | `/api/auth/refresh` | Cookie | Rotate token |
+| POST | `/api/auth/logout` | Bearer | Logout |
+| GET | `/api/me` | Bearer | Get profile |
+| PATCH | `/api/me` | Bearer | Update profile |
+| GET | `/api/trades` | Bearer | List trades |
+| POST | `/api/trades` | Bearer | Create trade |
+| GET | `/api/trades/export` | Bearer | Download CSV |
+| GET | `/api/trades/:id` | Bearer | Get trade |
+| PATCH | `/api/trades/:id` | Bearer | Update trade |
+| DELETE | `/api/trades/:id` | Bearer | Delete trade |
+| GET | `/api/analytics/summary` | Bearer | Stats |
+| GET | `/api/analytics/equity-curve` | Bearer | Cumulative PnL |
+| GET | `/api/analytics/distribution` | Bearer | PnL histogram |
+| GET | `/api/analytics/breakdown` | Bearer | Group by dimension |
+
+## Features
+
+- **Authentication** — Signup / Login / Logout with JWT + refresh tokens
+- **Trades CRUD** — Full trade management optimized for day trading
+- **Dashboard** — Today/WTD/MTD PnL, equity curve, PnL distribution, performance breakdown
+- **Filters** — Date presets, symbol, market, direction, strategy, outcome
+- **CSV Export** — Download all filtered trades as CSV
+- **Security** — Helmet, CORS, rate limiting, Zod validation, parameterized SQL
+
+## Computed Fields
+
+Server calculates these automatically on every create/update:
+
+| Field | Formula |
+|-------|---------|
+| `pnlGross` | `(exitPrice - entryPrice) × quantity` (long) |
+| `pnlNet` | `pnlGross - fees` |
+| `rMultiple` | `pnlNet / riskAmount` |
+| `durationMinutes` | `(exitTime - entryTime) / 60` |
+| `status` | `'open'` if no exit, `'closed'` otherwise |

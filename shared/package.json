@@ -1,0 +1,10 @@
+{
+  "name": "@trading-journal/shared",
+  "version": "1.0.0",
+  "description": "Shared schemas, constants and utilities",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}

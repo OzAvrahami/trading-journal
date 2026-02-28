@@ -1,0 +1,8 @@
+import api from './client.js';
+
+export const analyticsApi = {
+  summary:     (params) => api.get('/api/analytics/summary', { params }).then(r => r.data),
+  equityCurve: (params) => api.get('/api/analytics/equity-curve', { params }).then(r => r.data),
+  distribution:(params) => api.get('/api/analytics/distribution', { params }).then(r => r.data),
+  breakdown:   (params) => api.get('/api/analytics/breakdown', { params }).then(r => r.data),
+};
