@@ -1,12 +1,21 @@
 /**
- * Remove currency symbols, commas, and whitespace, then parse to float.
- * Returns 0 if the value cannot be parsed.
+ * Parse a broker-formatted number to float.
+ * Handles:
+ *   - Currency prefix/suffix:  $100.00  →  100
+ *   - Comma separators:        1,234.50 →  1234.5
+ *   - Accounting negatives:    (100.00) → -100   ← main loss-as-zero bug
+ *   - Plain negatives:        -100.00   → -100
+ * Returns 0 for blank or unparseable values (never NaN, never undefined).
  */
 export function toNum(value) {
   if (value == null || value === '') return 0;
-  const cleaned = String(value).replace(/[$,\s]/g, '');
+  const str = String(value).trim();
+  // Parentheses denote negative in accounting exports: (100.00) or $(100.00) → -100
+  const isNegative = /^\$?\(.*\)$/.test(str);
+  const cleaned = str.replace(/[$,\s()]/g, '');
   const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
+  if (isNaN(num)) return 0;
+  return isNegative ? -num : num;
 }
 
 /**

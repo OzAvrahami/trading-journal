@@ -1,6 +1,12 @@
 import { parse } from 'csv-parse/sync';
 import { toNum, toISO, durationToMinutes } from '../utils/importUtils.js';
 
+// Tradovate charges $0.95 per contract as shown in the UI (Fees & Comm / Contracts).
+// IMPORTANT: CSV `qty` is per-side (one leg). A round-trip trade of 1 contract
+// has qty=1 in the CSV but counts as 2 in the Tradovate UI "Contracts" total.
+// Full fee per CSV row = qty * 2 * FEE_PER_CONTRACT.
+const FEE_PER_CONTRACT = 0.95;
+
 /**
  * Tradovate CSV importer.
  *
@@ -13,9 +19,6 @@ import { toNum, toISO, durationToMinutes } from '../utils/importUtils.js';
  *   sellPrice > buyPrice  → long  (bought low, sold high)
  *   sellPrice < buyPrice  → short (sold high, bought low)
  *   equal                 → long
- *
- * Tradovate does not report fees per-trade in this export format;
- * pnl is treated as net and fees are set to 0.
  *
  * Returns an array of raw (un-validated) normalised row objects.
  */
@@ -30,7 +33,10 @@ export function parseTradovate(csvBuffer) {
   return records.map((row, index) => {
     const buyPrice  = toNum(row.buyPrice);
     const sellPrice = toNum(row.sellPrice);
+    const qty       = toNum(row.qty);
     const pnlGross  = toNum(row.pnl);
+    const fees      = parseFloat((qty * 2 * FEE_PER_CONTRACT).toFixed(2));
+    const pnlNet    = parseFloat((pnlGross - fees).toFixed(2));
 
     let direction;
     if (sellPrice > buyPrice) {
@@ -50,10 +56,10 @@ export function parseTradovate(csvBuffer) {
       exit_datetime: toISO(row.soldTimestamp),
       entry_price: buyPrice,
       exit_price: sellPrice,
-      quantity: toNum(row.qty),
-      fees: 0,
+      quantity: qty,
+      fees,
       pnl_gross: pnlGross,
-      pnl_net: pnlGross,
+      pnl_net: pnlNet,
       duration_minutes: durationToMinutes(row.duration),
       status: 'closed',
       notes: 'Imported from Tradovate',

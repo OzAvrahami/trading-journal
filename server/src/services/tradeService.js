@@ -3,16 +3,20 @@ import { createError } from '../middleware/errorHandler.js';
 
 // ---- Computation helpers ----------------------------------------------------
 
-function computeFields({ direction, entryPrice, exitPrice, quantity, fees, riskAmount, entryDatetime, exitDatetime }) {
+function calcPnl(direction, entryPrice, exitPrice, quantity, pointValue = 1) {
+  const dir = (direction || '').toLowerCase().trim();
+  const diff = dir === 'long'
+    ? parseFloat(exitPrice) - parseFloat(entryPrice)
+    : parseFloat(entryPrice) - parseFloat(exitPrice);
+  return parseFloat((diff * parseFloat(quantity) * pointValue).toFixed(4));
+}
+
+function computeFields({ direction, entryPrice, exitPrice, quantity, fees, riskAmount, entryDatetime, exitDatetime, pointValue = 1 }) {
   const status = exitDatetime ? 'closed' : 'open';
   let pnlGross = null, pnlNet = null, rMultiple = null, durationMinutes = null;
 
   if (exitPrice != null) {
-    const ep = parseFloat(entryPrice);
-    const xp = parseFloat(exitPrice);
-    const qty = parseFloat(quantity);
-    const diff = direction === 'long' ? xp - ep : ep - xp;
-    pnlGross = parseFloat((diff * qty).toFixed(4));
+    pnlGross = calcPnl(direction, entryPrice, exitPrice, quantity, pointValue);
     pnlNet = parseFloat((pnlGross - parseFloat(fees || 0)).toFixed(4));
 
     if (riskAmount && parseFloat(riskAmount) !== 0) {
