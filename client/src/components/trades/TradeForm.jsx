@@ -1,51 +1,58 @@
 import { useForm } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { accountsApi } from '../../api/accounts.js';
 
 const MARKETS    = ['stocks', 'crypto', 'futures', 'forex'];
 const DIRECTIONS = ['long', 'short'];
 const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'];
 
 /**
- * Shared trade form used by both QuickAddModal and TradeDetail edit mode.
- * @param {object}   defaultValues - Pre-filled values (for edit mode)
- * @param {function} onSubmit      - Called with validated form data
- * @param {boolean}  loading       - Shows spinner on submit button
+ * Shared trade form used by QuickAddModal (create) and TradeDetail (edit).
+ * In create mode (no defaultValues.id): shows required account selector.
+ * In edit mode (defaultValues.id set): account is shown as read-only text.
  */
 export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
   const { user } = useAuth();
+  const isEdit = Boolean(defaultValues.id);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn:  accountsApi.list,
+  });
+
+  const activeAccounts = accounts.filter(a => a.status === 'active');
+
+  const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
-      market:   defaultValues.market    || user?.defaults?.market    || 'stocks',
-      timeframe:defaultValues.timeframe || user?.defaults?.timeframe || '5m',
+      market:    defaultValues.market    || user?.defaults?.market    || 'stocks',
+      timeframe: defaultValues.timeframe || user?.defaults?.timeframe || '5m',
       direction: 'long',
       fees: 0,
       ...defaultValues,
     },
   });
 
-  const market = watch('market');
-
   function handleFormSubmit(data) {
-    // Convert datetime-local values ("2026-02-28T10:30") to full ISO strings ("2026-02-28T10:30:00.000Z")
-    // The server's Zod schema requires a valid ISO 8601 datetime with timezone info.
-    if (data.entryDatetime) {
-      data.entryDatetime = new Date(data.entryDatetime).toISOString();
-    }
-    if (data.exitDatetime) {
-      data.exitDatetime = new Date(data.exitDatetime).toISOString();
-    }
+    if (data.entryDatetime) data.entryDatetime = new Date(data.entryDatetime).toISOString();
+    if (data.exitDatetime)  data.exitDatetime  = new Date(data.exitDatetime).toISOString();
 
-    // Coerce numeric strings to numbers
     const nums = ['entryPrice', 'exitPrice', 'quantity', 'fees', 'riskAmount', 'stopLoss', 'takeProfit'];
-    nums.forEach(k => { if (data[k] !== '' && data[k] != null) data[k] = parseFloat(data[k]); else delete data[k]; });
+    nums.forEach(k => {
+      if (data[k] !== '' && data[k] != null) data[k] = parseFloat(data[k]);
+      else delete data[k];
+    });
 
-    // Empty strings → null
     ['strategy', 'setup', 'notes'].forEach(k => {
       if (data[k] === '') data[k] = null;
     });
 
     onSubmit(data);
+  }
+
+  function accountLabel(a) {
+    const base = `${a.company} — ${a.accountNumber}`;
+    return a.accountName ? `${base} (${a.accountName})` : base;
   }
 
   const field = (label, children, error) => (
@@ -58,6 +65,17 @@ export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      {/* Account selector (create only) */}
+      {!isEdit && field('Account *',
+        <select className="input" {...register('accountId', { required: 'Required' })}>
+          <option value="">Select account…</option>
+          {activeAccounts.map(a => (
+            <option key={a.id} value={a.id}>{accountLabel(a)}</option>
+          ))}
+        </select>,
+        errors.accountId
+      )}
+
       {/* Row 1: Symbol + Market + Direction */}
       <div className="grid grid-cols-3 gap-3">
         {field('Symbol *',
@@ -150,7 +168,7 @@ export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
       {/* Submit */}
       <div className="pt-2">
         <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? 'Saving…' : (defaultValues.id ? 'Update Trade' : 'Add Trade')}
+          {loading ? 'Saving…' : (isEdit ? 'Update Trade' : 'Add Trade')}
         </button>
       </div>
     </form>

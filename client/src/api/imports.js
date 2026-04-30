@@ -22,9 +22,10 @@ export async function parseImport(broker, file) {
  * Commit a previously parsed import session to the database.
  *
  * @param {string} sessionId - from parseImport response
+ * @param {string} accountId - UUID of the account to assign all imported trades to
  * @returns {{ inserted: number, dbDuplicates: number }}
  */
-export async function commitImport(sessionId) {
-  const { data } = await api.post('/api/imports/commit', { sessionId });
+export async function commitImport(sessionId, accountId) {
+  const { data } = await api.post('/api/imports/commit', { sessionId, accountId });
   return data;
 }

@@ -6,7 +6,7 @@ const PREVIEW_LIMIT = 20;
 const BATCH_SIZE = 400;
 
 const INSERT_COLS = [
-  'user_id', 'symbol', 'market', 'direction',
+  'user_id', 'account_id', 'symbol', 'market', 'direction',
   'entry_datetime', 'exit_datetime', 'entry_price', 'exit_price',
   'quantity', 'fees', 'pnl_gross', 'pnl_net', 'duration_minutes',
   'status', 'notes', 'strategy', 'setup', 'timeframe',
@@ -49,12 +49,12 @@ export async function parseImport(broker, csvBuffer) {
 }
 
 /**
- * Commit pre-parsed rows for a user using the existing pg pool:
+ * Commit pre-parsed rows for a user:
  *   1. Query DB for existing dedup keys (Level 2 dedup).
  *   2. Filter out already-imported rows.
- *   3. Batch-insert the new rows.
+ *   3. Batch-insert the new rows under the given accountId.
  */
-export async function commitImport(userId, rows) {
+export async function commitImport(userId, rows, accountId) {
   // Level 2: check which keys already exist in the DB for this user
   const incomingKeys = rows.map(r => r._dedupKey);
 
@@ -81,6 +81,7 @@ export async function commitImport(userId, rows) {
       const base = idx * INSERT_COLS.length;
       values.push(
         userId,
+        accountId,
         row.symbol,         row.market,          row.direction,
         row.entry_datetime, row.exit_datetime,
         row.entry_price,    row.exit_price,

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { tradesApi } from '../api/trades.js';
+import { accountsApi } from '../api/accounts.js';
 import { TradeTable } from '../components/trades/TradeTable.jsx';
 import { FilterBar } from '../components/filters/FilterBar.jsx';
 import { QuickAddModal } from '../components/trades/QuickAddModal.jsx';
@@ -24,6 +25,11 @@ export default function Trades() {
   const { data, isLoading } = useQuery({
     queryKey: ['trades', filters],
     queryFn: () => tradesApi.list(filters),
+  });
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn:  accountsApi.list,
   });
 
   async function handleExport() {
@@ -75,7 +81,7 @@ export default function Trades() {
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner className="w-8 h-8" /></div>
       ) : (
-        <TradeTable trades={trades} loading={false} />
+        <TradeTable trades={trades} accounts={accounts} loading={false} />
       )}
 
       {/* Pagination */}

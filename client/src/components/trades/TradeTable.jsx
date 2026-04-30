@@ -20,10 +20,18 @@ function StatusBadge({ status }) {
   );
 }
 
-export function TradeTable({ trades, loading }) {
+export function TradeTable({ trades, accounts = [], loading }) {
   const qc = useQueryClient();
   const toast = useToast();
   const navigate = useNavigate();
+
+  const accountMap = Object.fromEntries(accounts.map(a => [a.id, a]));
+
+  function accountLabel(accountId) {
+    const a = accountMap[accountId];
+    if (!a) return '—';
+    return a.accountName || `${a.company} ${a.accountNumber}`;
+  }
 
   const deleteMutation = useMutation({
     mutationFn: (id) => tradesApi.remove(id),
@@ -60,7 +68,7 @@ export function TradeTable({ trades, loading }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-800 bg-gray-900">
-            {['Symbol','Market','Direction','Entry','Exit','Entry $','Exit $','Qty','PnL Net','R','Duration','Status',''].map(h => (
+            {['Account', 'Symbol', 'Market', 'Direction', 'Entry', 'Exit', 'Entry $', 'Exit $', 'Qty', 'PnL Net', 'R', 'Duration', 'Status', ''].map(h => (
               <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 whitespace-nowrap">
                 {h}
               </th>
@@ -74,6 +82,9 @@ export function TradeTable({ trades, loading }) {
               onClick={() => navigate(`/trades/${trade.id}`)}
               className="bg-gray-950 hover:bg-gray-900 cursor-pointer transition"
             >
+              <td className="px-3 py-3 text-gray-400 whitespace-nowrap text-xs capitalize">
+                {accountLabel(trade.accountId)}
+              </td>
               <td className="px-3 py-3 font-medium text-gray-100 whitespace-nowrap">{trade.symbol}</td>
               <td className="px-3 py-3 text-gray-400 capitalize">{trade.market}</td>
               <td className="px-3 py-3"><DirectionBadge direction={trade.direction} /></td>

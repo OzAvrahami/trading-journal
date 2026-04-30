@@ -22,59 +22,102 @@ function startOfMonth(d = new Date()) {
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
 }
 
-function buildDateConditions(from, to, params) {
-  let cond = '';
-  if (from) { params.push(from);                    cond += ` AND entry_datetime >= $${params.length}`; }
-  if (to)   { params.push(`${to}T23:59:59.999Z`);   cond += ` AND entry_datetime <= $${params.length}`; }
-  return cond;
+// ---- Query builder helpers --------------------------------------------------
+
+/**
+ * Builds WHERE conditions and an optional JOIN for account/company filtering.
+ * Uses table alias "t" for trades throughout.
+ *
+ * accountId filter → direct column condition, no JOIN needed.
+ * company filter   → JOIN trading_accounts ta needed.
+ */
+function buildQueryParts(userId, { from, to, accountId, company }) {
+  const params = [userId];
+  const conds  = ['t.user_id = $1'];
+  let join     = '';
+
+  if (from) { params.push(from);                    conds.push(`t.entry_datetime >= $${params.length}`); }
+  if (to)   { params.push(`${to}T23:59:59.999Z`);   conds.push(`t.entry_datetime <= $${params.length}`); }
+
+  if (accountId) {
+    params.push(accountId);
+    conds.push(`t.account_id = $${params.length}`);
+  } else if (company) {
+    join = ' JOIN trading_accounts ta ON ta.id = t.account_id';
+    params.push(company.toLowerCase().trim());
+    conds.push(`ta.company = $${params.length}`);
+  }
+
+  return { params, where: conds.join(' AND '), join };
+}
+
+/**
+ * Builds a simple COUNT+SUM query for a fixed date period (today/WTD/MTD).
+ * Uses the same account/company filter as the main query but independent params.
+ */
+function buildPeriodQuery(userId, { accountId, company }, startDate, endDate) {
+  const params = [userId];
+  const conds  = ["t.user_id = $1", "t.status = 'closed'"];
+  let join     = '';
+
+  if (accountId) {
+    params.push(accountId);
+    conds.push(`t.account_id = $${params.length}`);
+  } else if (company) {
+    join = ' JOIN trading_accounts ta ON ta.id = t.account_id';
+    params.push(company.toLowerCase().trim());
+    conds.push(`ta.company = $${params.length}`);
+  }
+
+  params.push(startDate);
+  conds.push(`t.entry_datetime >= $${params.length}`);
+
+  if (endDate) {
+    params.push(endDate);
+    conds.push(`t.entry_datetime <= $${params.length}`);
+  }
+
+  return {
+    sql: `SELECT COUNT(*) AS cnt, COALESCE(SUM(t.pnl_net), 0) AS pnl
+          FROM trades t${join} WHERE ${conds.join(' AND ')}`,
+    params,
+  };
 }
 
 // ---- Summary ----------------------------------------------------------------
 
-export async function getSummary(userId, { from, to }) {
+export async function getSummary(userId, { from, to, accountId, company }) {
   const now = new Date();
 
-  const params = [userId];
-  const dateCond = buildDateConditions(from, to, params);
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+
+  const todayQ = buildPeriodQuery(userId, { accountId, company }, startOfDay(now), endOfDay(now));
+  const wtdQ   = buildPeriodQuery(userId, { accountId, company }, startOfWeek(now));
+  const mtdQ   = buildPeriodQuery(userId, { accountId, company }, startOfMonth(now));
 
   const [mainRes, todayRes, wtdRes, mtdRes] = await Promise.all([
     pool.query(`
       SELECT
-        COUNT(*)                                              AS total,
-        COUNT(*) FILTER (WHERE status = 'closed')            AS closed,
-        COUNT(*) FILTER (WHERE status = 'open')              AS open,
-        COUNT(*) FILTER (WHERE status='closed' AND pnl_net > 0) AS winners,
-        COUNT(*) FILTER (WHERE status='closed' AND pnl_net < 0) AS losers,
-        COALESCE(SUM(pnl_net)   FILTER (WHERE status='closed'), 0) AS pnl_net_sum,
-        COALESCE(SUM(pnl_gross) FILTER (WHERE status='closed'), 0) AS pnl_gross_sum,
-        COALESCE(SUM(fees), 0)                               AS fees_sum,
-        AVG(pnl_net)   FILTER (WHERE status='closed' AND pnl_net > 0) AS avg_win,
-        AVG(pnl_net)   FILTER (WHERE status='closed' AND pnl_net < 0) AS avg_loss,
-        AVG(r_multiple) FILTER (WHERE status='closed' AND r_multiple IS NOT NULL) AS avg_r,
-        AVG(duration_minutes) FILTER (WHERE status='closed') AS avg_duration,
-        COALESCE(SUM(pnl_net) FILTER (WHERE status='closed' AND pnl_net > 0), 0) AS gross_profit,
-        COALESCE(ABS(SUM(pnl_net) FILTER (WHERE status='closed' AND pnl_net < 0)), 0) AS gross_loss
-      FROM trades
-      WHERE user_id = $1 ${dateCond}
+        COUNT(*)                                                          AS total,
+        COUNT(*) FILTER (WHERE t.status = 'closed')                      AS closed,
+        COUNT(*) FILTER (WHERE t.status = 'open')                        AS open,
+        COUNT(*) FILTER (WHERE t.status = 'closed' AND t.pnl_net > 0)   AS winners,
+        COUNT(*) FILTER (WHERE t.status = 'closed' AND t.pnl_net < 0)   AS losers,
+        COALESCE(SUM(t.pnl_net)   FILTER (WHERE t.status = 'closed'), 0) AS pnl_net_sum,
+        COALESCE(SUM(t.pnl_gross) FILTER (WHERE t.status = 'closed'), 0) AS pnl_gross_sum,
+        COALESCE(SUM(t.fees), 0)                                          AS fees_sum,
+        AVG(t.pnl_net)    FILTER (WHERE t.status = 'closed' AND t.pnl_net > 0)               AS avg_win,
+        AVG(t.pnl_net)    FILTER (WHERE t.status = 'closed' AND t.pnl_net < 0)               AS avg_loss,
+        AVG(t.r_multiple) FILTER (WHERE t.status = 'closed' AND t.r_multiple IS NOT NULL)    AS avg_r,
+        AVG(t.duration_minutes) FILTER (WHERE t.status = 'closed')       AS avg_duration,
+        COALESCE(SUM(t.pnl_net) FILTER (WHERE t.status = 'closed' AND t.pnl_net > 0), 0)    AS gross_profit,
+        COALESCE(ABS(SUM(t.pnl_net) FILTER (WHERE t.status = 'closed' AND t.pnl_net < 0)), 0) AS gross_loss
+      FROM trades t${join}
+      WHERE ${where}
     `, params),
-
-    pool.query(
-      `SELECT COUNT(*) AS cnt, COALESCE(SUM(pnl_net),0) AS pnl
-       FROM trades WHERE user_id=$1 AND status='closed' AND entry_datetime >= $2 AND entry_datetime <= $3`,
-      [userId, startOfDay(now), endOfDay(now)]
-    ),
-
-    pool.query(
-      `SELECT COUNT(*) AS cnt, COALESCE(SUM(pnl_net),0) AS pnl
-       FROM trades WHERE user_id=$1 AND status='closed' AND entry_datetime >= $2`,
-      [userId, startOfWeek(now)]
-    ),
-
-    pool.query(
-      `SELECT COUNT(*) AS cnt, COALESCE(SUM(pnl_net),0) AS pnl
-       FROM trades WHERE user_id=$1 AND status='closed' AND entry_datetime >= $2`,
-      [userId, startOfMonth(now)]
-    ),
+    pool.query(todayQ.sql, todayQ.params),
+    pool.query(wtdQ.sql,   wtdQ.params),
+    pool.query(mtdQ.sql,   mtdQ.params),
   ]);
 
   const r = mainRes.rows[0];
@@ -119,15 +162,14 @@ export async function getSummary(userId, { from, to }) {
 
 // ---- Equity curve -----------------------------------------------------------
 
-export async function getEquityCurve(userId, { from, to }) {
-  const params = [userId];
-  const dateCond = buildDateConditions(from, to, params);
+export async function getEquityCurve(userId, { from, to, accountId, company }) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
 
   const result = await pool.query(`
-    SELECT DATE(entry_datetime) AS date, SUM(pnl_net) AS daily_pnl
-    FROM trades
-    WHERE user_id = $1 AND status = 'closed' ${dateCond}
-    GROUP BY DATE(entry_datetime)
+    SELECT DATE(t.entry_datetime) AS date, SUM(t.pnl_net) AS daily_pnl
+    FROM trades t${join}
+    WHERE ${where} AND t.status = 'closed'
+    GROUP BY DATE(t.entry_datetime)
     ORDER BY date ASC
   `, params);
 
@@ -143,14 +185,13 @@ export async function getEquityCurve(userId, { from, to }) {
 
 // ---- PnL distribution -------------------------------------------------------
 
-export async function getDistribution(userId, { from, to }) {
-  const params = [userId];
-  const dateCond = buildDateConditions(from, to, params);
+export async function getDistribution(userId, { from, to, accountId, company }) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
 
   const result = await pool.query(`
-    SELECT pnl_net FROM trades
-    WHERE user_id = $1 AND status = 'closed' AND pnl_net IS NOT NULL ${dateCond}
-    ORDER BY pnl_net
+    SELECT t.pnl_net FROM trades t${join}
+    WHERE ${where} AND t.status = 'closed' AND t.pnl_net IS NOT NULL
+    ORDER BY t.pnl_net
   `, params);
 
   if (result.rows.length === 0) return { buckets: [] };
@@ -159,7 +200,6 @@ export async function getDistribution(userId, { from, to }) {
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
 
-  // Choose a bucket size that gives ~15-20 buckets
   const range = maxVal - minVal || 1;
   const rawSize = range / 15;
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawSize)));
@@ -185,23 +225,38 @@ export async function getDistribution(userId, { from, to }) {
 
 // ---- Breakdown by dimension -------------------------------------------------
 
-export async function getBreakdown(userId, { by = 'strategy', from, to }) {
-  const allowed = { symbol: 'symbol', strategy: 'strategy', timeframe: 'timeframe', direction: 'direction' };
-  const col = allowed[by] || 'strategy';
+export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }) {
+  // account: group by account_id (UUID) — frontend maps to display name.
+  // company: group by ta.company — requires JOIN.
+  const dimensionMap = {
+    symbol:    { col: 't.symbol',     needsJoin: false },
+    strategy:  { col: 't.strategy',   needsJoin: false },
+    timeframe: { col: 't.timeframe',  needsJoin: false },
+    direction: { col: 't.direction',  needsJoin: false },
+    account:   { col: 't.account_id', needsJoin: false },
+    company:   { col: 'ta.company',   needsJoin: true  },
+  };
 
-  const params = [userId];
-  const dateCond = buildDateConditions(from, to, params);
+  const dim = dimensionMap[by] ?? dimensionMap.strategy;
+  const col = dim.col;
+
+  const { params, where, join: filterJoin } = buildQueryParts(userId, { from, to, accountId, company });
+
+  // If grouping by company we always need the JOIN, even if the filter doesn't require it.
+  const groupJoin = dim.needsJoin && !filterJoin
+    ? ' JOIN trading_accounts ta ON ta.id = t.account_id'
+    : filterJoin;
 
   const result = await pool.query(`
     SELECT
-      ${col}                                                  AS label,
-      COUNT(*)                                                AS trades_count,
-      COUNT(*) FILTER (WHERE pnl_net > 0)                    AS winners,
-      COUNT(*) FILTER (WHERE pnl_net < 0)                    AS losers,
-      COALESCE(SUM(pnl_net), 0)                              AS pnl_net,
-      AVG(r_multiple) FILTER (WHERE r_multiple IS NOT NULL)  AS avg_r
-    FROM trades
-    WHERE user_id = $1 AND status = 'closed' ${dateCond}
+      ${col}                                                     AS label,
+      COUNT(*)                                                   AS trades_count,
+      COUNT(*) FILTER (WHERE t.pnl_net > 0)                     AS winners,
+      COUNT(*) FILTER (WHERE t.pnl_net < 0)                     AS losers,
+      COALESCE(SUM(t.pnl_net), 0)                               AS pnl_net,
+      AVG(t.r_multiple) FILTER (WHERE t.r_multiple IS NOT NULL) AS avg_r
+    FROM trades t${groupJoin}
+    WHERE ${where} AND t.status = 'closed'
     GROUP BY ${col}
     ORDER BY pnl_net DESC
   `, params);
@@ -212,13 +267,13 @@ export async function getBreakdown(userId, { by = 'strategy', from, to }) {
       const count   = parseInt(r.trades_count) || 0;
       const winners = parseInt(r.winners)      || 0;
       return {
-        label:         r.label || 'Unknown',
-        tradesCount:   count,
+        label:        r.label || 'Unknown',
+        tradesCount:  count,
         winners,
-        losers:        parseInt(r.losers) || 0,
-        winRate:       count > 0 ? parseFloat((winners / count).toFixed(4)) : 0,
-        pnlNet:        parseFloat(parseFloat(r.pnl_net || 0).toFixed(2)),
-        avgRMultiple:  r.avg_r != null ? parseFloat(parseFloat(r.avg_r).toFixed(4)) : null,
+        losers:       parseInt(r.losers) || 0,
+        winRate:      count > 0 ? parseFloat((winners / count).toFixed(4)) : 0,
+        pnlNet:       parseFloat(parseFloat(r.pnl_net || 0).toFixed(2)),
+        avgRMultiple: r.avg_r != null ? parseFloat(parseFloat(r.avg_r).toFixed(4)) : null,
       };
     }),
   };

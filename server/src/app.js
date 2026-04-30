@@ -10,6 +10,7 @@ import meRoutes from './routes/me.js';
 import tradesRoutes from './routes/trades.js';
 import analyticsRoutes from './routes/analytics.js';
 import importRoutes from './routes/importRoutes.js';
+import accountsRoutes from './routes/accounts.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -55,6 +56,7 @@ app.get('/api/health', (_req, res) => {
 // Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/me', meRoutes);
+app.use('/api/accounts', accountsRoutes);
 app.use('/api/trades', tradesRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/imports', importRoutes);

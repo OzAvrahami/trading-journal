@@ -31,33 +31,34 @@ function computeFields({ direction, entryPrice, exitPrice, quantity, fees, riskA
 
 function mapTrade(row) {
   return {
-    id: row.id,
-    userId: row.user_id,
-    symbol: row.symbol,
-    market: row.market,
-    direction: row.direction,
-    entryDatetime: row.entry_datetime,
-    exitDatetime: row.exit_datetime,
-    entryPrice: parseFloat(row.entry_price),
-    exitPrice: row.exit_price != null ? parseFloat(row.exit_price) : null,
-    quantity: parseFloat(row.quantity),
-    fees: parseFloat(row.fees),
-    strategy: row.strategy,
-    setup: row.setup,
-    timeframe: row.timeframe,
-    riskAmount: row.risk_amount != null ? parseFloat(row.risk_amount) : null,
-    stopLoss: row.stop_loss != null ? parseFloat(row.stop_loss) : null,
-    takeProfit: row.take_profit != null ? parseFloat(row.take_profit) : null,
-    notes: row.notes,
-    emotions: row.emotions,
+    id:              row.id,
+    userId:          row.user_id,
+    accountId:       row.account_id,
+    symbol:          row.symbol,
+    market:          row.market,
+    direction:       row.direction,
+    entryDatetime:   row.entry_datetime,
+    exitDatetime:    row.exit_datetime,
+    entryPrice:      parseFloat(row.entry_price),
+    exitPrice:       row.exit_price != null ? parseFloat(row.exit_price) : null,
+    quantity:        parseFloat(row.quantity),
+    fees:            parseFloat(row.fees),
+    strategy:        row.strategy,
+    setup:           row.setup,
+    timeframe:       row.timeframe,
+    riskAmount:      row.risk_amount != null ? parseFloat(row.risk_amount) : null,
+    stopLoss:        row.stop_loss != null ? parseFloat(row.stop_loss) : null,
+    takeProfit:      row.take_profit != null ? parseFloat(row.take_profit) : null,
+    notes:           row.notes,
+    emotions:        row.emotions,
     screenshotLinks: row.screenshot_links,
-    status: row.status,
-    pnlGross: row.pnl_gross != null ? parseFloat(row.pnl_gross) : null,
-    pnlNet: row.pnl_net != null ? parseFloat(row.pnl_net) : null,
-    rMultiple: row.r_multiple != null ? parseFloat(row.r_multiple) : null,
+    status:          row.status,
+    pnlGross:        row.pnl_gross != null ? parseFloat(row.pnl_gross) : null,
+    pnlNet:          row.pnl_net != null ? parseFloat(row.pnl_net) : null,
+    rMultiple:       row.r_multiple != null ? parseFloat(row.r_multiple) : null,
     durationMinutes: row.duration_minutes,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt:       row.created_at,
+    updatedAt:       row.updated_at,
   };
 }
 
@@ -66,7 +67,7 @@ function mapTrade(row) {
 export async function listTrades(userId, filters = {}) {
   const {
     from, to, symbol, market, direction, status,
-    strategy, timeframe, outcome,
+    strategy, timeframe, outcome, accountId,
     page = 1, limit = 50, sort = 'entry_datetime', order = 'desc',
   } = filters;
 
@@ -74,22 +75,23 @@ export async function listTrades(userId, filters = {}) {
   const params = [userId];
   let idx = 2;
 
-  if (from) { conditions.push(`entry_datetime >= $${idx++}`); params.push(from); }
-  if (to)   { conditions.push(`entry_datetime <= $${idx++}`); params.push(`${to}T23:59:59.999Z`); }
-  if (symbol)    { conditions.push(`symbol ILIKE $${idx++}`);    params.push(`%${symbol}%`); }
-  if (market)    { conditions.push(`market = $${idx++}`);        params.push(market); }
-  if (direction) { conditions.push(`direction = $${idx++}`);     params.push(direction); }
-  if (status)    { conditions.push(`status = $${idx++}`);        params.push(status); }
-  if (strategy)  { conditions.push(`strategy ILIKE $${idx++}`);  params.push(`%${strategy}%`); }
-  if (timeframe) { conditions.push(`timeframe = $${idx++}`);     params.push(timeframe); }
+  if (from)      { conditions.push(`entry_datetime >= $${idx++}`); params.push(from); }
+  if (to)        { conditions.push(`entry_datetime <= $${idx++}`); params.push(`${to}T23:59:59.999Z`); }
+  if (symbol)    { conditions.push(`symbol ILIKE $${idx++}`);      params.push(`%${symbol}%`); }
+  if (market)    { conditions.push(`market = $${idx++}`);          params.push(market); }
+  if (direction) { conditions.push(`direction = $${idx++}`);       params.push(direction); }
+  if (status)    { conditions.push(`status = $${idx++}`);          params.push(status); }
+  if (strategy)  { conditions.push(`strategy ILIKE $${idx++}`);    params.push(`%${strategy}%`); }
+  if (timeframe) { conditions.push(`timeframe = $${idx++}`);       params.push(timeframe); }
+  if (accountId) { conditions.push(`account_id = $${idx++}`);      params.push(accountId); }
   if (outcome === 'win')  conditions.push('pnl_net > 0');
   if (outcome === 'loss') conditions.push('pnl_net < 0');
 
   const allowedSorts = {
     entry_datetime: 'entry_datetime',
-    pnl_net: 'pnl_net',
-    symbol: 'symbol',
-    created_at: 'created_at',
+    pnl_net:        'pnl_net',
+    symbol:         'symbol',
+    created_at:     'created_at',
   };
   const sortCol = allowedSorts[sort] || 'entry_datetime';
   const sortDir = order === 'asc' ? 'ASC' : 'DESC';
@@ -125,17 +127,18 @@ export async function createTrade(userId, data) {
 
   const result = await pool.query(
     `INSERT INTO trades (
-      user_id, symbol, market, direction,
+      user_id, account_id, symbol, market, direction,
       entry_datetime, exit_datetime, entry_price, exit_price,
       quantity, fees, strategy, setup, timeframe,
       risk_amount, stop_loss, take_profit,
       notes, emotions, screenshot_links,
       status, pnl_gross, pnl_net, r_multiple, duration_minutes
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25
     ) RETURNING *`,
     [
       userId,
+      data.accountId,
       data.symbol, data.market, data.direction,
       data.entryDatetime,
       data.exitDatetime ?? null,
@@ -167,14 +170,14 @@ export async function updateTrade(userId, tradeId, data) {
   const existing = await getTrade(userId, tradeId);
 
   const merged = {
-    direction: existing.direction,
-    entryPrice: existing.entryPrice,
+    direction:    existing.direction,
+    entryPrice:   existing.entryPrice,
     entryDatetime: existing.entryDatetime,
-    quantity: data.quantity ?? existing.quantity,
-    fees: data.fees ?? existing.fees,
-    riskAmount: data.riskAmount !== undefined ? data.riskAmount : existing.riskAmount,
+    quantity:     data.quantity    ?? existing.quantity,
+    fees:         data.fees        ?? existing.fees,
+    riskAmount:   data.riskAmount  !== undefined ? data.riskAmount  : existing.riskAmount,
     exitDatetime: data.exitDatetime !== undefined ? data.exitDatetime : existing.exitDatetime,
-    exitPrice: data.exitPrice !== undefined ? data.exitPrice : existing.exitPrice,
+    exitPrice:    data.exitPrice    !== undefined ? data.exitPrice    : existing.exitPrice,
   };
   const computed = computeFields(merged);
 
@@ -206,13 +209,13 @@ export async function updateTrade(userId, tradeId, data) {
       merged.exitPrice ?? null,
       merged.quantity,
       merged.fees,
-      data.strategy !== undefined ? data.strategy : existing.strategy,
-      data.setup !== undefined ? data.setup : existing.setup,
-      data.timeframe !== undefined ? data.timeframe : existing.timeframe,
+      data.strategy   !== undefined ? data.strategy   : existing.strategy,
+      data.setup      !== undefined ? data.setup      : existing.setup,
+      data.timeframe  !== undefined ? data.timeframe  : existing.timeframe,
       merged.riskAmount ?? null,
-      data.stopLoss !== undefined ? data.stopLoss : existing.stopLoss,
+      data.stopLoss   !== undefined ? data.stopLoss   : existing.stopLoss,
       data.takeProfit !== undefined ? data.takeProfit : existing.takeProfit,
-      data.notes !== undefined ? data.notes : existing.notes,
+      data.notes      !== undefined ? data.notes      : existing.notes,
       data.emotions !== undefined
         ? (data.emotions ? JSON.stringify(data.emotions) : null)
         : (existing.emotions ? JSON.stringify(existing.emotions) : null),

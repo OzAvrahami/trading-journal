@@ -6,6 +6,7 @@ import { useToast } from '../ui/Toast.jsx';
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: '📊' },
   { to: '/trades',    label: 'Trades',    icon: '📋' },
+  { to: '/accounts',  label: 'Accounts',  icon: '🏦' },
   { to: '/import',    label: 'Import',    icon: '📥' },
 ];
 

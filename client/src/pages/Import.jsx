@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { parseImport, commitImport } from '../api/imports.js';
+import { accountsApi } from '../api/accounts.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { Spinner } from '../components/ui/Spinner.jsx';
 
 const BROKERS = [
-  { key: 'topstepx', label: 'TopstepX' },
+  { key: 'topstepx',  label: 'TopstepX' },
   { key: 'tradovate', label: 'Tradovate' },
 ];
 
@@ -61,23 +63,23 @@ function PreviewTable({ rows }) {
   if (!rows.length) return <p className="text-gray-500 text-sm">No rows to preview.</p>;
 
   const cols = [
-    { key: 'symbol',          label: 'Symbol' },
-    { key: 'direction',       label: 'Direction' },
-    { key: 'entry_datetime',  label: 'Entry' },
-    { key: 'exit_datetime',   label: 'Exit' },
-    { key: 'entry_price',     label: 'Entry $' },
-    { key: 'exit_price',      label: 'Exit $' },
-    { key: 'quantity',        label: 'Qty' },
-    { key: 'pnl_net',         label: 'PnL Net' },
-    { key: 'fees',            label: 'Fees' },
+    { key: 'symbol',         label: 'Symbol' },
+    { key: 'direction',      label: 'Direction' },
+    { key: 'entry_datetime', label: 'Entry' },
+    { key: 'exit_datetime',  label: 'Exit' },
+    { key: 'entry_price',    label: 'Entry $' },
+    { key: 'exit_price',     label: 'Exit $' },
+    { key: 'quantity',       label: 'Qty' },
+    { key: 'pnl_net',        label: 'PnL Net' },
+    { key: 'fees',           label: 'Fees' },
   ];
 
   const fmt = (key, val) => {
     if (val == null) return '—';
-    if (['entry_datetime','exit_datetime'].includes(key)) {
+    if (['entry_datetime', 'exit_datetime'].includes(key)) {
       return new Date(val).toLocaleString();
     }
-    if (['entry_price','exit_price','pnl_net','fees'].includes(key)) {
+    if (['entry_price', 'exit_price', 'pnl_net', 'fees'].includes(key)) {
       return typeof val === 'number' ? val.toFixed(2) : val;
     }
     return String(val);
@@ -101,12 +103,8 @@ function PreviewTable({ rows }) {
               {cols.map(c => {
                 const val = row[c.key];
                 let extra = '';
-                if (c.key === 'pnl_net') {
-                  extra = val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : '';
-                }
-                if (c.key === 'direction') {
-                  extra = val === 'long' ? 'text-blue-400' : 'text-orange-400';
-                }
+                if (c.key === 'pnl_net')   extra = val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : '';
+                if (c.key === 'direction') extra = val === 'long' ? 'text-blue-400' : 'text-orange-400';
                 return (
                   <td key={c.key} className={`px-3 py-2 text-gray-300 whitespace-nowrap ${extra}`}>
                     {fmt(c.key, val)}
@@ -126,26 +124,31 @@ export default function Import() {
   const navigate = useNavigate();
   const fileRef  = useRef(null);
 
-  // Step
-  const [step, setStep] = useState('select');
-
-  // Select & upload state
-  const [broker, setBroker]   = useState('');
-  const [file, setFile]       = useState(null);
-  const [parsing, setParsing] = useState(false);
-
-  // Preview state
-  const [sessionId, setSessionId]   = useState(null);
-  const [preview, setPreview]       = useState([]);
+  const [step, setStep]           = useState('select');
+  const [broker, setBroker]       = useState('');
+  const [file, setFile]           = useState(null);
+  const [parsing, setParsing]     = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [preview, setPreview]     = useState([]);
   const [parseStats, setParseStats] = useState(null);
+  const [accountId, setAccountId] = useState('');
   const [committing, setCommitting] = useState(false);
-
-  // Done state
   const [commitResult, setCommitResult] = useState(null);
 
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn:  accountsApi.list,
+  });
+
+  const activeAccounts = accounts.filter(a => a.status === 'active');
+
+  function accountLabel(a) {
+    const base = `${a.company} — ${a.accountNumber}`;
+    return a.accountName ? `${base} (${a.accountName})` : base;
+  }
+
   function handleFileChange(e) {
-    const f = e.target.files?.[0] ?? null;
-    setFile(f);
+    setFile(e.target.files?.[0] ?? null);
   }
 
   async function handleParse() {
@@ -167,9 +170,11 @@ export default function Import() {
   }
 
   async function handleCommit() {
+    if (!accountId) { toast.error('Please select an account for these trades.'); return; }
+
     setCommitting(true);
     try {
-      const result = await commitImport(sessionId);
+      const result = await commitImport(sessionId, accountId);
       setCommitResult(result);
       setStep('done');
     } catch (err) {
@@ -185,6 +190,7 @@ export default function Import() {
     setSessionId(null);
     setPreview([]);
     setParseStats(null);
+    setAccountId('');
     setCommitResult(null);
     setStep('select');
     if (fileRef.current) fileRef.current.value = '';
@@ -272,11 +278,29 @@ export default function Import() {
             <PreviewTable rows={preview} />
           </div>
 
+          {/* Account selection */}
+          <div className="card space-y-2">
+            <label className="block text-sm font-medium text-gray-300">
+              Assign to Account *
+            </label>
+            <p className="text-xs text-gray-500">All imported trades will be assigned to this account.</p>
+            <select
+              className="input w-full sm:w-80"
+              value={accountId}
+              onChange={e => setAccountId(e.target.value)}
+            >
+              <option value="">Select account…</option>
+              {activeAccounts.map(a => (
+                <option key={a.id} value={a.id}>{accountLabel(a)}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Action buttons */}
           <div className="flex items-center gap-3">
             <button
               onClick={handleCommit}
-              disabled={committing || parseStats.uniqueInFile === 0}
+              disabled={committing || parseStats.uniqueInFile === 0 || !accountId}
               className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {committing

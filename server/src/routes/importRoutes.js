@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { requireAuth } from '../middleware/auth.js';
 import { parseImport, commitImport } from '../services/importService.js';
+import { validateAccountOwnership } from '../services/accountService.js';
 import { IMPORTERS } from '../importers/index.js';
 import { createError } from '../middleware/errorHandler.js';
 
@@ -88,15 +89,18 @@ router.post('/parse', requireAuth, upload.single('file'), async (req, res, next)
 
 /**
  * POST /api/imports/commit
- * Body: JSON { sessionId: string }
+ * Body: JSON { sessionId: string, accountId: string }
  * Response: { inserted, dbDuplicates }
  */
 router.post('/commit', requireAuth, async (req, res, next) => {
   try {
-    const { sessionId } = req.body;
+    const { sessionId, accountId } = req.body;
 
     if (!sessionId) {
       throw createError('VALIDATION_ERROR', '"sessionId" is required.', 400);
+    }
+    if (!accountId) {
+      throw createError('VALIDATION_ERROR', '"accountId" is required.', 400);
     }
 
     const rows = getSession(req.user.id, sessionId);
@@ -104,7 +108,10 @@ router.post('/commit', requireAuth, async (req, res, next) => {
       throw createError('SESSION_EXPIRED', 'Import session not found or expired. Please re-upload the file.', 410);
     }
 
-    const result = await commitImport(req.user.id, rows);
+    // Verify the account belongs to this user before writing any trades
+    await validateAccountOwnership(req.user.id, accountId);
+
+    const result = await commitImport(req.user.id, rows, accountId);
     deleteSession(req.user.id, sessionId);
 
     res.json(result);

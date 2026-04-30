@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tradesApi } from '../api/trades.js';
+import { accountsApi } from '../api/accounts.js';
 import { TradeForm } from '../components/trades/TradeForm.jsx';
 import { Spinner } from '../components/ui/Spinner.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
@@ -18,6 +19,17 @@ export default function TradeDetail() {
     queryKey: ['trade', id],
     queryFn: () => tradesApi.get(id),
   });
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn:  accountsApi.list,
+  });
+
+  function accountLabel(accountId) {
+    const a = accounts.find(x => x.id === accountId);
+    if (!a) return '—';
+    return a.accountName || `${a.company} — ${a.accountNumber}`;
+  }
 
   const updateMutation = useMutation({
     mutationFn: (data) => tradesApi.update(id, data),
@@ -120,6 +132,7 @@ export default function TradeDetail() {
         </div>
 
         {/* Details rows */}
+        <Row label="Account"      value={accountLabel(trade.accountId)} />
         <Row label="Entry Time"   value={formatDatetime(trade.entryDatetime)} />
         <Row label="Exit Time"    value={formatDatetime(trade.exitDatetime)} />
         <Row label="Entry Price"  value={formatCurrency(trade.entryPrice)} />

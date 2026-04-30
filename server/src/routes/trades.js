@@ -14,6 +14,7 @@ const DIRECTIONS = ['long', 'short'];
 const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'];
 
 const createSchema = z.object({
+  accountId:       z.string().uuid(),
   symbol:          z.string().min(1).max(20).transform(v => v.toUpperCase().trim()),
   market:          z.enum(MARKETS),
   direction:       z.enum(DIRECTIONS),
@@ -68,6 +69,7 @@ const filtersSchema = z.object({
   strategy:  z.string().optional(),
   timeframe: z.enum(TIMEFRAMES).optional(),
   outcome:   z.enum(['win', 'loss']).optional(),
+  accountId: z.string().uuid().optional(),
   page:      z.coerce.number().int().positive().default(1),
   limit:     z.coerce.number().int().min(1).max(200).default(50),
   sort:      z.enum(['entry_datetime', 'pnl_net', 'symbol', 'created_at']).default('entry_datetime'),
@@ -90,7 +92,7 @@ router.get('/export', validateQuery(filtersSchema), async (req, res, next) => {
     const trades = await tradeService.exportTradesCsv(req.user.id, req.query);
 
     const headers = [
-      'id', 'symbol', 'market', 'direction',
+      'id', 'accountId', 'symbol', 'market', 'direction',
       'entryDatetime', 'exitDatetime', 'entryPrice', 'exitPrice',
       'quantity', 'fees', 'status',
       'pnlGross', 'pnlNet', 'rMultiple', 'durationMinutes',

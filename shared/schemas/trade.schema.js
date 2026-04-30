@@ -9,6 +9,7 @@ const emotionsSchema = z.object({
 
 export const createTradeSchema = z.object({
   // Required
+  accountId: z.string().uuid(),
   symbol: z.string().min(1).max(20).transform(v => v.toUpperCase().trim()),
   market: z.enum(MARKETS),
   direction: z.enum(DIRECTIONS),
@@ -59,17 +60,18 @@ export const updateTradeSchema = z.object({
 });
 
 export const tradeFiltersSchema = z.object({
-  from: z.string().optional(),
-  to: z.string().optional(),
-  symbol: z.string().optional(),
-  market: z.enum(MARKETS).optional(),
+  from:      z.string().optional(),
+  to:        z.string().optional(),
+  symbol:    z.string().optional(),
+  market:    z.enum(MARKETS).optional(),
   direction: z.enum(DIRECTIONS).optional(),
-  status: z.enum(['open', 'closed']).optional(),
-  strategy: z.string().optional(),
+  status:    z.enum(['open', 'closed']).optional(),
+  strategy:  z.string().optional(),
   timeframe: z.enum(TIMEFRAMES).optional(),
-  outcome: z.enum(['win', 'loss']).optional(),
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  sort: z.enum(['entry_datetime', 'pnl_net', 'symbol', 'created_at']).default('entry_datetime'),
-  order: z.enum(['asc', 'desc']).default('desc'),
+  outcome:   z.enum(['win', 'loss']).optional(),
+  accountId: z.string().uuid().optional(),
+  page:      z.coerce.number().int().positive().default(1),
+  limit:     z.coerce.number().int().min(1).max(200).default(50),
+  sort:      z.enum(['entry_datetime', 'pnl_net', 'symbol', 'created_at']).default('entry_datetime'),
+  order:     z.enum(['asc', 'desc']).default('desc'),
 });

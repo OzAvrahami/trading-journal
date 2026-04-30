@@ -7,17 +7,19 @@ import * as analyticsService from '../services/analyticsService.js';
 const router = Router();
 router.use(requireAuth);
 
-const dateRangeSchema = z.object({
-  from: z.string().optional(),
-  to:   z.string().optional(),
+const baseSchema = z.object({
+  from:      z.string().optional(),
+  to:        z.string().optional(),
+  accountId: z.string().uuid().optional(),
+  company:   z.string().optional(),
 });
 
-const breakdownSchema = dateRangeSchema.extend({
-  by: z.enum(['symbol', 'strategy', 'timeframe', 'direction']).default('strategy'),
+const breakdownSchema = baseSchema.extend({
+  by: z.enum(['symbol', 'strategy', 'timeframe', 'direction', 'account', 'company']).default('strategy'),
 });
 
 // GET /api/analytics/summary
-router.get('/summary', validateQuery(dateRangeSchema), async (req, res, next) => {
+router.get('/summary', validateQuery(baseSchema), async (req, res, next) => {
   try {
     const data = await analyticsService.getSummary(req.user.id, req.query);
     res.json(data);
@@ -25,7 +27,7 @@ router.get('/summary', validateQuery(dateRangeSchema), async (req, res, next) =>
 });
 
 // GET /api/analytics/equity-curve
-router.get('/equity-curve', validateQuery(dateRangeSchema), async (req, res, next) => {
+router.get('/equity-curve', validateQuery(baseSchema), async (req, res, next) => {
   try {
     const data = await analyticsService.getEquityCurve(req.user.id, req.query);
     res.json(data);
@@ -33,14 +35,14 @@ router.get('/equity-curve', validateQuery(dateRangeSchema), async (req, res, nex
 });
 
 // GET /api/analytics/distribution
-router.get('/distribution', validateQuery(dateRangeSchema), async (req, res, next) => {
+router.get('/distribution', validateQuery(baseSchema), async (req, res, next) => {
   try {
     const data = await analyticsService.getDistribution(req.user.id, req.query);
     res.json(data);
   } catch (err) { next(err); }
 });
 
-// GET /api/analytics/breakdown?by=symbol|strategy|timeframe|direction
+// GET /api/analytics/breakdown?by=symbol|strategy|timeframe|direction|account|company
 router.get('/breakdown', validateQuery(breakdownSchema), async (req, res, next) => {
   try {
     const data = await analyticsService.getBreakdown(req.user.id, req.query);

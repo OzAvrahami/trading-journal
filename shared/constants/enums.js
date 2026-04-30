@@ -13,3 +13,12 @@ export const EMOTIONS = [
 ];
 
 export const OUTCOMES = ['win', 'loss', 'breakeven'];
+
+export const PROP_FIRMS = [
+  'Topstep', 'Lucid', 'MFF', 'Apex', 'FTMO', 'E8', 'The5ers',
+  'Earn2Trade', 'Tradeify', 'Bulenox', 'BluSky', 'Funded Engineer',
+];
+
+export const ACCOUNT_STATUSES = ['active', 'inactive', 'archived'];
+
+export const ACCOUNT_TYPES = ['funded', 'evaluation', 'demo', 'live'];

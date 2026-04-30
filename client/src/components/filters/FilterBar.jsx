@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { format, startOfWeek, startOfMonth, subWeeks, subMonths } from 'date-fns';
+import { accountsApi } from '../../api/accounts.js';
 
 const PRESETS = [
   { label: 'Today',      getRange: () => { const d = format(new Date(), 'yyyy-MM-dd'); return { from: d, to: d }; } },
@@ -18,6 +20,11 @@ const OUTCOMES   = ['win', 'loss'];
 export function FilterBar({ filters, onChange }) {
   const [expanded, setExpanded] = useState(false);
 
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn:  accountsApi.list,
+  });
+
   function set(key, value) {
     onChange({ ...filters, [key]: value || undefined, page: 1 });
   }
@@ -25,6 +32,11 @@ export function FilterBar({ filters, onChange }) {
   function applyPreset(preset) {
     const range = preset.getRange();
     onChange({ ...filters, from: range.from || undefined, to: range.to || undefined, page: 1 });
+  }
+
+  function accountLabel(a) {
+    const base = `${a.company} — ${a.accountNumber}`;
+    return a.accountName ? `${base} (${a.accountName})` : base;
   }
 
   return (
@@ -68,7 +80,21 @@ export function FilterBar({ filters, onChange }) {
 
       {/* Expanded filters */}
       {expanded && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2 border-t border-gray-800">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 pt-2 border-t border-gray-800">
+          <div>
+            <label className="label">Account</label>
+            <select
+              className="input"
+              value={filters.accountId || ''}
+              onChange={e => set('accountId', e.target.value)}
+            >
+              <option value="">All</option>
+              {accounts.map(a => (
+                <option key={a.id} value={a.id}>{accountLabel(a)}</option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="label">Symbol</label>
             <input
