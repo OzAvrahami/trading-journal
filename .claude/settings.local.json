@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install multer csv-parse @supabase/supabase-js)",
+      "Bash(node -e \"import\\(''d:/code/trading-journal/server/node_modules/multer/index.js''\\).then\\(m => console.log\\(Object.keys\\(m.default || m\\)\\)\\)\")"
+    ]
+  }
+}

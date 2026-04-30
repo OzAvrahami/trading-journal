@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import meRoutes from './routes/me.js';
 import tradesRoutes from './routes/trades.js';
 import analyticsRoutes from './routes/analytics.js';
+import importRoutes from './routes/importRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -56,6 +57,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/me', meRoutes);
 app.use('/api/trades', tradesRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/imports', importRoutes);
 
 // 404 handler
 app.use((_req, res) => {
