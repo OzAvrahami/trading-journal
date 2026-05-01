@@ -16,9 +16,8 @@ const FEE_PER_CONTRACT = 0.95;
  *   pnl, boughtTimestamp, soldTimestamp, duration
  *
  * Direction logic:
- *   sellPrice > buyPrice  → long  (bought low, sold high)
- *   sellPrice < buyPrice  → short (sold high, bought low)
- *   equal                 → long
+ *   soldTimestamp < boughtTimestamp  → short (sold first to open, bought to close)
+ *   boughtTimestamp ≤ soldTimestamp  → long  (bought first to open, sold to close)
  *
  * Returns an array of raw (un-validated) normalised row objects.
  */
@@ -38,24 +37,27 @@ export function parseTradovate(csvBuffer) {
     const fees      = parseFloat((qty * 2 * FEE_PER_CONTRACT).toFixed(2));
     const pnlNet    = parseFloat((pnlGross - fees).toFixed(2));
 
-    let direction;
-    if (sellPrice > buyPrice) {
-      direction = 'long';
-    } else if (sellPrice < buyPrice) {
-      direction = 'short';
-    } else {
-      direction = 'long';
-    }
+    // Direction is determined by execution order: whichever leg happened first is the opening leg.
+    const soldMs   = new Date(row.soldTimestamp).getTime();
+    const boughtMs = new Date(row.boughtTimestamp).getTime();
+    const direction = soldMs < boughtMs ? 'short' : 'long';
+
+    // For shorts: SELL opened the position (entry) and BUY closed it (exit).
+    // For longs:  BUY opened the position (entry) and SELL closed it (exit).
+    const entryDatetime = direction === 'short' ? toISO(row.soldTimestamp)   : toISO(row.boughtTimestamp);
+    const exitDatetime  = direction === 'short' ? toISO(row.boughtTimestamp) : toISO(row.soldTimestamp);
+    const entryPrice    = direction === 'short' ? sellPrice                  : buyPrice;
+    const exitPrice     = direction === 'short' ? buyPrice                   : sellPrice;
 
     return {
       _rowIndex: index + 2,
       symbol: (row.symbol || '').trim().toUpperCase(),
       market: 'futures',
       direction,
-      entry_datetime: toISO(row.boughtTimestamp),
-      exit_datetime: toISO(row.soldTimestamp),
-      entry_price: buyPrice,
-      exit_price: sellPrice,
+      entry_datetime: entryDatetime,
+      exit_datetime:  exitDatetime,
+      entry_price:    entryPrice,
+      exit_price:     exitPrice,
       quantity: qty,
       fees,
       pnl_gross: pnlGross,
