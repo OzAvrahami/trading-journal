@@ -55,12 +55,12 @@ export async function parseImport(broker, csvBuffer) {
  *   3. Batch-insert the new rows under the given accountId.
  */
 export async function commitImport(userId, rows, accountId) {
-  // Level 2: check which keys already exist in the DB for this user
+  // Level 2: check which keys already exist in the DB for this account
   const incomingKeys = rows.map(r => r._dedupKey);
 
   const { rows: existing } = await pool.query(
-    'SELECT dedup_key FROM trades WHERE user_id = $1 AND dedup_key = ANY($2::text[])',
-    [userId, incomingKeys]
+    'SELECT dedup_key FROM trades WHERE account_id = $1 AND dedup_key = ANY($2::text[])',
+    [accountId, incomingKeys]
   );
 
   const existingKeys = new Set(existing.map(r => r.dedup_key));
