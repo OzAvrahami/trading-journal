@@ -5,4 +5,5 @@ export const analyticsApi = {
   equityCurve: (params) => api.get('/api/analytics/equity-curve', { params }).then(r => r.data),
   distribution:(params) => api.get('/api/analytics/distribution', { params }).then(r => r.data),
   breakdown:   (params) => api.get('/api/analytics/breakdown', { params }).then(r => r.data),
+  calendar:    (params) => api.get('/api/analytics/calendar', { params }).then(r => r.data),
 };

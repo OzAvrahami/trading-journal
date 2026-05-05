@@ -34,6 +34,14 @@ router.get('/equity-curve', validateQuery(baseSchema), async (req, res, next) =>
   } catch (err) { next(err); }
 });
 
+// GET /api/analytics/calendar
+router.get('/calendar', validateQuery(baseSchema), async (req, res, next) => {
+  try {
+    const data = await analyticsService.getCalendar(req.user.id, req.query);
+    res.json(data);
+  } catch (err) { next(err); }
+});
+
 // GET /api/analytics/distribution
 router.get('/distribution', validateQuery(baseSchema), async (req, res, next) => {
   try {

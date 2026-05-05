@@ -1,3 +1,4 @@
+import { date } from 'zod';
 import pool from '../db/client.js';
 
 // ---- Date helpers -----------------------------------------------------------
@@ -180,6 +181,31 @@ export async function getEquityCurve(userId, { from, to, accountId, company }) {
       cumulative = parseFloat((cumulative + daily).toFixed(2));
       return { date: row.date, dailyPnl: daily, cumulativePnl: cumulative };
     }),
+  };
+}
+
+// ---- Calendar  --------------------------------------------------------------
+
+export async function getCalendar(userId, { from, to, accountId, company }) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+
+  const result = await pool.query(`
+    SELECT
+      DATE(t.entry_datetime) AS date,
+      SUM(t.pnl_net) AS pnl_net,
+      COUNT(*) AS trades_count
+    FROM trades t${join}
+    WHERE ${where} AND t.status = 'closed'
+    GROUP BY DATE(t.entry_datetime)
+    ORDER BY date ASC
+  `, params);
+
+  return {
+    days: result.rows.map(row => ({
+      date: row.date,
+      pnlNet: parseFloat(parseFloat(row.pnl_net).toFixed(2)),
+      tradesCount: Number(row.trades_count),
+    })),
   };
 }
 

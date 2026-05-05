@@ -9,6 +9,7 @@ import { PnLHistogram } from '../components/analytics/PnLHistogram.jsx';
 import { BreakdownChart } from '../components/analytics/BreakdownChart.jsx';
 import { Spinner } from '../components/ui/Spinner.jsx';
 import { QuickAddModal } from '../components/trades/QuickAddModal.jsx';
+import { TradingCalendar } from '../components/analytics/TradingCalendar.jsx';
 
 const DEFAULT_FROM = format(startOfMonth(new Date()), 'yyyy-MM-dd');
 const DEFAULT_TO   = format(new Date(), 'yyyy-MM-dd');
@@ -137,6 +138,8 @@ export default function Dashboard() {
       ) : (
         <SummaryCards data={summary} />
       )}
+
+      <TradingCalendar qParams={qParams} />
 
       {/* Charts */}
       <EquityCurve data={equityData?.data} />
