@@ -18,10 +18,11 @@ const loginSchema = z.object({
 });
 
 function setRefreshCookie(res, token) {
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie('refreshToken', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   });
 }
@@ -68,7 +69,12 @@ router.post('/logout', requireAuth, async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken;
     if (token) await authService.logout(token);
-    res.clearCookie('refreshToken');
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'strict',
+    });
     res.json({ message: 'Logged out successfully.' });
   } catch (err) {
     next(err);

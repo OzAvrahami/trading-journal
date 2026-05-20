@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
     didInit.current = true;
 
     axios
-      .post('/api/auth/refresh', {}, { withCredentials: true })
+      .post(`${import.meta.env.VITE_API_URL || ''}/api/auth/refresh`, {}, { withCredentials: true })
       .then(({ data }) => {
         setAccessToken(data.accessToken);
         return authApi.getMe();
