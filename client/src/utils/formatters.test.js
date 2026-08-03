@@ -5,6 +5,7 @@ import {
   formatDuration,
   formatPct,
   formatR,
+  formatSignedCurrency,
   isolateLtr,
   rawCurrency,
 } from './formatters.js';
@@ -25,6 +26,12 @@ describe('display formatters', () => {
   it('keeps null placeholders unisolated', () => {
     expect(formatCurrency(null)).toBe('—');
     expect(formatDate(null)).toBe('—');
+  });
+
+  it('adds a sign to gains without marking zero as a gain', () => {
+    expect(stripIsolation(formatSignedCurrency(12))).toBe('+$12.00');
+    expect(stripIsolation(formatSignedCurrency(0))).toBe('$0.00');
+    expect(stripIsolation(formatSignedCurrency(-12))).toBe('-$12.00');
   });
 
   it('isolates complete percentage, ratio, and duration expressions', () => {

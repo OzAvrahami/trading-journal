@@ -1,0 +1,134 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const apiMocks = vi.hoisted(() => ({
+  accounts: vi.fn(),
+  summary: vi.fn(),
+  equityCurve: vi.fn(),
+  distribution: vi.fn(),
+  breakdown: vi.fn(),
+}));
+
+vi.mock('../api/accounts.js', () => ({ accountsApi: { list: apiMocks.accounts } }));
+vi.mock('../api/analytics.js', () => ({ analyticsApi: {
+  summary: apiMocks.summary,
+  equityCurve: apiMocks.equityCurve,
+  distribution: apiMocks.distribution,
+  breakdown: apiMocks.breakdown,
+} }));
+vi.mock('../components/analytics/EquityCurve.jsx', () => ({ EquityCurve: ({ isLoading, error }) => <div>{isLoading ? 'Equity loading' : error ? 'Equity error' : 'Equity ready'}</div> }));
+vi.mock('../components/analytics/PnLHistogram.jsx', () => ({ PnLHistogram: ({ isLoading, error }) => <div>{isLoading ? 'Distribution loading' : error ? 'Distribution error' : 'Distribution ready'}</div> }));
+vi.mock('../components/analytics/BreakdownChart.jsx', () => ({ BreakdownChart: ({ isLoading, error, onByChange }) => <button type="button" onClick={() => onByChange('symbol')}>{isLoading ? 'Breakdown loading' : error ? 'Breakdown error' : 'Breakdown ready'}</button> }));
+vi.mock('../components/analytics/TradingCalendar.jsx', () => ({ TradingCalendar: () => <div>Calendar widget</div> }));
+vi.mock('../components/trades/QuickAddModal.jsx', () => ({ QuickAddModal: ({ open, onClose }) => open ? <div role="dialog"><span>Add trade flow</span><button onClick={onClose}>Close</button></div> : null }));
+
+import Dashboard from './Dashboard.jsx';
+
+const successSummary = {
+  today: { pnlNet: 125, tradesCount: 1 },
+  wtd: { pnlNet: 200, tradesCount: 2 },
+  mtd: { pnlNet: -50, tradesCount: 4 },
+  totals: {
+    pnlNet: 275, tradesClosed: 3, winners: 2, losers: 1, winRate: 2 / 3,
+    avgWin: 200, avgLoss: -125, expectancy: 91.67, profitFactor: 3.2, avgRMultiple: 1.25,
+  },
+};
+
+function setSuccess(summary = successSummary) {
+  apiMocks.accounts.mockResolvedValue([
+    { id: 'account-1', company: 'Broker A', accountNumber: 'A-100', accountName: 'Primary' },
+    { id: 'account-2', company: 'Broker B', accountNumber: 'B-200' },
+  ]);
+  apiMocks.summary.mockResolvedValue(summary);
+  apiMocks.equityCurve.mockResolvedValue({ data: [] });
+  apiMocks.distribution.mockResolvedValue({ buckets: [] });
+  apiMocks.breakdown.mockResolvedValue({ data: [] });
+}
+
+function renderDashboard() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  return render(<QueryClientProvider client={client}><Dashboard /></QueryClientProvider>);
+}
+
+describe('Dashboard', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('shows layout-mirroring skeletons without a duplicate page heading', () => {
+    const never = new Promise(() => {});
+    apiMocks.accounts.mockReturnValue(never);
+    apiMocks.summary.mockReturnValue(never);
+    apiMocks.equityCurve.mockReturnValue(never);
+    apiMocks.distribution.mockReturnValue(never);
+    apiMocks.breakdown.mockReturnValue(never);
+    renderDashboard();
+
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Loading Dashboard metrics' })).toBeInTheDocument();
+    expect(screen.getByText('Equity loading')).toBeInTheDocument();
+  });
+
+  it('renders production API values and keeps Add Trade wired', async () => {
+    setSuccess();
+    renderDashboard();
+
+    expect(await screen.findByText('Period net PnL')).toBeInTheDocument();
+    expect(screen.getByText(/\+\$275\.00/)).toBeInTheDocument();
+    expect(screen.getByText('3 closed trades')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add Trade' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('Add trade flow');
+  });
+
+  it('marks ratio metrics unavailable when the selected period has no closed trades', async () => {
+    setSuccess({
+      today: { pnlNet: 0, tradesCount: 0 }, wtd: { pnlNet: 0, tradesCount: 0 }, mtd: { pnlNet: 0, tradesCount: 0 },
+      totals: { pnlNet: 0, tradesClosed: 0, winners: 0, losers: 0, winRate: 0, avgWin: 0, avgLoss: 0, expectancy: 0, profitFactor: null, avgRMultiple: null },
+    });
+    renderDashboard();
+
+    expect(await screen.findByText('No closed trades in this selected period')).toBeInTheDocument();
+    expect(screen.getByText('Period net PnL').parentElement).toHaveTextContent('$0.00');
+    expect(screen.getByText('Win rate').parentElement).toHaveTextContent('—');
+    expect(screen.getByText('Expectancy').parentElement).toHaveTextContent('—');
+  });
+
+  it('shows a retryable full-dashboard error when every analytics query fails', async () => {
+    apiMocks.accounts.mockResolvedValue([]);
+    apiMocks.summary.mockRejectedValue(new Error('summary failed'));
+    apiMocks.equityCurve.mockRejectedValue(new Error('equity failed'));
+    apiMocks.distribution.mockRejectedValue(new Error('distribution failed'));
+    apiMocks.breakdown.mockRejectedValue(new Error('breakdown failed'));
+    renderDashboard();
+
+    expect(await screen.findByText('Dashboard analytics could not be loaded')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    expect(screen.getByText(/independently loaded calendar/i)).toBeInTheDocument();
+  });
+
+  it('keeps successful widgets visible when one query fails', async () => {
+    setSuccess();
+    apiMocks.distribution.mockRejectedValue(new Error('distribution failed'));
+    renderDashboard();
+
+    expect(await screen.findByText('Period net PnL')).toBeInTheDocument();
+    expect(screen.getByText('Equity ready')).toBeInTheDocument();
+    expect(screen.getByText('Distribution error')).toBeInTheDocument();
+    expect(screen.queryByText('Dashboard analytics could not be loaded')).not.toBeInTheDocument();
+  });
+
+  it('preserves account and date query parameters', async () => {
+    setSuccess();
+    renderDashboard();
+    const user = userEvent.setup();
+    await screen.findByRole('option', { name: 'Broker A — A-100 (Primary)' });
+
+    await user.selectOptions(screen.getByLabelText('Account'), 'account-1');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-07-01' } });
+    fireEvent.change(screen.getByLabelText('End date'), { target: { value: '2026-07-31' } });
+
+    await waitFor(() => expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: '2026-07-01', to: '2026-07-31', accountId: 'account-1' }));
+  });
+});

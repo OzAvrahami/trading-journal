@@ -33,6 +33,14 @@ export function formatCurrency(value, opts = {}) {
   return formatted === EMPTY_VALUE ? formatted : isolateLtr(formatted);
 }
 
+/** Format signed USD without treating a real zero as a gain or loss. */
+export function formatSignedCurrency(value, opts = {}) {
+  return formatCurrency(value, {
+    signDisplay: value > 0 ? 'always' : 'auto',
+    ...opts,
+  });
+}
+
 export function rawDate(value) {
   if (!value) return EMPTY_VALUE;
   return new Date(value).toLocaleDateString('en-US', {

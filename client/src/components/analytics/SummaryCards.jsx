@@ -1,74 +1,63 @@
-import { formatCurrency, formatPct, formatR } from '../../utils/formatters.js';
+import { Card } from '../ui/Card.jsx';
+import { ValueIndicator } from '../ui/ValueIndicator.jsx';
+import { formatCurrency, formatPct, formatR, formatSignedCurrency } from '../../utils/formatters.js';
 
-function StatCard({ label, value, valueClass = 'text-gray-100', sub }) {
-  return (
-    <div className="card">
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${valueClass}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-600 mt-1">{sub}</p>}
-    </div>
-  );
+function tradeCount(count, closed = false) {
+  return `${count} ${closed ? 'closed ' : ''}${count === 1 ? 'trade' : 'trades'}`;
 }
 
-function pnlClass(v) {
-  if (v == null) return 'text-gray-400';
-  if (v > 0) return 'text-green-400';
-  if (v < 0) return 'text-red-400';
-  return 'text-gray-400';
+function MetricCard({ label, value, detail, pnlValue, unavailable = false }) {
+  return (
+    <Card density="compact" className="min-w-0 bg-surface-raised">
+      <p className="text-[0.65625rem] font-semibold uppercase tracking-[0.05em] text-muted">{label}</p>
+      <div className="mt-1.5 min-h-7 text-[1.1875rem] font-semibold tracking-tight text-primary">
+        {unavailable ? (
+          <span className="font-mono tabular-nums text-muted" dir="ltr" aria-label="Unavailable">—</span>
+        ) : pnlValue != null ? (
+          <ValueIndicator value={pnlValue} className="text-[1.1875rem] font-semibold">{value}</ValueIndicator>
+        ) : (
+          <span className="font-mono tabular-nums" dir="ltr">{value}</span>
+        )}
+      </div>
+      {detail && <p className="mt-1 text-xs text-muted">{detail}</p>}
+    </Card>
+  );
 }
 
 export function SummaryCards({ data }) {
   if (!data) return null;
-  const { totals, today, wtd, mtd } = data;
+  const { totals = {}, today = {}, wtd = {}, mtd = {} } = data;
+  const closedTrades = totals.tradesClosed ?? 0;
+  const hasClosedTrades = closedTrades > 0;
+  const hasWinners = (totals.winners ?? 0) > 0;
+  const hasLosers = (totals.losers ?? 0) > 0;
 
   return (
-    <div className="space-y-4">
-      {/* Period PnL row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard
-          label="Today PnL"
-          value={formatCurrency(today?.pnlNet)}
-          valueClass={pnlClass(today?.pnlNet)}
-          sub={`${today?.tradesCount ?? 0} trades`}
-        />
-        <StatCard
-          label="Week-to-Date"
-          value={formatCurrency(wtd?.pnlNet)}
-          valueClass={pnlClass(wtd?.pnlNet)}
-          sub={`${wtd?.tradesCount ?? 0} trades`}
-        />
-        <StatCard
-          label="Month-to-Date"
-          value={formatCurrency(mtd?.pnlNet)}
-          valueClass={pnlClass(mtd?.pnlNet)}
-          sub={`${mtd?.tradesCount ?? 0} trades`}
-        />
-        <StatCard
-          label="Period Net PnL"
-          value={formatCurrency(totals?.pnlNet)}
-          valueClass={pnlClass(totals?.pnlNet)}
-          sub={`${totals?.tradesClosed ?? 0} closed trades`}
-        />
+    <section aria-label="Trading performance metrics" className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 compact:grid-cols-4">
+        <MetricCard label="Today PnL" value={formatSignedCurrency(today.pnlNet)} pnlValue={today.pnlNet} detail={tradeCount(today.tradesCount ?? 0)} />
+        <MetricCard label="Week-to-date" value={formatSignedCurrency(wtd.pnlNet)} pnlValue={wtd.pnlNet} detail={tradeCount(wtd.tradesCount ?? 0)} />
+        <MetricCard label="Month-to-date" value={formatSignedCurrency(mtd.pnlNet)} pnlValue={mtd.pnlNet} detail={tradeCount(mtd.tradesCount ?? 0)} />
+        <MetricCard label="Period net PnL" value={formatSignedCurrency(totals.pnlNet)} pnlValue={totals.pnlNet} detail={tradeCount(closedTrades, true)} />
       </div>
 
-      {/* Performance stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard
-          label="Win Rate"
-          value={formatPct(totals?.winRate)}
-          valueClass={totals?.winRate >= 0.5 ? 'text-green-400' : 'text-red-400'}
-          sub={`${totals?.winners ?? 0}W / ${totals?.losers ?? 0}L`}
+      <div className="grid grid-cols-2 gap-3 adaptive:grid-cols-3 wide:grid-cols-6">
+        <MetricCard
+          label="Win rate"
+          value={formatPct(totals.winRate)}
+          unavailable={!hasClosedTrades}
+          detail={hasClosedTrades ? `${totals.winners ?? 0}W / ${totals.losers ?? 0}L` : 'No closed trades'}
         />
-        <StatCard label="Avg Win"  value={formatCurrency(totals?.avgWin)}  valueClass="text-green-400" />
-        <StatCard label="Avg Loss" value={formatCurrency(totals?.avgLoss)} valueClass="text-red-400" />
-        <StatCard label="Expectancy" value={formatCurrency(totals?.expectancy)} valueClass={pnlClass(totals?.expectancy)} />
-        <StatCard
-          label="Profit Factor"
-          value={totals?.profitFactor != null ? totals.profitFactor.toFixed(2) : '—'}
-          valueClass={totals?.profitFactor >= 1 ? 'text-green-400' : 'text-red-400'}
+        <MetricCard label="Average win" value={formatSignedCurrency(totals.avgWin)} pnlValue={hasWinners ? totals.avgWin : null} unavailable={!hasWinners} />
+        <MetricCard label="Average loss" value={formatCurrency(totals.avgLoss)} pnlValue={hasLosers ? totals.avgLoss : null} unavailable={!hasLosers} />
+        <MetricCard label="Expectancy" value={formatSignedCurrency(totals.expectancy)} pnlValue={hasClosedTrades ? totals.expectancy : null} unavailable={!hasClosedTrades} />
+        <MetricCard
+          label="Profit factor"
+          value={totals.profitFactor != null ? totals.profitFactor.toFixed(2) : '—'}
+          unavailable={!hasClosedTrades || totals.profitFactor == null}
         />
-        <StatCard label="Avg R" value={formatR(totals?.avgRMultiple)} />
+        <MetricCard label="Average R" value={formatR(totals.avgRMultiple)} unavailable={!hasClosedTrades || totals.avgRMultiple == null} />
       </div>
-    </div>
+    </section>
   );
 }
