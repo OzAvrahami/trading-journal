@@ -16,7 +16,7 @@ const ROUTES = [
   {
     match: (pathname) => /^\/trades\/[^/]+$/.test(pathname),
     title: 'Trade details',
-    description: 'Review the recorded execution and trade outcome.',
+    description: 'Review the recorded trade context and outcome.',
     breadcrumbs: ['Journal', 'Trades', 'Trade details'],
     nav: '/trades',
   },

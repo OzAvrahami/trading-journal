@@ -1,35 +1,56 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { DownloadSimple, Plus } from '@phosphor-icons/react';
 import { tradesApi } from '../api/trades.js';
 import { accountsApi } from '../api/accounts.js';
 import { TradeTable } from '../components/trades/TradeTable.jsx';
-import { FilterBar } from '../components/filters/FilterBar.jsx';
+import { DEFAULT_TRADE_FILTERS, FilterBar, getActiveTradeFilterKeys } from '../components/filters/FilterBar.jsx';
 import { QuickAddModal } from '../components/trades/QuickAddModal.jsx';
-import { Spinner } from '../components/ui/Spinner.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { EmptyState, ErrorState } from '../components/ui/States.jsx';
+import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { downloadBlob } from '../utils/csvExport.js';
 import { useToast } from '../components/ui/Toast.jsx';
 
-const DEFAULT_FILTERS = {
-  page: 1,
-  limit: 50,
-  sort: 'entry_datetime',
-  order: 'desc',
-};
+function TradesSkeleton() {
+  return (
+    <div aria-label="Loading trades" className="space-y-3">
+      <div className="hidden overflow-hidden rounded-lg border border-default bg-surface adaptive:block">
+        <div className="grid grid-cols-6 gap-3 border-b border-default p-3">
+          {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-4" label="Loading table header" />)}
+        </div>
+        {Array.from({ length: 5 }, (_, row) => (
+          <div key={row} className="grid grid-cols-6 gap-3 border-b border-default p-3 last:border-0">
+            {Array.from({ length: 6 }, (_, cell) => <Skeleton key={cell} className="h-5" label="Loading trade row" />)}
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-3 adaptive:hidden">
+        {Array.from({ length: 3 }, (_, index) => (
+          <div key={index} className="rounded-lg border border-default bg-surface p-4">
+            <Skeleton className="h-5 w-2/3" label="Loading trade card" />
+            <Skeleton className="mt-4 h-14" label="Loading trade details" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Trades() {
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState(DEFAULT_TRADE_FILTERS);
   const [addOpen, setAddOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const toast = useToast();
 
-  const { data, isLoading } = useQuery({
+  const tradesQuery = useQuery({
     queryKey: ['trades', filters],
     queryFn: () => tradesApi.list(filters),
   });
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
-    queryFn:  accountsApi.list,
+    queryFn: accountsApi.list,
   });
 
   async function handleExport() {
@@ -45,66 +66,109 @@ export default function Trades() {
     }
   }
 
+  function clearFilters() {
+    setFilters({ ...DEFAULT_TRADE_FILTERS });
+  }
+
+  function handleSort(field) {
+    setFilters((current) => ({
+      ...current,
+      sort: field,
+      order: current.sort === field && current.order === 'asc' ? 'desc' : 'asc',
+      page: 1,
+    }));
+  }
+
+  const data = tradesQuery.data;
   const pagination = data?.pagination;
   const trades = data?.data ?? [];
+  const hasActiveFilters = getActiveTradeFilterKeys(filters).length > 0;
+  const hasUsableData = Boolean(data);
+  const rangeStart = pagination?.total ? ((pagination.page - 1) * pagination.limit) + 1 : 0;
+  const rangeEnd = pagination?.total ? Math.min(rangeStart + trades.length - 1, pagination.total) : 0;
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl font-bold text-gray-100">Trades</h1>
-        <div className="flex gap-2">
-          <button
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-secondary">Review recorded trades, narrow the scope, or export the current result set.</p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            loading={exporting}
+            disabled={tradesQuery.isLoading}
+            leadingIcon={<DownloadSimple size={17} aria-hidden="true" />}
             onClick={handleExport}
-            disabled={exporting}
-            className="btn-secondary text-sm"
           >
-            {exporting ? 'Exporting…' : '↓ Export CSV'}
-          </button>
-          <button onClick={() => setAddOpen(true)} className="btn-primary text-sm">
-            + Add Trade
-          </button>
+            Export CSV
+          </Button>
+          <Button type="button" variant="primary" leadingIcon={<Plus size={17} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
+            Add trade
+          </Button>
         </div>
       </div>
 
-      {/* Filters */}
       <FilterBar filters={filters} onChange={setFilters} />
 
-      {/* Trade count */}
+      {tradesQuery.isError && hasUsableData && (
+        <ErrorState
+          title="Trades could not be refreshed"
+          detail="The current filters are unchanged and the last available results remain visible."
+          onRetry={tradesQuery.refetch}
+        />
+      )}
+
       {pagination && (
-        <div className="text-xs text-gray-500">
-          Showing {trades.length} of {pagination.total} trades
+        <div className="flex min-h-8 flex-wrap items-center justify-between gap-2 text-xs text-secondary" role="status" aria-live="polite">
+          <span dir="ltr">Showing {rangeStart}–{rangeEnd} of {pagination.total} trades</span>
+          {tradesQuery.isFetching && !tradesQuery.isLoading && <span className="text-muted">Refreshing results…</span>}
         </div>
       )}
 
-      {/* Table */}
-      {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner className="w-8 h-8" /></div>
+      {tradesQuery.isLoading ? (
+        <TradesSkeleton />
+      ) : tradesQuery.isError && !hasUsableData ? (
+        <ErrorState
+          title="Trades could not be loaded"
+          detail="Your filter selections are still in place. Try loading the list again."
+          onRetry={tradesQuery.refetch}
+        />
+      ) : trades.length === 0 ? (
+        <EmptyState
+          filtered={hasActiveFilters}
+          title={hasActiveFilters ? 'No trades match the current filters' : 'No trades recorded yet'}
+          detail={hasActiveFilters ? 'Clear the current filters to return to the full trade list.' : 'Use Add trade when you are ready to record your first trade.'}
+          onClear={hasActiveFilters ? clearFilters : undefined}
+        />
       ) : (
-        <TradeTable trades={trades} accounts={accounts} loading={false} />
+        <TradeTable
+          trades={trades}
+          accounts={accounts}
+          sort={filters.sort}
+          order={filters.order}
+          onSort={handleSort}
+        />
       )}
 
-      {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <button
+        <nav className="flex flex-wrap items-center justify-center gap-2 pt-2" aria-label="Trade list pagination">
+          <Button
+            type="button"
+            size="mobile"
             disabled={filters.page <= 1}
-            onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))}
-            className="btn-secondary text-xs"
+            onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
           >
-            ← Prev
-          </button>
-          <span className="text-sm text-gray-400">
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
-          <button
+            Previous
+          </Button>
+          <span className="px-2 text-sm text-secondary" aria-current="page" dir="ltr">Page {pagination.page} of {pagination.totalPages}</span>
+          <Button
+            type="button"
+            size="mobile"
             disabled={filters.page >= pagination.totalPages}
-            onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}
-            className="btn-secondary text-xs"
+            onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
           >
-            Next →
-          </button>
-        </div>
+            Next
+          </Button>
+        </nav>
       )}
 
       <QuickAddModal open={addOpen} onClose={() => setAddOpen(false)} />
