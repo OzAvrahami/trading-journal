@@ -6,7 +6,8 @@
       "Bash(Get-ChildItem -Path \"D:\\\\code\\\\trading-journal\" -Recurse -Include \"migrations*\" -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Get-ChildItem -Path \"D:\\\\code\\\\trading-journal\\\\client\\\\src\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(grep -rn \"trading-journal/shared\\\\|\\\\.\\\\./\\\\.\\\\./shared\\\\|from '.*shared/\" --include=\"*.js\" --include=\"*.jsx\" client/src server/src shared)"
     ]
   }
 }
