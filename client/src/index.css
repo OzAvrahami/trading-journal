@@ -1,51 +1,204 @@
+@import './styles/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-gray-950 text-gray-100 antialiased;
+  html {
+    background: var(--bg);
   }
-  * {
-    @apply border-gray-800;
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--type-body);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  *,
+  *::before,
+  *::after {
+    border-color: var(--border);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  :focus-visible {
+    border-radius: 3px;
+    outline: 2px solid var(--action);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--action-soft);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: var(--radius-pill);
+    background: var(--border-2);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  [dir='ltr'],
+  .numeric,
+  .font-mono {
+    white-space: nowrap;
+  }
+
+  .numeric,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-gray-900 border border-gray-800 rounded-xl p-4;
+    @apply rounded-lg border border-default bg-surface p-4 shadow-flat;
   }
+
   .input {
-    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition;
+    @apply min-h-9 w-full rounded-md border border-default bg-surface-raised px-3 py-2 text-sm text-primary placeholder:text-muted transition-colors;
   }
+
+  .input:hover:not(:disabled) {
+    border-color: var(--border-2);
+  }
+
+  .input:focus {
+    border-color: var(--action);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--action-soft);
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--neg);
+  }
+
   .label {
-    @apply block text-xs font-medium text-gray-400 mb-1;
+    @apply mb-1 block text-xs font-medium text-secondary;
   }
+
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors;
   }
+
+  .btn:disabled,
+  .input:disabled {
+    cursor: not-allowed;
+    border-color: var(--border);
+    background: var(--surface-3);
+    color: var(--text-3);
+    text-decoration: none;
+  }
+
   .btn-primary {
-    @apply btn bg-blue-600 hover:bg-blue-500 text-white focus:ring-blue-500;
+    @apply btn border-action bg-action text-white hover:bg-action-hover;
   }
+
   .btn-secondary {
-    @apply btn bg-gray-800 hover:bg-gray-700 text-gray-200 focus:ring-gray-500;
+    @apply btn border-strong bg-surface-raised text-primary hover:bg-surface-sunken;
   }
+
   .btn-danger {
-    @apply btn bg-red-900 hover:bg-red-800 text-red-200 focus:ring-red-500;
+    @apply btn border-negative bg-negative-soft text-negative hover:border-negative hover:bg-negative-soft;
   }
+
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-medium;
   }
+
   .badge-green {
-    @apply badge bg-green-900 text-green-300;
+    @apply badge bg-positive-soft text-positive;
   }
+
   .badge-red {
-    @apply badge bg-red-900 text-red-300;
+    @apply badge bg-negative-soft text-negative;
   }
+
   .badge-blue {
-    @apply badge bg-blue-900 text-blue-300;
+    @apply badge bg-action-soft text-action;
   }
+
   .badge-gray {
-    @apply badge bg-gray-800 text-gray-400;
+    @apply badge bg-surface-sunken text-secondary;
+  }
+
+  .skeleton-shim {
+    animation: skeleton-shim 1.5s ease-in-out infinite;
+  }
+}
+
+/* Compatibility seam for legacy page markup during the staged redesign. */
+@layer utilities {
+  .bg-gray-950 { background-color: var(--bg); }
+  .bg-gray-900 { background-color: var(--surface); }
+  .bg-gray-800 { background-color: var(--surface-2); }
+  .bg-gray-700 { background-color: var(--surface-3); }
+  .border-gray-800 { border-color: var(--border); }
+  .border-gray-700,
+  .border-gray-600 { border-color: var(--border-2); }
+  .text-gray-100,
+  .text-gray-200 { color: var(--text); }
+  .text-gray-300,
+  .text-gray-400 { color: var(--text-2); }
+  .text-gray-500,
+  .text-gray-600 { color: var(--text-3); }
+  .text-blue-300,
+  .text-blue-400,
+  .text-blue-500 { color: var(--action); }
+  .bg-blue-600 { background-color: var(--action); }
+  .bg-blue-500 { background-color: var(--action-2); }
+  .border-blue-500,
+  .border-blue-600 { border-color: var(--action); }
+  .text-green-200,
+  .text-green-300,
+  .text-green-400 { color: var(--pos); }
+  .bg-green-600 { background-color: var(--pos); }
+  .text-red-200,
+  .text-red-300,
+  .text-red-400 { color: var(--neg); }
+  .text-amber-200,
+  .text-amber-400 { color: var(--warn); }
+}
+
+@keyframes skeleton-shim {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

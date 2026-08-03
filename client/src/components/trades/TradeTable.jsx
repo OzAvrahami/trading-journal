@@ -3,12 +3,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tradesApi } from '../../api/trades.js';
 import { useToast } from '../ui/Toast.jsx';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '../ui/Badge.jsx';
 
 function DirectionBadge({ direction }) {
   return (
-    <span className={`badge ${direction === 'long' ? 'badge-green' : 'badge-red'}`}>
+    <Badge variant={direction === 'long' ? 'long' : 'short'}>
       {direction === 'long' ? '▲ Long' : '▼ Short'}
-    </span>
+    </Badge>
   );
 }
 
@@ -64,7 +65,7 @@ export function TradeTable({ trades, accounts = [], loading }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-800">
+    <div className="overflow-x-auto rounded-lg border border-gray-800">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-800 bg-gray-900">

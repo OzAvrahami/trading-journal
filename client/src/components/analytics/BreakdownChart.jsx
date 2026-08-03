@@ -54,8 +54,9 @@ export function BreakdownChart({ data, accounts = [], by, onByChange }) {
       {!chartData.length ? (
         <div className="h-48 flex items-center justify-center text-gray-600">No data.</div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
+        <div dir="ltr">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
             <XAxis dataKey="displayLabel" tick={{ fill: '#6b7280', fontSize: 11 }} />
             <YAxis
@@ -68,8 +69,9 @@ export function BreakdownChart({ data, accounts = [], by, onByChange }) {
                 <Cell key={i} fill={entry.pnlNet >= 0 ? '#22c55e' : '#ef4444'} />
               ))}
             </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   );

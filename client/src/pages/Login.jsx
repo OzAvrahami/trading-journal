@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
+import { ChartLineUp } from '@phosphor-icons/react';
 
 export default function Login() {
   const { login } = useAuth();
@@ -25,13 +26,15 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-canvas p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <span className="text-5xl">📈</span>
-          <h1 className="mt-3 text-2xl font-bold text-gray-100">TradingLog</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to your journal</p>
+          <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg bg-action text-white">
+            <ChartLineUp size={25} weight="fill" aria-hidden="true" />
+          </span>
+          <h1 className="mt-3 text-2xl font-bold text-primary">TradingLog</h1>
+          <p className="mt-1 text-sm text-muted">Sign in to your journal</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">
@@ -65,9 +68,9 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="mt-4 text-center text-sm text-muted">
           No account?{' '}
-          <Link to="/signup" className="text-blue-400 hover:text-blue-300">
+          <Link to="/signup" className="text-action hover:text-action-hover">
             Create one
           </Link>
         </p>

@@ -1,0 +1,50 @@
+const ROUTES = [
+  {
+    match: (pathname) => pathname === '/dashboard',
+    title: 'Dashboard',
+    description: 'Review trading performance across your current scope.',
+    breadcrumbs: ['Journal', 'Dashboard'],
+    nav: '/dashboard',
+  },
+  {
+    match: (pathname) => pathname === '/trades',
+    title: 'Trades',
+    description: 'Find, filter, export, and manage recorded trades.',
+    breadcrumbs: ['Journal', 'Trades'],
+    nav: '/trades',
+  },
+  {
+    match: (pathname) => /^\/trades\/[^/]+$/.test(pathname),
+    title: 'Trade details',
+    description: 'Review the recorded execution and trade outcome.',
+    breadcrumbs: ['Journal', 'Trades', 'Trade details'],
+    nav: '/trades',
+  },
+  {
+    match: (pathname) => pathname === '/accounts',
+    title: 'Accounts',
+    description: 'Manage the accounts used to organize trading activity.',
+    breadcrumbs: ['Manage', 'Accounts'],
+    nav: '/accounts',
+  },
+  {
+    match: (pathname) => pathname === '/import',
+    title: 'Import',
+    description: 'Bring broker trade files into an existing account.',
+    breadcrumbs: ['Manage', 'Import'],
+    nav: '/import',
+  },
+];
+
+const FALLBACK = {
+  title: 'TradingLog',
+  description: '',
+  breadcrumbs: ['TradingLog'],
+  nav: null,
+};
+
+export function resolveRouteMetadata(pathname) {
+  return ROUTES.find((route) => route.match(pathname)) || FALLBACK;
+}
+
+export const routeMetadata = ROUTES;

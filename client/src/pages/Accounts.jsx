@@ -168,7 +168,7 @@ export default function Accounts() {
           No accounts yet. Create one to start logging trades.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-800">
+        <div className="overflow-x-auto rounded-lg border border-gray-800">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 bg-gray-900">

@@ -11,12 +11,12 @@ import TradeDetail from './pages/TradeDetail.jsx';
 import Import from './pages/Import.jsx';
 import Accounts from './pages/Accounts.jsx';
 
-function ProtectedRoute({ children }) {
+export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
         <Spinner className="w-8 h-8" />
       </div>
     );
@@ -27,14 +27,14 @@ function ProtectedRoute({ children }) {
   return <AppShell>{children}</AppShell>;
 }
 
-function PublicRoute({ children }) {
+export function PublicRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
-function AppRoutes() {
+export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login"  element={<PublicRoute><Login /></PublicRoute>} />

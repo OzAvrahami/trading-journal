@@ -30,8 +30,9 @@ export function EquityCurve({ data }) {
   return (
     <div className="card">
       <h3 className="text-sm font-semibold text-gray-300 mb-4">Equity Curve</h3>
-      <ResponsiveContainer width="100%" height={280}>
-        <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
+      <div dir="ltr">
+        <ResponsiveContainer width="100%" height={280}>
+          <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
           <XAxis
             dataKey="date"
@@ -63,8 +64,9 @@ export function EquityCurve({ data }) {
               <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
             </linearGradient>
           </defs>
-        </ComposedChart>
-      </ResponsiveContainer>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
