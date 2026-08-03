@@ -114,3 +114,4 @@ desktop.ini
 *.sql.bak
 *.dump
 exports/
+.claude/

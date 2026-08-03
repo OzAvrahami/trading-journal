@@ -7,7 +7,11 @@
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Get-ChildItem -Path \"D:\\\\code\\\\trading-journal\\\\client\\\\src\" -Directory)",
       "Bash(Select-Object Name)",
-      "Bash(grep -rn \"trading-journal/shared\\\\|\\\\.\\\\./\\\\.\\\\./shared\\\\|from '.*shared/\" --include=\"*.js\" --include=\"*.jsx\" client/src server/src shared)"
+      "Bash(grep -rn \"trading-journal/shared\\\\|\\\\.\\\\./\\\\.\\\\./shared\\\\|from '.*shared/\" --include=\"*.js\" --include=\"*.jsx\" client/src server/src shared)",
+      "Bash(grep -n -oE '<\\(h1|h2|h3|h4\\)[^>]*>[^<]{0,120}' \"Foundations.dc.html\")",
+      "Bash(grep -n -oE '<\\(h1|h2|h3|h4\\)[^>]*>[^<]{0,120}' \"TradingLog.dc.html\")",
+      "Bash(python3 -)",
+      "Bash(PYTHONIOENCODING=utf-8 python3 -)"
     ]
   }
 }
