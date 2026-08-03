@@ -6,10 +6,12 @@ export function EmptyState({ title, detail, filtered = false, onClear, action })
     <section className="rounded-lg border border-dashed border-strong bg-surface p-6 text-center">
       <h2 className="text-sm font-semibold text-primary">{title || (filtered ? 'No matching results' : 'Nothing here yet')}</h2>
       {detail && <p className="mx-auto mt-2 max-w-lg text-sm text-secondary">{detail}</p>}
-      <div className="mt-4 flex justify-center gap-2">
-        {filtered && onClear && <Button onClick={onClear}>Clear filters</Button>}
-        {action}
-      </div>
+      {(action || (filtered && onClear)) && (
+        <div className="mt-4 flex justify-center gap-2">
+          {filtered && onClear && <Button onClick={onClear}>Clear filters</Button>}
+          {action}
+        </div>
+      )}
     </section>
   );
 }

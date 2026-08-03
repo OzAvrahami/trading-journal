@@ -43,7 +43,7 @@ function dayTone(day) {
   return 'border-strong bg-surface-raised text-secondary';
 }
 
-export function TradingCalendar({ qParams }) {
+export function TradingCalendar({ qParams, errorsOnly = false }) {
   const monthRange = getMonthRange(qParams?.from);
   const calendarParams = useMemo(() => (
     monthRange ? { ...qParams, from: monthRange.monthStart, to: monthRange.monthEnd } : null
@@ -56,12 +56,15 @@ export function TradingCalendar({ qParams }) {
   });
 
   if (!calendarParams || query.isLoading) {
+    if (errorsOnly) return null;
     return <Skeleton className="h-[25rem] w-full" label="Loading trading calendar" />;
   }
 
   if (query.error) {
     return <ErrorState title="Trading calendar could not be loaded" detail="Daily realized PnL is unavailable for this month." available="Dashboard controls and any other successful widgets" onRetry={query.refetch} />;
   }
+
+  if (errorsOnly) return null;
 
   const apiDays = query.data?.days ?? [];
   const pnlByDate = new Map(apiDays.map(day => [normalizeDateKey(day.date), day]).filter(([key]) => key));

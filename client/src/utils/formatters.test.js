@@ -25,13 +25,19 @@ describe('display formatters', () => {
 
   it('keeps null placeholders unisolated', () => {
     expect(formatCurrency(null)).toBe('—');
+    expect(formatSignedCurrency(undefined)).toBe('—');
     expect(formatDate(null)).toBe('—');
   });
 
-  it('adds a sign to gains without marking zero as a gain', () => {
+  it('keeps zero and negative zero neutral while preserving nonzero signs', () => {
     expect(stripIsolation(formatSignedCurrency(12))).toBe('+$12.00');
     expect(stripIsolation(formatSignedCurrency(0))).toBe('$0.00');
+    expect(stripIsolation(formatSignedCurrency(-0))).toBe('$0.00');
+    expect(stripIsolation(formatCurrency(-0))).toBe('$0.00');
     expect(stripIsolation(formatSignedCurrency(-12))).toBe('-$12.00');
+    expect(formatR(0)).toBe('\u20660.00R\u2069');
+    expect(formatR(-0)).toBe('\u20660.00R\u2069');
+    expect(formatPct(-0)).toBe('\u20660.0%\u2069');
   });
 
   it('isolates complete percentage, ratio, and duration expressions', () => {

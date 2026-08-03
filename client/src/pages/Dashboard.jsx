@@ -93,8 +93,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-4 adaptive:space-y-5">
       <Card as="section" density="compact" aria-label="Dashboard filters">
-        <div className="grid grid-cols-1 gap-3 adaptive:grid-cols-2 compact:grid-cols-[minmax(12rem,1.4fr)_minmax(10rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] compact:items-end">
-          <Field label="Account">
+        <div className="flex flex-col gap-3 adaptive:flex-row adaptive:flex-wrap adaptive:items-end">
+          <Field label="Account" className="w-full adaptive:w-72 wide:w-80">
             {fieldProps => (
               <Select {...fieldProps} value={scope.type === 'account' ? scope.id : ''} onChange={handleAccountChange} disabled={accountsQuery.isLoading} className="min-h-11 adaptive:min-h-9" dir="ltr">
                 <option value="">All accounts</option>
@@ -104,7 +104,7 @@ export default function Dashboard() {
           </Field>
 
           {scope.type !== 'account' && companies.length > 1 ? (
-            <Field label="Company">
+            <Field label="Company" className="w-full adaptive:w-48">
               {fieldProps => (
                 <Select {...fieldProps} value={scope.type === 'company' ? scope.name : ''} onChange={handleCompanyChange} className="min-h-11 adaptive:min-h-9" dir="ltr">
                   <option value="">All companies</option>
@@ -112,12 +112,12 @@ export default function Dashboard() {
                 </Select>
               )}
             </Field>
-          ) : <div className="hidden compact:block" aria-hidden="true" />}
+          ) : null}
 
-          <Field label="Start date">
+          <Field label="Start date" className="w-full adaptive:w-44">
             {fieldProps => <Input {...fieldProps} type="date" numeric value={dateRange.from} onChange={event => setDateRange(range => ({ ...range, from: event.target.value }))} className="min-h-11 adaptive:min-h-9" />}
           </Field>
-          <Field label="End date">
+          <Field label="End date" className="w-full adaptive:w-44">
             {fieldProps => <Input {...fieldProps} type="date" numeric value={dateRange.to} onChange={event => setDateRange(range => ({ ...range, to: event.target.value }))} className="min-h-11 adaptive:min-h-9" />}
           </Field>
           <Button variant="primary" size="mobile" className="w-full adaptive:w-auto compact:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
@@ -140,14 +140,21 @@ export default function Dashboard() {
 
       {noClosedTrades && (
         <EmptyState
-          filtered
-          title="No closed trades in this selected period"
-          detail="Period ratios are unavailable. Today, week-to-date, and month-to-date values above remain the real values returned for this account scope."
-          action={<Button variant="primary" onClick={() => setAddOpen(true)}>Add Trade</Button>}
+          title="No closed trades in this period"
+          detail="Choose another date range or add a trade to start building your performance history."
         />
       )}
 
-      {fullFailure ? (
+      {noClosedTrades ? (
+        <>
+          {equityQuery.isError && <EquityCurve error={equityQuery.error} onRetry={equityQuery.refetch} />}
+          {distributionQuery.isError && <PnLHistogram error={distributionQuery.error} onRetry={distributionQuery.refetch} />}
+          {breakdownQuery.isError && (
+            <BreakdownChart accounts={accounts} by={breakdownBy} onByChange={setBreakdownBy} error={breakdownQuery.error} onRetry={breakdownQuery.refetch} />
+          )}
+          <TradingCalendar qParams={qParams} errorsOnly />
+        </>
+      ) : fullFailure ? (
         <ErrorState title="Dashboard analytics could not be loaded" detail="Summary metrics and all chart queries failed for the selected scope." available="Filters, Add Trade, and the independently loaded calendar" onRetry={retryAnalytics} />
       ) : (
         <>

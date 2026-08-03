@@ -3,6 +3,10 @@ const FSI = '\u2068';
 const PDI = '\u2069';
 const EMPTY_VALUE = '—';
 
+function normalizeZero(value) {
+  return value === 0 ? 0 : value;
+}
+
 export function isolateLtr(value) {
   return `${LRI}${value}${PDI}`;
 }
@@ -18,13 +22,14 @@ export function formatLtrText(value) {
 
 export function rawCurrency(value, opts = {}) {
   if (value == null) return EMPTY_VALUE;
+  const normalizedValue = normalizeZero(value);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     ...opts,
-  }).format(value);
+  }).format(normalizedValue);
 }
 
 /** Format a number as directionally isolated USD currency. */
@@ -35,9 +40,10 @@ export function formatCurrency(value, opts = {}) {
 
 /** Format signed USD without treating a real zero as a gain or loss. */
 export function formatSignedCurrency(value, opts = {}) {
-  return formatCurrency(value, {
-    signDisplay: value > 0 ? 'always' : 'auto',
+  const normalizedValue = normalizeZero(value);
+  return formatCurrency(normalizedValue, {
     ...opts,
+    signDisplay: normalizedValue > 0 ? 'always' : 'auto',
   });
 }
 
@@ -83,7 +89,7 @@ export function formatDuration(minutes) {
 
 export function rawPct(value, decimals = 1) {
   if (value == null) return EMPTY_VALUE;
-  return `${(value * 100).toFixed(decimals)}%`;
+  return `${(normalizeZero(value) * 100).toFixed(decimals)}%`;
 }
 
 export function formatPct(value, decimals = 1) {
@@ -93,7 +99,8 @@ export function formatPct(value, decimals = 1) {
 
 export function rawR(value) {
   if (value == null) return EMPTY_VALUE;
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}R`;
+  const normalizedValue = normalizeZero(value);
+  return `${normalizedValue > 0 ? '+' : ''}${normalizedValue.toFixed(2)}R`;
 }
 
 export function formatR(value) {

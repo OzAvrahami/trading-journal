@@ -21,7 +21,7 @@ vi.mock('../api/analytics.js', () => ({ analyticsApi: {
 vi.mock('../components/analytics/EquityCurve.jsx', () => ({ EquityCurve: ({ isLoading, error }) => <div>{isLoading ? 'Equity loading' : error ? 'Equity error' : 'Equity ready'}</div> }));
 vi.mock('../components/analytics/PnLHistogram.jsx', () => ({ PnLHistogram: ({ isLoading, error }) => <div>{isLoading ? 'Distribution loading' : error ? 'Distribution error' : 'Distribution ready'}</div> }));
 vi.mock('../components/analytics/BreakdownChart.jsx', () => ({ BreakdownChart: ({ isLoading, error, onByChange }) => <button type="button" onClick={() => onByChange('symbol')}>{isLoading ? 'Breakdown loading' : error ? 'Breakdown error' : 'Breakdown ready'}</button> }));
-vi.mock('../components/analytics/TradingCalendar.jsx', () => ({ TradingCalendar: () => <div>Calendar widget</div> }));
+vi.mock('../components/analytics/TradingCalendar.jsx', () => ({ TradingCalendar: ({ errorsOnly }) => errorsOnly ? null : <div>Calendar widget</div> }));
 vi.mock('../components/trades/QuickAddModal.jsx', () => ({ QuickAddModal: ({ open, onClose }) => open ? <div role="dialog"><span>Add trade flow</span><button onClick={onClose}>Close</button></div> : null }));
 
 import Dashboard from './Dashboard.jsx';
@@ -69,7 +69,7 @@ describe('Dashboard', () => {
     expect(screen.getByText('Equity loading')).toBeInTheDocument();
   });
 
-  it('renders production API values and keeps Add Trade wired', async () => {
+  it('renders production API values, all analytics widgets, and keeps Add Trade wired', async () => {
     setSuccess();
     renderDashboard();
 
@@ -77,22 +77,36 @@ describe('Dashboard', () => {
     expect(screen.getByText(/\+\$275\.00/)).toBeInTheDocument();
     expect(screen.getByText('3 closed trades')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByText('Equity ready')).toBeInTheDocument();
+    expect(screen.getByText('Distribution ready')).toBeInTheDocument();
+    expect(screen.getByText('Breakdown ready')).toBeInTheDocument();
+    expect(screen.getByText('Calendar widget')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Add Trade' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Add trade flow');
   });
 
-  it('marks ratio metrics unavailable when the selected period has no closed trades', async () => {
+  it('uses one restrained empty state while keeping real zeroes and unavailable ratios distinct', async () => {
     setSuccess({
       today: { pnlNet: 0, tradesCount: 0 }, wtd: { pnlNet: 0, tradesCount: 0 }, mtd: { pnlNet: 0, tradesCount: 0 },
       totals: { pnlNet: 0, tradesClosed: 0, winners: 0, losers: 0, winRate: 0, avgWin: 0, avgLoss: 0, expectancy: 0, profitFactor: null, avgRMultiple: null },
     });
     renderDashboard();
 
-    expect(await screen.findByText('No closed trades in this selected period')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'No closed trades in this period' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'No closed trades in this period' })).toHaveLength(1);
     expect(screen.getByText('Period net PnL').parentElement).toHaveTextContent('$0.00');
+    expect(screen.getByText('Period net PnL').parentElement).toHaveTextContent('No change:');
     expect(screen.getByText('Win rate').parentElement).toHaveTextContent('—');
     expect(screen.getByText('Expectancy').parentElement).toHaveTextContent('—');
+    expect(screen.queryByText('Equity ready')).not.toBeInTheDocument();
+    expect(screen.queryByText('Distribution ready')).not.toBeInTheDocument();
+    expect(screen.queryByText('Breakdown ready')).not.toBeInTheDocument();
+    expect(screen.queryByText('Calendar widget')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Add Trade' })).toHaveLength(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add Trade' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('Add trade flow');
   });
 
   it('shows a retryable full-dashboard error when every analytics query fails', async () => {
@@ -124,6 +138,8 @@ describe('Dashboard', () => {
     renderDashboard();
     const user = userEvent.setup();
     await screen.findByRole('option', { name: 'Broker A — A-100 (Primary)' });
+    expect(screen.getByLabelText('Account').parentElement).toHaveClass('adaptive:w-72');
+    expect(screen.getByLabelText('Start date').parentElement).toHaveClass('adaptive:w-44');
 
     await user.selectOptions(screen.getByLabelText('Account'), 'account-1');
     fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-07-01' } });

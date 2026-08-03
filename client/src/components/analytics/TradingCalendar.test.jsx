@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 const calendarMock = vi.hoisted(() => vi.fn());
@@ -36,5 +36,26 @@ describe('TradingCalendar', () => {
     const grid = buildCalendarGrid(days, '2026-08-01');
     expect(grid.slice(0, 6)).toEqual([null, null, null, null, null, null]);
     expect(grid[6].date).toBe('2026-08-01');
+  });
+
+  it('can suppress normal calendar content while still surfacing errors', async () => {
+    calendarMock.mockResolvedValue({ days: [] });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    const view = render(
+      <QueryClientProvider client={client}>
+        <TradingCalendar qParams={{ from: '2026-10-03', to: '2026-10-10' }} errorsOnly />
+      </QueryClientProvider>,
+    );
+    expect(screen.queryByRole('status', { name: 'Loading trading calendar' })).not.toBeInTheDocument();
+    await waitFor(() => expect(calendarMock).toHaveBeenCalled());
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+
+    calendarMock.mockRejectedValue(new Error('calendar failed'));
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <TradingCalendar qParams={{ from: '2026-11-03', to: '2026-11-10' }} errorsOnly />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('Trading calendar could not be loaded')).toBeInTheDocument();
   });
 });
