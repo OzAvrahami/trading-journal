@@ -121,4 +121,4 @@ desktop.ini
 exports/
 
 # Local Codex/Claude settings; other .claude files remain shareable.
-.claude/settings.local.json
+.claude/
