@@ -4,10 +4,14 @@ import pool from '../db/client.js';
 import {
   BREAKDOWN_DIMENSIONS,
   R_BUCKETS,
+  bucketPnlValues,
   bucketRValues,
   buildQueryParts,
+  calculateExpectancy,
   getBreakdown,
+  getDistribution,
   getRDistribution,
+  getSummary,
 } from './analyticsService.js';
 import { baseSchema, breakdownSchema } from '../routes/analytics.js';
 
@@ -134,5 +138,100 @@ describe('R-multiple distribution', () => {
     assert.match(captured.sql, /ta\.company = \$2/);
     assert.deepEqual(captured.params, [userId, 'broker a']);
     assert.deepEqual(result, { totalTrades: 0, buckets: [] });
+  });
+});
+
+describe('expectancy', () => {
+  test('is average stored net PnL across winners and losers', () => {
+    assert.equal(calculateExpectancy(60, 2), 30);
+  });
+
+  test('includes breakeven closed trades in the denominator', () => {
+    assert.equal(calculateExpectancy(60, 3), 20);
+  });
+
+  test('returns zero for all breakevens and null with no closed trades', () => {
+    assert.equal(calculateExpectancy(0, 3), 0);
+    assert.equal(calculateExpectancy(0, 0), null);
+  });
+
+  test('uses stored net PnL so fees remain reflected', () => {
+    const storedNetAfterFees = 90 - 55;
+    assert.equal(calculateExpectancy(storedNetAfterFees, 2), 17.5);
+  });
+
+  test('preserves the summary field and returns null when no closed trades exist', async () => {
+    pool.query = async (sql) => {
+      if (/AS total/.test(sql)) {
+        return { rows: [{
+          total: '0', closed: '0', open: '0', winners: '0', losers: '0',
+          pnl_net_sum: '0', pnl_gross_sum: '0', fees_sum: '0', avg_win: null,
+          avg_loss: null, avg_r: null, avg_duration: null, gross_profit: '0', gross_loss: '0',
+        }] };
+      }
+      return { rows: [{ cnt: '0', pnl: '0' }] };
+    };
+    const result = await getSummary(userId, {});
+    assert.equal(result.totals.expectancy, null);
+    assert.ok(Object.hasOwn(result.totals, 'expectancy'));
+  });
+
+  test('summary divides total stored net PnL by all closed trades including breakevens', async () => {
+    pool.query = async (sql) => {
+      if (/AS total/.test(sql)) {
+        return { rows: [{
+          total: '3', closed: '3', open: '0', winners: '1', losers: '1',
+          pnl_net_sum: '60', pnl_gross_sum: '65', fees_sum: '5', avg_win: '100',
+          avg_loss: '-40', avg_r: null, avg_duration: '30', gross_profit: '100', gross_loss: '40',
+        }] };
+      }
+      return { rows: [{ cnt: '0', pnl: '0' }] };
+    };
+    const result = await getSummary(userId, {});
+    assert.equal(result.totals.expectancy, 20);
+  });
+});
+
+describe('dollar-PnL distribution', () => {
+  test('returns the established empty response for no qualifying data', async () => {
+    pool.query = async () => ({ rows: [] });
+    assert.deepEqual(await getDistribution(userId, {}), { buckets: [] });
+  });
+
+  test('places one value and identical values in one exact bucket', () => {
+    assert.deepEqual(bucketPnlValues([25]), [{ range: '+25', min: 25, max: 25, count: 1 }]);
+    assert.deepEqual(bucketPnlValues([-12, -12, -12]), [{ range: '-12', min: -12, max: -12, count: 3 }]);
+  });
+
+  test('includes minimum and maximum values exactly once', () => {
+    const values = [-100, 0, 100];
+    const buckets = bucketPnlValues(values);
+    assert.equal(buckets.reduce((sum, bucket) => sum + bucket.count, 0), values.length);
+    assert.equal(buckets.filter((bucket) => -100 >= bucket.min && -100 < bucket.max).length, 1);
+    assert.equal(buckets.filter((bucket) => 100 >= bucket.min && 100 < bucket.max).length, 1);
+  });
+
+  test('handles negative-only, positive-only, and mixed values with stable counts', () => {
+    for (const values of [[-300, -200, -100], [10, 20, 30], [-10, 0, 10]]) {
+      const buckets = bucketPnlValues(values);
+      assert.equal(buckets.reduce((sum, bucket) => sum + bucket.count, 0), values.length);
+      assert.deepEqual([...buckets].sort((a, b) => a.min - b.min), buckets);
+    }
+  });
+
+  test('preserves response shape, filters, and user ownership', async () => {
+    let captured;
+    pool.query = async (sql, params) => {
+      captured = { sql, params };
+      return { rows: [{ pnl_net: '-50' }, { pnl_net: '50' }] };
+    };
+    const result = await getDistribution(userId, { from: '2026-08-01', accountId });
+    assert.match(captured.sql, /t\.user_id = \$1/);
+    assert.match(captured.sql, /t\.status = 'closed'/);
+    assert.match(captured.sql, /t\.pnl_net IS NOT NULL/);
+    assert.deepEqual(captured.params, [userId, '2026-08-01', accountId]);
+    assert.ok(Array.isArray(result.buckets));
+    assert.deepEqual(Object.keys(result.buckets[0]), ['range', 'min', 'max', 'count']);
+    assert.equal(result.buckets.reduce((sum, bucket) => sum + bucket.count, 0), 2);
   });
 });

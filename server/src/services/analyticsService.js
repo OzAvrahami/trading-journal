@@ -129,7 +129,7 @@ export async function getSummary(userId, { from, to, accountId, company }) {
   const grossProfit = parseFloat(r.gross_profit) || 0;
   const grossLoss   = parseFloat(r.gross_loss)   || 0;
   const winRate     = closed > 0 ? winners / closed : 0;
-  const expectancy  = winRate * avgWin + (1 - winRate) * avgLoss;
+  const expectancy  = calculateExpectancy(r.pnl_net_sum, closed);
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? null : 0);
 
   const fmt2 = v => parseFloat(parseFloat(v || 0).toFixed(2));
@@ -149,7 +149,7 @@ export async function getSummary(userId, { from, to, accountId, company }) {
       totalFees:          fmt2(r.fees_sum),
       avgWin:             fmt2(avgWin),
       avgLoss:            fmt2(avgLoss),
-      expectancy:         fmt2(expectancy),
+      expectancy:         expectancy != null ? fmt2(expectancy) : null,
       profitFactor:       profitFactor != null ? fmt4(profitFactor) : null,
       avgRMultiple:       fmt4(r.avg_r),
       avgDurationMinutes: r.avg_duration ? Math.round(parseFloat(r.avg_duration)) : null,
@@ -158,6 +158,12 @@ export async function getSummary(userId, { from, to, accountId, company }) {
     wtd:   { pnlNet: fmt2(wtdRes.rows[0].pnl),   tradesCount: parseInt(wtdRes.rows[0].cnt) },
     mtd:   { pnlNet: fmt2(mtdRes.rows[0].pnl),   tradesCount: parseInt(mtdRes.rows[0].cnt) },
   };
+}
+
+export function calculateExpectancy(totalNetPnl, closedTrades) {
+  const count = Number(closedTrades);
+  if (!Number.isFinite(count) || count <= 0) return null;
+  return Number(totalNetPnl || 0) / count;
 }
 
 // ---- Equity curve -----------------------------------------------------------
@@ -219,19 +225,33 @@ export async function getDistribution(userId, { from, to, accountId, company }) 
     ORDER BY t.pnl_net
   `, params);
 
-  if (result.rows.length === 0) return { buckets: [] };
-
   const values = result.rows.map(r => parseFloat(r.pnl_net));
+  return { buckets: bucketPnlValues(values) };
+}
+
+export function bucketPnlValues(rawValues) {
+  const values = rawValues.map(Number).filter(Number.isFinite);
+  if (values.length === 0) return [];
+
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
 
-  const range = maxVal - minVal || 1;
+  if (minVal === maxVal) {
+    return [{
+      range: `${minVal >= 0 ? '+' : ''}${minVal.toFixed(0)}`,
+      min: minVal,
+      max: maxVal,
+      count: values.length,
+    }];
+  }
+
+  const range = maxVal - minVal;
   const rawSize = range / 15;
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawSize)));
   const bucketSize = Math.max(Math.ceil(rawSize / magnitude) * magnitude, 1);
 
   const bucketStart = Math.floor(minVal / bucketSize) * bucketSize;
-  const bucketEnd   = Math.ceil(maxVal  / bucketSize) * bucketSize;
+  const bucketEnd   = (Math.floor(maxVal / bucketSize) + 1) * bucketSize;
   const buckets = [];
 
   for (let start = bucketStart; start < bucketEnd; start += bucketSize) {
@@ -245,7 +265,7 @@ export async function getDistribution(userId, { from, to, accountId, company }) 
     });
   }
 
-  return { buckets };
+  return buckets;
 }
 
 // ---- R-multiple distribution -----------------------------------------------

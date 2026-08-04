@@ -91,6 +91,7 @@ describe('Dashboard', () => {
     expect(await screen.findByText('Period net PnL')).toBeInTheDocument();
     expect(screen.getByText(/\+\$275\.00/)).toBeInTheDocument();
     expect(screen.getByText('3 closed trades')).toBeInTheDocument();
+    expect(screen.getByText('Average net PnL per closed trade')).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByText('Equity ready')).toBeInTheDocument();
     expect(screen.getByText('Distribution ready')).toBeInTheDocument();
@@ -107,7 +108,7 @@ describe('Dashboard', () => {
   it('uses one restrained empty state while keeping real zeroes and unavailable ratios distinct', async () => {
     setSuccess({
       today: { pnlNet: 0, tradesCount: 0 }, wtd: { pnlNet: 0, tradesCount: 0 }, mtd: { pnlNet: 0, tradesCount: 0 },
-      totals: { pnlNet: 0, tradesClosed: 0, winners: 0, losers: 0, winRate: 0, avgWin: 0, avgLoss: 0, expectancy: 0, profitFactor: null, avgRMultiple: null },
+      totals: { pnlNet: 0, tradesClosed: 0, winners: 0, losers: 0, winRate: 0, avgWin: 0, avgLoss: 0, expectancy: null, profitFactor: null, avgRMultiple: null },
     });
     renderDashboard();
 

@@ -50,7 +50,13 @@ export function SummaryCards({ data }) {
         />
         <MetricCard label="Average win" value={formatSignedCurrency(totals.avgWin)} pnlValue={hasWinners ? totals.avgWin : null} unavailable={!hasWinners} />
         <MetricCard label="Average loss" value={formatCurrency(totals.avgLoss)} pnlValue={hasLosers ? totals.avgLoss : null} unavailable={!hasLosers} />
-        <MetricCard label="Expectancy" value={formatSignedCurrency(totals.expectancy)} pnlValue={hasClosedTrades ? totals.expectancy : null} unavailable={!hasClosedTrades} />
+        <MetricCard
+          label="Expectancy"
+          value={formatSignedCurrency(totals.expectancy)}
+          pnlValue={hasClosedTrades ? totals.expectancy : null}
+          unavailable={!hasClosedTrades || totals.expectancy == null}
+          detail="Average net PnL per closed trade"
+        />
         <MetricCard
           label="Profit factor"
           value={totals.profitFactor != null ? totals.profitFactor.toFixed(2) : '—'}
