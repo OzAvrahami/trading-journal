@@ -10,6 +10,7 @@ import Trades from './pages/Trades.jsx';
 import TradeDetail from './pages/TradeDetail.jsx';
 import Import from './pages/Import.jsx';
 import Accounts from './pages/Accounts.jsx';
+import Analytics from './pages/Analytics.jsx';
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ export function AppRoutes() {
       <Route path="/trades/:id" element={<ProtectedRoute><TradeDetail /></ProtectedRoute>} />
       <Route path="/import"    element={<ProtectedRoute><Import /></ProtectedRoute>} />
       <Route path="/accounts"  element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+      <Route path="/insights/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

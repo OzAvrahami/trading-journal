@@ -1,4 +1,4 @@
-import { ChartLineUp, ListBullets, Bank, UploadSimple } from '@phosphor-icons/react';
+import { ChartBar, ChartLineUp, ListBullets, Bank, UploadSimple } from '@phosphor-icons/react';
 
 export const navigationGroups = [
   {
@@ -15,6 +15,14 @@ export const navigationGroups = [
       { to: '/import', label: 'Import', Icon: UploadSimple },
     ],
   },
+  {
+    label: 'Insights',
+    items: [
+      { to: '/insights/analytics', label: 'Analytics', Icon: ChartBar },
+    ],
+  },
 ];
 
 export const navigationItems = navigationGroups.flatMap((group) => group.items);
+export const mobileNavigationItems = navigationItems.filter((item) => ['/dashboard', '/trades', '/accounts'].includes(item.to));
+export const mobileMoreItems = navigationItems.filter((item) => ['/import', '/insights/analytics'].includes(item.to));

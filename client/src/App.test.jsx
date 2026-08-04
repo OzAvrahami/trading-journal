@@ -12,8 +12,9 @@ vi.mock('./context/AuthContext.jsx', () => ({
 vi.mock('./components/layout/AppShell.jsx', () => ({
   AppShell: ({ children }) => <div data-testid="app-shell">{children}</div>,
 }));
+vi.mock('./pages/Analytics.jsx', () => ({ default: () => <span>Analytics page</span> }));
 
-import { ProtectedRoute, PublicRoute } from './App.jsx';
+import { AppRoutes, ProtectedRoute, PublicRoute } from './App.jsx';
 
 describe('route guards', () => {
   beforeEach(() => {
@@ -54,5 +55,11 @@ describe('route guards', () => {
   it('renders a public route for an unauthenticated user', () => {
     render(<MemoryRouter><PublicRoute><span>Login form</span></PublicRoute></MemoryRouter>);
     expect(screen.getByText('Login form')).toBeInTheDocument();
+  });
+
+  it('renders Analytics as an authenticated protected route', () => {
+    authState.current = { user: { id: 'user-1' }, loading: false };
+    render(<MemoryRouter initialEntries={['/insights/analytics']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Analytics page');
   });
 });

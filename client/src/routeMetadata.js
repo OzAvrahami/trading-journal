@@ -44,6 +44,15 @@ const ROUTES = [
     headerControls: [],
     commandActions: [],
   },
+  {
+    match: (pathname) => pathname === '/insights/analytics',
+    title: 'Analytics',
+    description: 'Analyze trading performance across markets, direction, strategy, timing, and account scope.',
+    breadcrumbs: ['Insights', 'Analytics'],
+    nav: '/insights/analytics',
+    headerControls: ['analyticsScope'],
+    commandActions: [],
+  },
 ];
 
 const FALLBACK = {
