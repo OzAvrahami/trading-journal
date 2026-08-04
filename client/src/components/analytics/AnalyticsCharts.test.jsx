@@ -33,4 +33,12 @@ describe('Dashboard charts', () => {
     rerender(<BreakdownChart data={[{ label: 'Momentum', tradesCount: 2, winRate: 0.5, pnlNet: 25 }]} by="strategy" onByChange={() => {}} />);
     expect(screen.getByRole('img', { name: /Net PnL for 1 strategy group/ })).toHaveAttribute('dir', 'ltr');
   });
+
+  it('renders a constant dollar distribution and preserves the truthful empty state', () => {
+    const { rerender } = render(<PnLHistogram data={[{ range: '+25', min: 25, max: 25, count: 3 }]} />);
+    expect(screen.getByRole('img', { name: /1 buckets across 3 closed trades/i })).toBeInTheDocument();
+
+    rerender(<PnLHistogram data={[]} />);
+    expect(screen.getByRole('heading', { name: 'No PnL distribution yet' })).toBeInTheDocument();
+  });
 });

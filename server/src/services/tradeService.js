@@ -1,5 +1,6 @@
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
+import { validateAccountOwnership } from './accountService.js';
 
 // ---- Computation helpers ----------------------------------------------------
 
@@ -11,7 +12,38 @@ function calcPnl(direction, entryPrice, exitPrice, quantity, pointValue = 1) {
   return parseFloat((diff * parseFloat(quantity) * pointValue).toFixed(4));
 }
 
-function computeFields({ direction, entryPrice, exitPrice, quantity, fees, riskAmount, entryDatetime, exitDatetime, pointValue = 1 }) {
+export function validateTradeState({ entryDatetime, exitDatetime, exitPrice }) {
+  const normalizedExitDatetime = exitDatetime === '' ? null : (exitDatetime ?? null);
+  const normalizedExitPrice = exitPrice === '' ? null : (exitPrice ?? null);
+  const hasExitDatetime = normalizedExitDatetime != null;
+  const hasExitPrice = normalizedExitPrice != null;
+
+  if (hasExitDatetime !== hasExitPrice) {
+    throw createError(
+      'VALIDATION_ERROR',
+      'Exit datetime and exit price must be provided together.',
+      400,
+      { exitFields: ['Exit datetime and exit price must be provided together.'] }
+    );
+  }
+
+  if (hasExitDatetime && new Date(normalizedExitDatetime) < new Date(entryDatetime)) {
+    throw createError(
+      'VALIDATION_ERROR',
+      'Exit datetime must be on or after entry datetime.',
+      400,
+      { exitDatetime: ['Exit datetime must be on or after entry datetime.'] }
+    );
+  }
+
+  return { exitDatetime: normalizedExitDatetime, exitPrice: normalizedExitPrice };
+}
+
+export function computeFields(fields) {
+  const {
+    direction, entryPrice, quantity, fees, riskAmount, entryDatetime, pointValue = 1,
+  } = fields;
+  const { exitDatetime, exitPrice } = validateTradeState(fields);
   const status = exitDatetime ? 'closed' : 'open';
   let pnlGross = null, pnlNet = null, rMultiple = null, durationMinutes = null;
 
@@ -127,7 +159,10 @@ export async function getTrade(userId, tradeId) {
 }
 
 export async function createTrade(userId, data) {
-  const computed = computeFields(data);
+  const exitState = validateTradeState(data);
+  await validateAccountOwnership(userId, data.accountId);
+  const normalized = { ...data, ...exitState };
+  const computed = computeFields(normalized);
 
   const result = await pool.query(
     `INSERT INTO trades (
@@ -145,9 +180,9 @@ export async function createTrade(userId, data) {
       data.accountId,
       data.symbol, data.market, data.direction,
       data.entryDatetime,
-      data.exitDatetime ?? null,
+      normalized.exitDatetime,
       data.entryPrice,
-      data.exitPrice ?? null,
+      normalized.exitPrice,
       data.quantity,
       data.fees ?? 0,
       data.strategy ?? null,
@@ -172,6 +207,7 @@ export async function createTrade(userId, data) {
 export async function updateTrade(userId, tradeId, data) {
   // Fetch existing trade to merge with patch data
   const existing = await getTrade(userId, tradeId);
+  await validateAccountOwnership(userId, existing.accountId);
 
   const merged = {
     direction:    existing.direction,
@@ -183,6 +219,8 @@ export async function updateTrade(userId, tradeId, data) {
     exitDatetime: data.exitDatetime !== undefined ? data.exitDatetime : existing.exitDatetime,
     exitPrice:    data.exitPrice    !== undefined ? data.exitPrice    : existing.exitPrice,
   };
+  const exitState = validateTradeState(merged);
+  Object.assign(merged, exitState);
   const computed = computeFields(merged);
 
   const result = await pool.query(

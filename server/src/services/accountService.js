@@ -94,6 +94,8 @@ export async function updateAccount(userId, accountId, data) {
 }
 
 export async function deleteAccount(userId, accountId) {
+  await getAccount(userId, accountId);
+
   const countRes = await pool.query(
     'SELECT COUNT(*)::int AS cnt FROM trades WHERE account_id = $1',
     [accountId]
