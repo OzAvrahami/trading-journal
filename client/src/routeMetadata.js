@@ -62,6 +62,15 @@ const ROUTES = [
     headerControls: ['journalActions'],
     commandActions: [],
   },
+  {
+    match: (pathname) => pathname === '/insights/rules',
+    title: 'Rules & Adherence',
+    description: 'Define your trading rules, record what happened, and measure process consistency over time.',
+    breadcrumbs: ['Insights', 'Rules & Adherence'],
+    nav: '/insights/rules',
+    headerControls: ['rulesActions'],
+    commandActions: ['newRule', 'recordRuleCheck'],
+  },
 ];
 
 const FALLBACK = {

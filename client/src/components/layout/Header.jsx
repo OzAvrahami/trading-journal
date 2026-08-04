@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CaretLeft, CaretRight, MagnifyingGlass, Moon, Notebook, Sun } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, ListChecks, MagnifyingGlass, Moon, Notebook, Plus, Sun } from '@phosphor-icons/react';
 import { IconButton } from '../ui/IconButton.jsx';
 import { useDirection } from '../../hooks/useDirection.js';
 import { useTheme } from '../../hooks/useTheme.js';
@@ -50,6 +50,22 @@ export function Header({ metadata }) {
       keywords: 'create note review',
       Icon: Notebook,
       action: () => navigate('/insights/journal?new=1'),
+    },
+    {
+      id: 'newRule',
+      label: 'New Rule',
+      description: 'Create a trading rule',
+      keywords: 'rules adherence create',
+      Icon: Plus,
+      action: () => navigate('/insights/rules?action=new-rule'),
+    },
+    {
+      id: 'recordRuleCheck',
+      label: 'Record Rule Check',
+      description: 'Record whether a trading rule was followed',
+      keywords: 'rules adherence followed broken check',
+      Icon: ListChecks,
+      action: () => navigate('/insights/rules?action=record-check'),
     },
     ...getRouteCommands(),
   ], [getRouteCommands, navigate, commandOpen]);
