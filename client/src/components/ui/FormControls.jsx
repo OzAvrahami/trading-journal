@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { forwardRef, useId } from 'react';
 
 export function Field({ label, helpText, error, required, id: suppliedId, children, className = '' }) {
   const generatedId = useId();
@@ -22,21 +22,21 @@ export function Field({ label, helpText, error, required, id: suppliedId, childr
   );
 }
 
-export function Input({ numeric = false, className = '', dir, ...props }) {
-  return <input className={`input ${numeric ? 'numeric font-mono text-end' : ''} ${className}`} dir={numeric ? 'ltr' : dir} {...props} />;
-}
+export const Input = forwardRef(function Input({ numeric = false, className = '', dir, ...props }, ref) {
+  return <input ref={ref} className={`input ${numeric ? 'numeric font-mono text-end' : ''} ${className}`} dir={numeric ? 'ltr' : dir} {...props} />;
+});
 
-export function Select({ className = '', ...props }) {
-  return <select className={`input ${className}`} {...props} />;
-}
+export const Select = forwardRef(function Select({ className = '', ...props }, ref) {
+  return <select ref={ref} className={`input ${className}`} {...props} />;
+});
 
-export function Checkbox({ label, className = '', ...props }) {
+export const Checkbox = forwardRef(function Checkbox({ label, className = '', ...props }, ref) {
   const generatedId = useId();
   const id = props.id || generatedId;
   return (
     <label htmlFor={id} className={`inline-flex min-h-9 cursor-pointer items-center gap-2 text-sm text-secondary ${className}`}>
-      <input id={id} type="checkbox" className="h-4 w-4 rounded-sm border-strong accent-action" {...props} />
+      <input ref={ref} id={id} type="checkbox" className="h-4 w-4 rounded-sm border-strong accent-action" {...props} />
       <span>{label}</span>
     </label>
   );
-}
+});

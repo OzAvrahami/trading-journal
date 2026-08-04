@@ -13,6 +13,8 @@ vi.mock('./components/layout/AppShell.jsx', () => ({
   AppShell: ({ children }) => <div data-testid="app-shell">{children}</div>,
 }));
 vi.mock('./pages/Analytics.jsx', () => ({ default: () => <span>Analytics page</span> }));
+vi.mock('./pages/Journal.jsx', () => ({ default: () => <span>Journal page</span> }));
+vi.mock('./pages/Login.jsx', () => ({ default: () => <span>Login page</span> }));
 
 import { AppRoutes, ProtectedRoute, PublicRoute } from './App.jsx';
 
@@ -61,5 +63,17 @@ describe('route guards', () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/insights/analytics']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByTestId('app-shell')).toHaveTextContent('Analytics page');
+  });
+
+  it('renders Journal as an authenticated protected route', () => {
+    authState.current = { user: { id: 'user-1' }, loading: false };
+    render(<MemoryRouter initialEntries={['/insights/journal']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Journal page');
+  });
+
+  it('protects the Journal route from unauthenticated access', () => {
+    render(<MemoryRouter initialEntries={['/insights/journal']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByText('Login page')).toBeInTheDocument();
+    expect(screen.queryByText('Journal page')).not.toBeInTheDocument();
   });
 });

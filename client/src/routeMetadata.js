@@ -53,6 +53,15 @@ const ROUTES = [
     headerControls: ['analyticsScope'],
     commandActions: [],
   },
+  {
+    match: (pathname) => pathname === '/insights/journal',
+    title: 'Journal & Reviews',
+    description: 'Capture notes and structured reviews, then connect them to the trades they describe.',
+    breadcrumbs: ['Insights', 'Journal & Reviews'],
+    nav: '/insights/journal',
+    headerControls: ['journalActions'],
+    commandActions: [],
+  },
 ];
 
 const FALLBACK = {
