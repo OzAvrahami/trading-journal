@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CaretLeft, CaretRight, MagnifyingGlass, Moon, Sun } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, MagnifyingGlass, Moon, Notebook, Sun } from '@phosphor-icons/react';
 import { IconButton } from '../ui/IconButton.jsx';
 import { useDirection } from '../../hooks/useDirection.js';
 import { useTheme } from '../../hooks/useTheme.js';
@@ -43,6 +43,14 @@ export function Header({ metadata }) {
       Icon,
       action: () => navigate(to),
     })),
+    {
+      id: 'newJournalEntry',
+      label: 'New journal entry',
+      description: 'Open the Journal & Reviews entry form',
+      keywords: 'create note review',
+      Icon: Notebook,
+      action: () => navigate('/insights/journal?new=1'),
+    },
     ...getRouteCommands(),
   ], [getRouteCommands, navigate, commandOpen]);
 

@@ -24,4 +24,15 @@ describe('route metadata', () => {
       headerControls: ['analyticsScope'],
     });
   });
+
+  it('resolves Journal metadata without account scope', () => {
+    expect(resolveRouteMetadata('/insights/journal')).toMatchObject({
+      title: 'Journal & Reviews',
+      description: 'Capture notes and structured reviews, then connect them to the trades they describe.',
+      breadcrumbs: ['Insights', 'Journal & Reviews'],
+      nav: '/insights/journal',
+      headerControls: ['journalActions'],
+    });
+    expect(resolveRouteMetadata('/insights/journal').headerControls).not.toContain('analyticsScope');
+  });
 });

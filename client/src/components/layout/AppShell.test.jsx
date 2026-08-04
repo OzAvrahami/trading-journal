@@ -32,7 +32,7 @@ describe('AppShell', () => {
     expect(screen.getAllByRole('link', { name: 'Analytics' }).length).toBeGreaterThan(0);
     expect(screen.getByText('Insights')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Portfolio' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Journal & Reviews/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Journal & Reviews/i }).length).toBeGreaterThan(0);
     expect(screen.queryByRole('link', { name: /Goals & Rules/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Notifications/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('tablist', { name: 'Workspace' })).not.toBeInTheDocument();
@@ -64,6 +64,8 @@ describe('AppShell', () => {
     expect(within(dialog).getByLabelText('Search commands')).toHaveFocus();
     expect(within(dialog).getByRole('option', { name: /Dashboard/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /Analytics/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('option', { name: /^Journal & Reviews/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('option', { name: /New journal entry/ })).toBeInTheDocument();
     expect(within(dialog).queryByText('Portfolio')).not.toBeInTheDocument();
     expect(within(dialog).queryByText(/recent/i)).not.toBeInTheDocument();
 
@@ -94,6 +96,37 @@ describe('AppShell', () => {
     await userEvent.click(within(more).getByRole('link', { name: 'Analytics' }));
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Analytics' })).toBeInTheDocument());
     expect(screen.getByText('Analytics', { selector: '[aria-current="page"]' })).toBeInTheDocument();
+  });
+
+  it('reaches Journal through mobile More and exposes its active state', async () => {
+    render(
+      <MemoryRouter initialEntries={['/trades']}>
+        <ToastProvider>
+          <AppShell><div>Trade page content</div></AppShell>
+        </ToastProvider>
+      </MemoryRouter>,
+    );
+    const primary = screen.getByRole('navigation', { name: 'Primary navigation' });
+    expect(within(primary).getAllByRole('link')).toHaveLength(3);
+    await userEvent.click(within(primary).getByRole('button', { name: 'More' }));
+    const more = screen.getByRole('dialog', { name: 'More destinations' });
+    await userEvent.click(within(more).getByRole('link', { name: 'Journal & Reviews' }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Journal & Reviews' })).toBeInTheDocument());
+    expect(screen.getByText('Journal & Reviews', { selector: '[aria-current="page"]' })).toBeInTheDocument();
+  });
+
+  it('navigates the global New journal entry command with a truthful form instruction', async () => {
+    render(
+      <MemoryRouter initialEntries={['/trades']}>
+        <ToastProvider>
+          <AppShell><div>Trade page content</div></AppShell>
+        </ToastProvider>
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Search or run a command' }));
+    const dialog = screen.getByRole('dialog', { name: 'Search or run a command' });
+    await userEvent.click(within(dialog).getByRole('option', { name: /New journal entry/ }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Journal & Reviews' })).toBeInTheDocument());
   });
 
   it('mirrors breadcrumb direction in RTL while retaining stable responsive structure', async () => {
