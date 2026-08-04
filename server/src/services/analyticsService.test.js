@@ -240,6 +240,16 @@ describe('dollar-PnL distribution', () => {
 });
 
 describe('user-local Analytics dates', () => {
+  test('returns derived PostgreSQL DATE buckets as exact calendar strings', async () => {
+    pool.query = async (sql) => /daily_pnl/.test(sql)
+      ? { rows: [{ date: '2026-08-04', daily_pnl: '100' }] }
+      : { rows: [{ date: '2026-08-04', pnl_net: '100', trades_count: '1' }] };
+    const equity = await getEquityCurve(userId, {}, 'Asia/Jerusalem');
+    const calendar = await getCalendar(userId, {}, 'Asia/Jerusalem');
+    assert.equal(equity.data[0].date, '2026-08-04');
+    assert.equal(calendar.days[0].date, '2026-08-04');
+  });
+
   test('groups equity and calendar rows by parameterized local entry date', async () => {
     const calls = [];
     pool.query = async (sql, params) => {

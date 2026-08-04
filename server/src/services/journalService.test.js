@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, test } from 'node:test';
-import pool from '../db/client.js';
+import pool, { parsePostgresDate } from '../db/client.js';
 import {
   buildListQueryParts,
   createJournalEntry,
@@ -9,6 +9,7 @@ import {
   getJournalCalendar,
   getJournalEntry,
   listJournalEntries,
+  mapJournalEntry,
   updateJournalEntry,
 } from './journalService.js';
 import {
@@ -30,7 +31,7 @@ const entryRow = {
   id: entryId,
   user_id: userId,
   entry_type: 'trade_review',
-  entry_date: '2026-08-03',
+  entry_date: parsePostgresDate('2026-08-03'),
   title: 'Review',
   content: 'Followed the plan.',
   tags: ['Process'],
@@ -151,6 +152,11 @@ describe('journal migration integrity constraints', () => {
 });
 
 describe('journal query ownership and responses', () => {
+  test('maps DB-returned entry_date without UTC conversion', () => {
+    assert.equal(mapJournalEntry({ ...entryRow, entry_date: parsePostgresDate('2026-08-04') }).entryDate, '2026-08-04');
+    assert.throws(() => mapJournalEntry({ ...entryRow, entry_date: new Date('2026-08-03T21:00:00Z') }), /exact YYYY-MM-DD string/);
+  });
+
   test('keeps search, type, status, and trade filters parameterized and user-scoped', () => {
     const result = buildListQueryParts(userId, {
       from: '2026-08-01', to: '2026-08-04', type: 'trade_review', status: 'complete',

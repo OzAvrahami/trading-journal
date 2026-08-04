@@ -1,5 +1,13 @@
 import pg from 'pg';
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+export const POSTGRES_DATE_OID = 1082;
+export const parsePostgresDate = (value) => value;
+
+// PostgreSQL DATE is a calendar value, not an instant. Returning the wire value
+// prevents the pg default parser from creating a local-midnight Date that can
+// shift to the previous day when later formatted through UTC.
+types.setTypeParser(POSTGRES_DATE_OID, parsePostgresDate);
 
 const isSupabase = (process.env.DATABASE_URL || '').includes('supabase.co');
 

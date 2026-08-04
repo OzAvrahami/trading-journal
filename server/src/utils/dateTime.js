@@ -16,6 +16,14 @@ export function isValidDateKey(value) {
     && parsed.getUTCDate() === day;
 }
 
+export function mapPostgresDate(value) {
+  if (value == null) return null;
+  if (!isValidDateKey(value)) {
+    throw new TypeError('Expected PostgreSQL DATE as an exact YYYY-MM-DD string.');
+  }
+  return value;
+}
+
 export function normalizeTimezone(value) {
   return typeof value === 'string' ? value.trim() : value;
 }

@@ -1,16 +1,12 @@
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
-
-function dateKey(value) {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return String(value).slice(0, 10);
-}
+import { mapPostgresDate } from '../utils/dateTime.js';
 
 export function mapJournalEntry(row, trades = []) {
   return {
     id: row.id,
     entryType: row.entry_type,
-    entryDate: dateKey(row.entry_date),
+    entryDate: mapPostgresDate(row.entry_date),
     title: row.title,
     content: row.content,
     tags: row.tags ?? [],
@@ -113,9 +109,9 @@ export async function getJournalEntry(userId, entryId, queryable = pool) {
   return mapJournalEntry(result.rows[0], links.get(entryId) ?? []);
 }
 
-export async function getJournalCalendar(userId, month) {
+export async function getJournalCalendar(userId, month, queryable = pool) {
   const monthStart = `${month}-01`;
-  const result = await pool.query(
+  const result = await queryable.query(
     `SELECT entry_date AS date,
             COUNT(*)::int AS total,
             COUNT(*) FILTER (WHERE is_complete)::int AS complete,
@@ -132,7 +128,7 @@ export async function getJournalCalendar(userId, month) {
   return {
     month,
     days: result.rows.map((row) => ({
-      date: dateKey(row.date),
+      date: mapPostgresDate(row.date),
       total: Number(row.total),
       complete: Number(row.complete),
       incomplete: Number(row.incomplete),
@@ -216,7 +212,7 @@ export async function updateJournalEntry(userId, entryId, data) {
         entryId,
         userId,
         data.entryType ?? existing.entry_type,
-        data.entryDate ?? dateKey(existing.entry_date),
+        data.entryDate ?? mapPostgresDate(existing.entry_date),
         data.title ?? existing.title,
         data.content ?? existing.content,
         data.tags ?? existing.tags,
