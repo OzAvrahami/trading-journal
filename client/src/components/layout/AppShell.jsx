@@ -6,6 +6,7 @@ import { resolveRouteMetadata } from '../../routeMetadata.js';
 import { Sidebar } from './Sidebar.jsx';
 import { Header } from './Header.jsx';
 import { MobileNav } from './MobileNav.jsx';
+import { HeaderControlsProvider } from './HeaderControls.jsx';
 
 const SIDEBAR_STORAGE_KEY = 'tradinglog-sidebar-collapsed';
 
@@ -48,15 +49,17 @@ export function AppShell({ children }) {
   }
 
   return (
-    <div className="flex h-dvh min-h-0 overflow-hidden bg-canvas-secondary text-primary">
-      <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} user={user} onLogout={handleLogout} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
-        <Header metadata={metadata} />
-        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 adaptive:p-5 compact:p-6">
-          {children}
-        </main>
-        <MobileNav />
+    <HeaderControlsProvider metadata={metadata}>
+      <div className="flex h-dvh min-h-0 overflow-hidden bg-canvas-secondary text-primary">
+        <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} user={user} onLogout={handleLogout} />
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
+          <Header metadata={metadata} />
+          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 adaptive:p-5 compact:p-6">
+            {children}
+          </main>
+          <MobileNav />
+        </div>
       </div>
-    </div>
+    </HeaderControlsProvider>
   );
 }

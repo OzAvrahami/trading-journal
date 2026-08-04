@@ -198,11 +198,6 @@ export default function Import() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-100 mb-1">Import Trades</h1>
-      <p className="text-gray-400 text-sm mb-6">
-        Upload a broker CSV export to import your trades. Duplicates are detected automatically.
-      </p>
-
       <StepIndicator current={step} />
 
       {/* ── Step 1: Select & Upload ── */}

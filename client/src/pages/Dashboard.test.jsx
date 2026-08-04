@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { format, startOfWeek } from 'date-fns';
 
 const apiMocks = vi.hoisted(() => ({
   accounts: vi.fn(),
@@ -25,6 +27,9 @@ vi.mock('../components/analytics/TradingCalendar.jsx', () => ({ TradingCalendar:
 vi.mock('../components/trades/QuickAddModal.jsx', () => ({ QuickAddModal: ({ open, onClose }) => open ? <div role="dialog"><span>Add trade flow</span><button onClick={onClose}>Close</button></div> : null }));
 
 import Dashboard from './Dashboard.jsx';
+import { Header } from '../components/layout/Header.jsx';
+import { HeaderControlsProvider } from '../components/layout/HeaderControls.jsx';
+import { resolveRouteMetadata } from '../routeMetadata.js';
 
 const successSummary = {
   today: { pnlNet: 125, tradesCount: 1 },
@@ -49,7 +54,17 @@ function setSuccess(summary = successSummary) {
 
 function renderDashboard() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return render(<QueryClientProvider client={client}><Dashboard /></QueryClientProvider>);
+  const metadata = resolveRouteMetadata('/dashboard');
+  return render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter>
+        <HeaderControlsProvider metadata={metadata}>
+          <Header metadata={metadata} />
+          <Dashboard />
+        </HeaderControlsProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
 }
 
 describe('Dashboard', () => {
@@ -64,7 +79,7 @@ describe('Dashboard', () => {
     apiMocks.breakdown.mockReturnValue(never);
     renderDashboard();
 
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByRole('region', { name: 'Loading Dashboard metrics' })).toBeInTheDocument();
     expect(screen.getByText('Equity loading')).toBeInTheDocument();
   });
@@ -76,11 +91,14 @@ describe('Dashboard', () => {
     expect(await screen.findByText('Period net PnL')).toBeInTheDocument();
     expect(screen.getByText(/\+\$275\.00/)).toBeInTheDocument();
     expect(screen.getByText('3 closed trades')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByText('Equity ready')).toBeInTheDocument();
     expect(screen.getByText('Distribution ready')).toBeInTheDocument();
     expect(screen.getByText('Breakdown ready')).toBeInTheDocument();
     expect(screen.getByText('Calendar widget')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Trade' }).closest('header')).toBeInTheDocument();
+    expect(screen.queryByText(/balance/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/included accounts/i)).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Add Trade' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Add trade flow');
@@ -138,13 +156,28 @@ describe('Dashboard', () => {
     renderDashboard();
     const user = userEvent.setup();
     await screen.findByRole('option', { name: 'Broker A — A-100 (Primary)' });
-    expect(screen.getByLabelText('Account').parentElement).toHaveClass('adaptive:w-72');
-    expect(screen.getByLabelText('Start date').parentElement).toHaveClass('adaptive:w-44');
+    expect(screen.getByLabelText('Account').parentElement).toHaveClass('adaptive:w-56');
 
     await user.selectOptions(screen.getByLabelText('Account'), 'account-1');
+    await user.click(screen.getByRole('button', { name: 'Custom' }));
     fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-07-01' } });
     fireEvent.change(screen.getByLabelText('End date'), { target: { value: '2026-07-31' } });
 
     await waitFor(() => expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: '2026-07-01', to: '2026-07-31', accountId: 'account-1' }));
+  });
+
+  it('maps Today and WTD presets to the existing from/to query shape', async () => {
+    setSuccess();
+    renderDashboard();
+    const user = userEvent.setup();
+    const now = new Date();
+    const today = format(now, 'yyyy-MM-dd');
+    const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+    await user.click(screen.getByRole('button', { name: 'Today' }));
+    await waitFor(() => expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: today, to: today }));
+
+    await user.click(screen.getByRole('button', { name: 'WTD' }));
+    await waitFor(() => expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: weekStart, to: today }));
   });
 });

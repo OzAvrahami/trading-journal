@@ -18,6 +18,9 @@ vi.mock('../components/trades/TradeForm.jsx', () => ({
 }));
 
 import TradeDetail from './TradeDetail.jsx';
+import { Header } from '../components/layout/Header.jsx';
+import { HeaderControlsProvider } from '../components/layout/HeaderControls.jsx';
+import { resolveRouteMetadata } from '../routeMetadata.js';
 
 const closedTrade = {
   id: 't1', accountId: 'a1', symbol: 'AAPL', market: 'stocks', direction: 'long', status: 'closed',
@@ -31,14 +34,18 @@ const closedTrade = {
 
 function renderDetail() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  const metadata = resolveRouteMetadata('/trades/t1');
   return render(
     <QueryClientProvider client={client}>
       <ToastProvider>
         <MemoryRouter initialEntries={['/trades/t1']}>
-          <Routes>
-            <Route path="/trades/:id" element={<TradeDetail />} />
-            <Route path="/trades" element={<p>Trades route</p>} />
-          </Routes>
+          <HeaderControlsProvider metadata={metadata}>
+            <Header metadata={metadata} />
+            <Routes>
+              <Route path="/trades/:id" element={<TradeDetail />} />
+              <Route path="/trades" element={<p>Trades route</p>} />
+            </Routes>
+          </HeaderControlsProvider>
         </MemoryRouter>
       </ToastProvider>
     </QueryClientProvider>,
@@ -58,7 +65,7 @@ describe('TradeDetail', () => {
     renderDetail();
 
     expect(await screen.findByRole('heading', { name: 'AAPL' })).toHaveAttribute('dir', 'ltr');
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     const summary = screen.getByRole('heading', { name: 'Financial result' }).parentElement;
     expect(within(summary).getAllByText(/\+\$125\.00/).length).toBeGreaterThan(0);
     expect(within(summary).getByText(/\+\$130\.00/)).toBeInTheDocument();
@@ -83,6 +90,10 @@ describe('TradeDetail', () => {
     });
     renderDetail();
     await screen.findByRole('heading', { name: 'AAPL' });
+    expect(screen.getByRole('button', { name: 'Back to trades' }).closest('header')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit trade' }).closest('header')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' }).closest('header')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Edit trade' })).toHaveLength(1);
 
     const summary = screen.getByRole('heading', { name: 'Financial result' }).parentElement;
     expect(within(summary).getByText('Net PnL').parentElement).toHaveTextContent('—');

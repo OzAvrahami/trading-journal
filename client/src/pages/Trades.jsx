@@ -11,6 +11,7 @@ import { EmptyState, ErrorState } from '../components/ui/States.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { downloadBlob } from '../utils/csvExport.js';
 import { useToast } from '../components/ui/Toast.jsx';
+import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 
 function TradesSkeleton() {
   return (
@@ -89,11 +90,18 @@ export default function Trades() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-secondary">Review recorded trades, narrow the scope, or export the current result set.</p>
-        <div className="flex flex-wrap gap-2">
+      <RouteHeaderControls
+        slot="tradesActions"
+        commands={[
+          { id: 'exportTrades', label: 'Export trades', description: 'Export the current filter scope as CSV', keywords: 'download csv', Icon: DownloadSimple, action: handleExport },
+          { id: 'addTrade', label: 'Add trade', description: 'Open the existing trade form', keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) },
+        ]}
+      >
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
+            size="mobile"
+            className="adaptive:min-h-9"
             loading={exporting}
             disabled={tradesQuery.isLoading}
             leadingIcon={<DownloadSimple size={17} aria-hidden="true" />}
@@ -101,11 +109,11 @@ export default function Trades() {
           >
             Export CSV
           </Button>
-          <Button type="button" variant="primary" leadingIcon={<Plus size={17} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
+          <Button type="button" variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={17} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
             Add trade
           </Button>
         </div>
-      </div>
+      </RouteHeaderControls>
 
       <FilterBar filters={filters} onChange={setFilters} />
 

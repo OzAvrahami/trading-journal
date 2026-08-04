@@ -4,6 +4,9 @@ import { accountsApi } from '../api/accounts.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { Spinner } from '../components/ui/Spinner.jsx';
+import { Plus } from '@phosphor-icons/react';
+import { Button } from '../components/ui/Button.jsx';
+import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 
 const PROP_FIRMS = [
   'Topstep', 'Lucid', 'MFF', 'Apex', 'FTMO', 'E8', 'The5ers',
@@ -149,16 +152,14 @@ export default function Accounts() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-100">Accounts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your prop firm and broker accounts</p>
-        </div>
-        <button onClick={() => setModalState({ mode: 'create' })} className="btn-primary">
-          + New Account
-        </button>
-      </div>
+      <RouteHeaderControls
+        slot="accountActions"
+        commands={[{ id: 'addAccount', label: 'Add account', description: 'Open the existing account form', keywords: 'new broker prop firm', Icon: Plus, action: () => setModalState({ mode: 'create' }) }]}
+      >
+        <Button variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setModalState({ mode: 'create' })}>
+          New account
+        </Button>
+      </RouteHeaderControls>
 
       {/* Table */}
       {isLoading ? (

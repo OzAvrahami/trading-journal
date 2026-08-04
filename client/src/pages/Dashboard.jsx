@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format, startOfMonth } from 'date-fns';
-import { Plus } from '@phosphor-icons/react';
+import { format, startOfMonth, startOfWeek } from 'date-fns';
+import { Bank, Plus } from '@phosphor-icons/react';
 import { analyticsApi } from '../api/analytics.js';
 import { accountsApi } from '../api/accounts.js';
 import { SummaryCards } from '../components/analytics/SummaryCards.jsx';
@@ -11,13 +11,26 @@ import { BreakdownChart } from '../components/analytics/BreakdownChart.jsx';
 import { TradingCalendar } from '../components/analytics/TradingCalendar.jsx';
 import { QuickAddModal } from '../components/trades/QuickAddModal.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { Card } from '../components/ui/Card.jsx';
-import { Field, Input, Select } from '../components/ui/FormControls.jsx';
 import { EmptyState, ErrorState } from '../components/ui/States.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
+import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 
 const DEFAULT_FROM = format(startOfMonth(new Date()), 'yyyy-MM-dd');
 const DEFAULT_TO = format(new Date(), 'yyyy-MM-dd');
+const PERIODS = [
+  { id: 'today', label: 'Today' },
+  { id: 'wtd', label: 'WTD' },
+  { id: 'mtd', label: 'MTD' },
+  { id: 'custom', label: 'Custom' },
+];
+
+function periodRange(period) {
+  const today = new Date();
+  const to = format(today, 'yyyy-MM-dd');
+  if (period === 'today') return { from: to, to };
+  if (period === 'wtd') return { from: format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'), to };
+  return { from: format(startOfMonth(today), 'yyyy-MM-dd'), to };
+}
 
 function MetricsSkeleton() {
   return (
@@ -37,6 +50,7 @@ export default function Dashboard() {
   const [breakdownBy, setBreakdownBy] = useState('strategy');
   const [addOpen, setAddOpen] = useState(false);
   const [scope, setScope] = useState({ type: 'all' });
+  const [period, setPeriod] = useState('mtd');
 
   const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: accountsApi.list });
   const accounts = accountsQuery.data ?? [];
@@ -85,6 +99,16 @@ export default function Dashboard() {
     setScope(value ? { type: 'company', name: value } : { type: 'all' });
   }
 
+  function applyPeriod(nextPeriod) {
+    setPeriod(nextPeriod);
+    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod));
+  }
+
+  function updateCustomDate(key, value) {
+    setPeriod('custom');
+    setDateRange((range) => ({ ...range, [key]: value }));
+  }
+
   function accountLabel(account) {
     const base = `${account.company} — ${account.accountNumber}`;
     return account.accountName ? `${base} (${account.accountName})` : base;
@@ -92,45 +116,76 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 adaptive:space-y-5">
-      <Card as="section" density="compact" aria-label="Dashboard filters">
-        <div className="flex flex-col gap-3 adaptive:flex-row adaptive:flex-wrap adaptive:items-end">
-          <Field label="Account" className="w-full adaptive:w-72 wide:w-80">
-            {fieldProps => (
-              <Select {...fieldProps} value={scope.type === 'account' ? scope.id : ''} onChange={handleAccountChange} disabled={accountsQuery.isLoading} className="min-h-11 adaptive:min-h-9" dir="ltr">
-                <option value="">All accounts</option>
-                {accounts.map(account => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}
-              </Select>
-            )}
-          </Field>
+      <RouteHeaderControls
+        slot="dashboardScope"
+        commands={[{ id: 'addTrade', label: 'Add trade', description: 'Open the existing trade form', keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) }]}
+      >
+        <div className="flex w-full flex-wrap items-center gap-2 compact:w-auto compact:justify-end">
+          <label className="relative flex w-full items-center adaptive:w-56">
+            <Bank size={15} className="pointer-events-none absolute start-2.5 text-muted" aria-hidden="true" />
+            <span className="sr-only">Account</span>
+            <select
+              aria-label="Account"
+              value={scope.type === 'account' ? scope.id : ''}
+              onChange={handleAccountChange}
+              disabled={accountsQuery.isLoading}
+              className="input min-h-11 ps-8 adaptive:min-h-9"
+              dir="ltr"
+            >
+              <option value="">All accounts</option>
+              {accounts.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}
+            </select>
+          </label>
 
-          {scope.type !== 'account' && companies.length > 1 ? (
-            <Field label="Company" className="w-full adaptive:w-48">
-              {fieldProps => (
-                <Select {...fieldProps} value={scope.type === 'company' ? scope.name : ''} onChange={handleCompanyChange} className="min-h-11 adaptive:min-h-9" dir="ltr">
-                  <option value="">All companies</option>
-                  {companies.map(company => <option key={company} value={company}>{company}</option>)}
-                </Select>
-              )}
-            </Field>
-          ) : null}
+          {scope.type !== 'account' && companies.length > 1 && (
+            <label className="w-full adaptive:w-40">
+              <span className="sr-only">Company</span>
+              <select aria-label="Company" value={scope.type === 'company' ? scope.name : ''} onChange={handleCompanyChange} className="input min-h-11 adaptive:min-h-9" dir="ltr">
+                <option value="">All companies</option>
+                {companies.map((company) => <option key={company} value={company}>{company}</option>)}
+              </select>
+            </label>
+          )}
 
-          <Field label="Start date" className="w-full adaptive:w-44">
-            {fieldProps => <Input {...fieldProps} type="date" numeric value={dateRange.from} onChange={event => setDateRange(range => ({ ...range, from: event.target.value }))} className="min-h-11 adaptive:min-h-9" />}
-          </Field>
-          <Field label="End date" className="w-full adaptive:w-44">
-            {fieldProps => <Input {...fieldProps} type="date" numeric value={dateRange.to} onChange={event => setDateRange(range => ({ ...range, to: event.target.value }))} className="min-h-11 adaptive:min-h-9" />}
-          </Field>
-          <Button variant="primary" size="mobile" className="w-full adaptive:w-auto compact:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
+          <div role="group" aria-label="Dashboard period" className="flex min-h-11 flex-1 gap-0.5 rounded-md border border-default bg-surface-sunken p-0.5 adaptive:min-h-9 adaptive:flex-none">
+            {PERIODS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={period === item.id}
+                onClick={() => applyPeriod(item.id)}
+                className={`min-w-12 flex-1 rounded-sm px-2 font-mono text-xs transition-colors adaptive:flex-none ${period === item.id ? 'bg-surface font-semibold text-primary shadow-flat' : 'text-muted hover:text-primary'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {period === 'custom' && (
+            <div className="flex w-full gap-2 adaptive:w-auto" aria-label="Custom dashboard dates">
+              <label className="min-w-0 flex-1 adaptive:w-36 adaptive:flex-none">
+                <span className="sr-only">Start date</span>
+                <input aria-label="Start date" type="date" value={dateRange.from} onChange={(event) => updateCustomDate('from', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
+              </label>
+              <label className="min-w-0 flex-1 adaptive:w-36 adaptive:flex-none">
+                <span className="sr-only">End date</span>
+                <input aria-label="End date" type="date" value={dateRange.to} onChange={(event) => updateCustomDate('to', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
+              </label>
+            </div>
+          )}
+
+          <Button variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
             Add Trade
           </Button>
         </div>
-        {accountsQuery.isError && (
-          <div className="mt-3 text-xs text-negative" role="alert">
-            Account options could not be loaded. Date filters and all-account analytics remain available.{' '}
-            <button type="button" className="font-medium underline" onClick={() => accountsQuery.refetch()}>Retry accounts</button>
-          </div>
-        )}
-      </Card>
+      </RouteHeaderControls>
+
+      {accountsQuery.isError && (
+        <div className="text-xs text-negative" role="alert">
+          Account options could not be loaded. Period controls and all-account analytics remain available.{' '}
+          <button type="button" className="font-medium underline" onClick={() => accountsQuery.refetch()}>Retry accounts</button>
+        </div>
+      )}
 
       {refreshing && <p className="text-xs text-muted" role="status">Refreshing Dashboard data…</p>}
 

@@ -5,6 +5,8 @@ const ROUTES = [
     description: 'Review trading performance across your current scope.',
     breadcrumbs: ['Journal', 'Dashboard'],
     nav: '/dashboard',
+    headerControls: ['dashboardScope'],
+    commandActions: ['addTrade'],
   },
   {
     match: (pathname) => pathname === '/trades',
@@ -12,6 +14,8 @@ const ROUTES = [
     description: 'Find, filter, export, and manage recorded trades.',
     breadcrumbs: ['Journal', 'Trades'],
     nav: '/trades',
+    headerControls: ['tradesActions'],
+    commandActions: ['addTrade', 'exportTrades'],
   },
   {
     match: (pathname) => /^\/trades\/[^/]+$/.test(pathname),
@@ -19,6 +23,8 @@ const ROUTES = [
     description: 'Review the recorded trade context and outcome.',
     breadcrumbs: ['Journal', 'Trades', 'Trade details'],
     nav: '/trades',
+    headerControls: ['tradeActions'],
+    commandActions: [],
   },
   {
     match: (pathname) => pathname === '/accounts',
@@ -26,6 +32,8 @@ const ROUTES = [
     description: 'Manage the accounts used to organize trading activity.',
     breadcrumbs: ['Manage', 'Accounts'],
     nav: '/accounts',
+    headerControls: ['accountActions'],
+    commandActions: ['addAccount'],
   },
   {
     match: (pathname) => pathname === '/import',
@@ -33,6 +41,8 @@ const ROUTES = [
     description: 'Bring broker trade files into an existing account.',
     breadcrumbs: ['Manage', 'Import'],
     nav: '/import',
+    headerControls: [],
+    commandActions: [],
   },
 ];
 
@@ -41,6 +51,8 @@ const FALLBACK = {
   description: '',
   breadcrumbs: ['TradingLog'],
   nav: null,
+  headerControls: [],
+  commandActions: [],
 };
 
 export function resolveRouteMetadata(pathname) {

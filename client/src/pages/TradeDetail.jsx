@@ -14,6 +14,7 @@ import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { ValueIndicator } from '../components/ui/ValueIndicator.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { formatCurrency, formatDatetime, formatDuration, formatR, formatSignedCurrency } from '../utils/formatters.js';
+import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 
 function accountLabel(accountId, accounts) {
   const account = accounts.find((item) => item.id === accountId);
@@ -170,9 +171,9 @@ export default function TradeDetail() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button type="button" variant="tertiary" size="mobile" onClick={() => navigate(-1)}>Back to trades</Button>
-        <div className="flex gap-2">
+      <RouteHeaderControls slot="tradeActions">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="tertiary" size="mobile" onClick={() => navigate(-1)}>Back to trades</Button>
           <Button
             type="button"
             size="mobile"
@@ -192,7 +193,7 @@ export default function TradeDetail() {
             Delete
           </Button>
         </div>
-      </div>
+      </RouteHeaderControls>
 
       <Card className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
