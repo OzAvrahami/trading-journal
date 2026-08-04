@@ -15,4 +15,13 @@ describe('route metadata', () => {
       nav: '/trades',
     });
   });
+
+  it('resolves the real Analytics route and header scope slot', () => {
+    expect(resolveRouteMetadata('/insights/analytics')).toMatchObject({
+      title: 'Analytics',
+      breadcrumbs: ['Insights', 'Analytics'],
+      nav: '/insights/analytics',
+      headerControls: ['analyticsScope'],
+    });
+  });
 });

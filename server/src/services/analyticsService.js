@@ -1,4 +1,3 @@
-import { date } from 'zod';
 import pool from '../db/client.js';
 
 // ---- Date helpers -----------------------------------------------------------
@@ -32,7 +31,7 @@ function startOfMonth(d = new Date()) {
  * accountId filter → direct column condition, no JOIN needed.
  * company filter   → JOIN trading_accounts ta needed.
  */
-function buildQueryParts(userId, { from, to, accountId, company }) {
+export function buildQueryParts(userId, { from, to, accountId, company }) {
   const params = [userId];
   const conds  = ['t.user_id = $1'];
   let join     = '';
@@ -249,22 +248,79 @@ export async function getDistribution(userId, { from, to, accountId, company }) 
   return { buckets };
 }
 
+// ---- R-multiple distribution -----------------------------------------------
+
+export const R_BUCKETS = Object.freeze([
+  { key: 'lte_neg_2', label: '≤ -2R', min: null, max: -2, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_2_to_neg_1_5', label: '-2R to -1.5R', min: -2, max: -1.5, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_1_5_to_neg_1', label: '-1.5R to -1R', min: -1.5, max: -1, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_1_to_neg_0_5', label: '-1R to -0.5R', min: -1, max: -0.5, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_0_5_to_0', label: '-0.5R to 0R', min: -0.5, max: 0, lowerInclusive: false, upperInclusive: false },
+  { key: '0_to_0_5', label: '0R to 0.5R', min: 0, max: 0.5, lowerInclusive: true, upperInclusive: false },
+  { key: '0_5_to_1', label: '0.5R to 1R', min: 0.5, max: 1, lowerInclusive: true, upperInclusive: false },
+  { key: '1_to_2', label: '1R to 2R', min: 1, max: 2, lowerInclusive: true, upperInclusive: false },
+  { key: '2_to_3', label: '2R to 3R', min: 2, max: 3, lowerInclusive: true, upperInclusive: false },
+  { key: 'gte_3', label: '≥ 3R', min: 3, max: null, lowerInclusive: true, upperInclusive: false },
+]);
+
+function includesRValue(bucket, value) {
+  const aboveMin = bucket.min == null || (bucket.lowerInclusive ? value >= bucket.min : value > bucket.min);
+  const belowMax = bucket.max == null || (bucket.upperInclusive ? value <= bucket.max : value < bucket.max);
+  return aboveMin && belowMax;
+}
+
+export function bucketRValues(values) {
+  if (!values.length) return [];
+  return R_BUCKETS.map((bucket) => ({
+    ...bucket,
+    count: values.filter((value) => includesRValue(bucket, value)).length,
+  }));
+}
+
+export async function getRDistribution(userId, { from, to, accountId, company }) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+  const result = await pool.query(`
+    SELECT t.r_multiple FROM trades t${join}
+    WHERE ${where} AND t.status = 'closed' AND t.r_multiple IS NOT NULL
+    ORDER BY t.r_multiple ASC
+  `, params);
+
+  const values = result.rows
+    .filter((row) => row.r_multiple != null)
+    .map((row) => Number(row.r_multiple))
+    .filter(Number.isFinite);
+  return { totalTrades: values.length, buckets: bucketRValues(values) };
+}
+
 // ---- Breakdown by dimension -------------------------------------------------
+
+const WEEKDAYS = Object.freeze([
+  { key: 'monday', label: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday' },
+  { key: 'friday', label: 'Friday' },
+  { key: 'saturday', label: 'Saturday' },
+  { key: 'sunday', label: 'Sunday' },
+]);
+
+export const BREAKDOWN_DIMENSIONS = Object.freeze({
+  symbol:    { expression: 't.symbol', needsJoin: false },
+  strategy:  { expression: 't.strategy', needsJoin: false },
+  timeframe: { expression: 't.timeframe', needsJoin: false },
+  direction: { expression: 't.direction', needsJoin: false },
+  account:   { expression: 't.account_id', needsJoin: false },
+  company:   { expression: 'ta.company', needsJoin: true },
+  market:    { expression: 't.market', needsJoin: false },
+  weekday:   { expression: 'EXTRACT(ISODOW FROM t.entry_datetime)::int', needsJoin: false, ordered: true },
+});
 
 export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }) {
   // account: group by account_id (UUID) — frontend maps to display name.
   // company: group by ta.company — requires JOIN.
-  const dimensionMap = {
-    symbol:    { col: 't.symbol',     needsJoin: false },
-    strategy:  { col: 't.strategy',   needsJoin: false },
-    timeframe: { col: 't.timeframe',  needsJoin: false },
-    direction: { col: 't.direction',  needsJoin: false },
-    account:   { col: 't.account_id', needsJoin: false },
-    company:   { col: 'ta.company',   needsJoin: true  },
-  };
-
-  const dim = dimensionMap[by] ?? dimensionMap.strategy;
-  const col = dim.col;
+  const dim = BREAKDOWN_DIMENSIONS[by];
+  if (!dim) throw new RangeError(`Unsupported analytics breakdown dimension: ${by}`);
+  const col = dim.expression;
 
   const { params, where, join: filterJoin } = buildQueryParts(userId, { from, to, accountId, company });
 
@@ -275,7 +331,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
 
   const result = await pool.query(`
     SELECT
-      ${col}                                                     AS label,
+      ${col}                                                     AS dimension_key,
       COUNT(*)                                                   AS trades_count,
       COUNT(*) FILTER (WHERE t.pnl_net > 0)                     AS winners,
       COUNT(*) FILTER (WHERE t.pnl_net < 0)                     AS losers,
@@ -284,7 +340,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
     FROM trades t${groupJoin}
     WHERE ${where} AND t.status = 'closed'
     GROUP BY ${col}
-    ORDER BY pnl_net DESC
+    ORDER BY ${dim.ordered ? `${col} ASC` : 'pnl_net DESC'}
   `, params);
 
   return {
@@ -292,8 +348,11 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
     data: result.rows.map(r => {
       const count   = parseInt(r.trades_count) || 0;
       const winners = parseInt(r.winners)      || 0;
+      const weekday = by === 'weekday' ? WEEKDAYS[Number(r.dimension_key) - 1] : null;
+      const rawKey = r.dimension_key == null || r.dimension_key === '' ? 'unknown' : String(r.dimension_key);
       return {
-        label:        r.label || 'Unknown',
+        key:          weekday?.key || rawKey,
+        label:        weekday?.label || (rawKey === 'unknown' ? 'Unknown' : rawKey),
         tradesCount:  count,
         winners,
         losers:       parseInt(r.losers) || 0,

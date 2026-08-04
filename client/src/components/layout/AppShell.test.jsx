@@ -29,7 +29,11 @@ describe('AppShell', () => {
     expect(screen.getByText('Trades', { selector: '[aria-current="page"]' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Dashboard' }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: 'Import' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Analytics' }).length).toBeGreaterThan(0);
+    expect(screen.getByText('Insights')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Portfolio' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Journal & Reviews/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Goals & Rules/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Notifications/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('tablist', { name: 'Workspace' })).not.toBeInTheDocument();
     expect(screen.queryByText('TRADINGLOG · REDESIGN PREVIEW')).not.toBeInTheDocument();
@@ -59,6 +63,7 @@ describe('AppShell', () => {
     const dialog = screen.getByRole('dialog', { name: 'Search or run a command' });
     expect(within(dialog).getByLabelText('Search commands')).toHaveFocus();
     expect(within(dialog).getByRole('option', { name: /Dashboard/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('option', { name: /Analytics/ })).toBeInTheDocument();
     expect(within(dialog).queryByText('Portfolio')).not.toBeInTheDocument();
     expect(within(dialog).queryByText(/recent/i)).not.toBeInTheDocument();
 
@@ -69,6 +74,26 @@ describe('AppShell', () => {
     await user.keyboard('{Control>}k{/Control}');
     await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Accounts' })).toBeInTheDocument());
+  });
+
+  it('reaches Analytics through the mobile More navigation without adding a fifth primary item', async () => {
+    render(
+      <MemoryRouter initialEntries={['/trades']}>
+        <ToastProvider>
+          <AppShell><div>Trade page content</div></AppShell>
+        </ToastProvider>
+      </MemoryRouter>,
+    );
+    const primary = screen.getByRole('navigation', { name: 'Primary navigation' });
+    expect(within(primary).getAllByRole('link')).toHaveLength(3);
+    expect(within(primary).getByRole('button', { name: 'More' })).toBeInTheDocument();
+
+    await userEvent.click(within(primary).getByRole('button', { name: 'More' }));
+    const more = screen.getByRole('dialog', { name: 'More destinations' });
+    expect(within(more).getByRole('link', { name: 'Import' })).toBeInTheDocument();
+    await userEvent.click(within(more).getByRole('link', { name: 'Analytics' }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Analytics' })).toBeInTheDocument());
+    expect(screen.getByText('Analytics', { selector: '[aria-current="page"]' })).toBeInTheDocument();
   });
 
   it('mirrors breadcrumb direction in RTL while retaining stable responsive structure', async () => {
