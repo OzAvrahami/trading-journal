@@ -1,10 +1,6 @@
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
-
-function dateKey(value) {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return value == null ? null : String(value).slice(0, 10);
-}
+import { mapPostgresDate } from '../utils/dateTime.js';
 
 function count(value) {
   return Number(value ?? 0);
@@ -45,7 +41,7 @@ function mapAdherence(row) {
     broken,
     notApplicable: count(row.not_applicable),
     adherenceRate: calculateAdherenceRate(followed, eligibleChecks),
-    lastCheckDate: dateKey(row.last_check_date),
+    lastCheckDate: mapPostgresDate(row.last_check_date),
   };
 }
 
@@ -58,7 +54,7 @@ function mapCheck(row) {
   return {
     id: row.id,
     ruleId: row.rule_id,
-    checkDate: dateKey(row.check_date),
+    checkDate: mapPostgresDate(row.check_date),
     outcome: row.outcome,
     notes: row.notes,
     createdAt: row.created_at,
@@ -82,7 +78,7 @@ function mapCheck(row) {
     journalEntry: row.journal_entry_id ? {
       id: row.journal_entry_id,
       entryType: row.journal_entry_type,
-      entryDate: dateKey(row.journal_entry_date),
+      entryDate: mapPostgresDate(row.journal_entry_date),
       title: row.journal_entry_title,
       isComplete: row.journal_entry_is_complete,
     } : null,
@@ -134,9 +130,9 @@ export function buildAdherenceQueryParts(userId, filters = {}) {
   return { join: joinConditions.join(' AND '), where: ruleConditions.join(' AND '), params };
 }
 
-export async function getAdherence(userId, filters = {}) {
+export async function getAdherence(userId, filters = {}, queryable = pool) {
   const { join, where, params } = buildAdherenceQueryParts(userId, filters);
-  const result = await pool.query(
+  const result = await queryable.query(
     `SELECT r.id, r.name, r.scope, r.is_active, r.sort_order, r.created_at,
             COUNT(rc.id)::int AS total_checks,
             COUNT(rc.id) FILTER (WHERE rc.outcome = 'followed')::int AS followed,
@@ -203,7 +199,7 @@ export async function getRule(userId, ruleId, queryable = pool) {
         broken,
         notApplicable: count(row.not_applicable),
         adherenceRate: calculateAdherenceRate(followed, followed + broken),
-        lastCheckDate: dateKey(row.last_check_date),
+        lastCheckDate: mapPostgresDate(row.last_check_date),
       },
     },
   };
@@ -387,7 +383,7 @@ export async function updateRuleCheck(userId, checkId, data) {
         checkId,
         userId,
         next.ruleId,
-        data.checkDate !== undefined ? data.checkDate : dateKey(existing.check_date),
+        data.checkDate !== undefined ? data.checkDate : mapPostgresDate(existing.check_date),
         data.outcome !== undefined ? data.outcome : existing.outcome,
         data.notes !== undefined ? data.notes : existing.notes,
         next.tradeId,

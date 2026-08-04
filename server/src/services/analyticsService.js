@@ -5,6 +5,7 @@ import {
   dateKeyInTimezone,
   ensureTimezoneParameter,
   localDateSql,
+  mapPostgresDate,
   mondayOfDateKey,
   monthStartDateKey,
 } from '../utils/dateTime.js';
@@ -68,7 +69,7 @@ function buildPeriodQuery(userId, { accountId, company }, from, to, timezone) {
 
 // ---- Summary ----------------------------------------------------------------
 
-export async function getSummary(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, now = new Date()) {
+export async function getSummary(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, now = new Date(), queryable = pool) {
   const today = dateKeyInTimezone(timezone, now);
   const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
 
@@ -77,7 +78,7 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
   const mtdQ   = buildPeriodQuery(userId, { accountId, company }, monthStartDateKey(today), today, timezone);
 
   const [mainRes, todayRes, wtdRes, mtdRes] = await Promise.all([
-    pool.query(`
+    queryable.query(`
       SELECT
         COUNT(*)                                                          AS total,
         COUNT(*) FILTER (WHERE t.status = 'closed')                      AS closed,
@@ -96,9 +97,9 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
       FROM trades t${join}
       WHERE ${where}
     `, params),
-    pool.query(todayQ.sql, todayQ.params),
-    pool.query(wtdQ.sql,   wtdQ.params),
-    pool.query(mtdQ.sql,   mtdQ.params),
+    queryable.query(todayQ.sql, todayQ.params),
+    queryable.query(wtdQ.sql,   wtdQ.params),
+    queryable.query(mtdQ.sql,   mtdQ.params),
   ]);
 
   const r = mainRes.rows[0];
@@ -169,20 +170,20 @@ export async function getEquityCurve(userId, { from, to, accountId, company }, t
     data: result.rows.map(row => {
       const daily = parseFloat(parseFloat(row.daily_pnl).toFixed(2));
       cumulative = parseFloat((cumulative + daily).toFixed(2));
-      return { date: row.date, dailyPnl: daily, cumulativePnl: cumulative };
+      return { date: mapPostgresDate(row.date), dailyPnl: daily, cumulativePnl: cumulative };
     }),
   };
 }
 
 // ---- Calendar  --------------------------------------------------------------
 
-export async function getCalendar(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+export async function getCalendar(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
   const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
   const timezonePlaceholder = ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder);
   const dateExpression = localDateSql('t.entry_datetime', timezonePlaceholder);
   const { params, where, join } = parts;
 
-  const result = await pool.query(`
+  const result = await queryable.query(`
     SELECT
       ${dateExpression} AS date,
       SUM(t.pnl_net) AS pnl_net,
@@ -195,7 +196,7 @@ export async function getCalendar(userId, { from, to, accountId, company }, time
 
   return {
     days: result.rows.map(row => ({
-      date: row.date,
+      date: mapPostgresDate(row.date),
       pnlNet: parseFloat(parseFloat(row.pnl_net).toFixed(2)),
       tradesCount: Number(row.trades_count),
     })),
@@ -204,10 +205,10 @@ export async function getCalendar(userId, { from, to, accountId, company }, time
 
 // ---- PnL distribution -------------------------------------------------------
 
-export async function getDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+export async function getDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
   const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
 
-  const result = await pool.query(`
+  const result = await queryable.query(`
     SELECT t.pnl_net FROM trades t${join}
     WHERE ${where} AND t.status = 'closed' AND t.pnl_net IS NOT NULL
     ORDER BY t.pnl_net
@@ -285,9 +286,9 @@ export function bucketRValues(values) {
   }));
 }
 
-export async function getRDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+export async function getRDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
   const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
-  const result = await pool.query(`
+  const result = await queryable.query(`
     SELECT t.r_multiple FROM trades t${join}
     WHERE ${where} AND t.status = 'closed' AND t.r_multiple IS NOT NULL
     ORDER BY t.r_multiple ASC

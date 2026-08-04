@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, test } from 'node:test';
-import pool from '../db/client.js';
+import pool, { parsePostgresDate } from '../db/client.js';
 import {
   buildGoalsListQueryParts,
   calculateGoalProgress,
@@ -12,6 +12,7 @@ import {
   getGoal,
   goalTodayKey,
   listGoals,
+  mapStoredGoal,
   queryJournalGoalMetrics,
   queryRulesGoalMetrics,
   queryTradeGoalMetrics,
@@ -34,8 +35,8 @@ const goalRow = {
   metric_key: 'net_pnl',
   comparison: 'at_least',
   target_value: '1000.0000',
-  start_date: '2026-08-01',
-  end_date: '2026-08-31',
+  start_date: parsePostgresDate('2026-08-01'),
+  end_date: parsePostgresDate('2026-08-31'),
   status: 'active',
   created_at: '2026-08-01T00:00:00Z',
   updated_at: '2026-08-01T00:00:00Z',
@@ -166,6 +167,17 @@ describe('goals migration contract', () => {
 });
 
 describe('goal metric calculation and state', () => {
+  test('maps DB-returned start and end DATE values without an instant conversion', () => {
+    const mapped = mapStoredGoal({
+      ...goalRow,
+      start_date: parsePostgresDate('2026-08-04'),
+      end_date: parsePostgresDate('2026-08-18'),
+    });
+    assert.equal(mapped.startDate, '2026-08-04');
+    assert.equal(mapped.endDate, '2026-08-18');
+    assert.throws(() => mapStoredGoal({ ...goalRow, start_date: new Date('2026-08-03T21:00:00Z') }), /exact YYYY-MM-DD string/);
+  });
+
   test('uses the user-local calendar date for lifecycle state', () => {
     const instant = new Date('2026-08-01T21:30:00.000Z');
     assert.equal(goalTodayKey('UTC', instant), '2026-08-01');

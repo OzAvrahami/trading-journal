@@ -1,6 +1,6 @@
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
-import { DEFAULT_TIMEZONE, dateKeyInTimezone } from '../utils/dateTime.js';
+import { DEFAULT_TIMEZONE, dateKeyInTimezone, mapPostgresDate } from '../utils/dateTime.js';
 
 export const GOAL_METRICS = Object.freeze([
   'net_pnl',
@@ -23,11 +23,6 @@ export const METRIC_CONFIG = Object.freeze({
   journal_entries: { comparison: 'at_least', unit: 'count', source: 'journal', min: 0, max: 1000000000, integer: true },
   broken_rule_checks: { comparison: 'at_most', unit: 'count', source: 'rules', min: 0, max: 1000000000, integer: true },
 });
-
-function dateKey(value) {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return value == null ? null : String(value).slice(0, 10);
-}
 
 function number(value) {
   return value == null ? null : Number(value);
@@ -82,8 +77,8 @@ export function mapStoredGoal(row) {
     metricKey: row.metric_key,
     comparison: row.comparison,
     targetValue: number(row.target_value),
-    startDate: dateKey(row.start_date),
-    endDate: dateKey(row.end_date),
+    startDate: mapPostgresDate(row.start_date),
+    endDate: mapPostgresDate(row.end_date),
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

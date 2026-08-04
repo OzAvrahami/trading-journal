@@ -122,3 +122,28 @@ Server calculates these automatically on every create/update:
 - Per-account timezones, exchange timezones, market-session dates, and exit-date attribution are deferred.
 
 Stored timestamps and historical records are not rewritten. Timezone-aware filtering and grouping can move previously displayed results near midnight to a different calendar day while leaving the source record unchanged.
+
+## Demo data reset and seed
+
+`npm run seed:demo` is a development-only, destructive reset for one explicitly selected user's domain data. It is forbidden when `NODE_ENV=production`, never runs automatically, and creates a local JSON backup before opening the reset transaction.
+
+Required environment variables:
+
+```powershell
+$env:DEMO_USER_EMAIL="user@example.com"
+$env:DEMO_RESET_CONFIRM="RESET_MY_DEMO_DATA"
+```
+
+Optional deterministic anchor date:
+
+```powershell
+$env:DEMO_ANCHOR_DATE="2026-08-04"
+```
+
+Without `DEMO_ANCHOR_DATE`, the command uses the current calendar date in the target user's IANA timezone. For a given user and anchor date, rerunning recreates the same logical fixtures.
+
+The command backs up and resets only owned rows in `goals`, `rule_checks`, `trading_rules`, `journal_entry_trades`, `journal_entries`, `trades`, and `trading_accounts`. It preserves `users`, `refresh_tokens`, `schema_migrations`, login credentials, profile fields, timezone, and sessions. The resulting fixture contains 8 accounts, 53 closed trades, 4 open trades across 22 dates, 14 Journal entries, 8 rules with 44 checks, and 7 Goals. Production Analytics is validated before commit against 31 winners, 20 losers, 2 breakevens, $7,486 net PnL, $346 fees, approximately $141.25 expectancy, and approximately 1.70 profit factor.
+
+Backups are written beneath ignored `server/.local/demo-seed-backups/`. To restore, review the JSON, map its sections back to the same tables, and restore in foreign-key order inside a manually reviewed transaction. No automatic restore or general database-wipe command is provided.
+
+The design's positions, executions, portfolio transactions, holdings, lots, dividends, allocation, price/FX caches, notifications, import history, saved views, and portfolio-performance data are not seeded because those production domains do not exist.

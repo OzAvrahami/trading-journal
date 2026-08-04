@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, test } from 'node:test';
-import pool from '../db/client.js';
+import pool, { parsePostgresDate } from '../db/client.js';
 import {
   buildAdherenceQueryParts,
   buildChecksQueryParts,
@@ -42,13 +42,13 @@ const ruleRow = {
   created_at: '2026-08-01T10:00:00Z', updated_at: '2026-08-01T10:00:00Z', check_count: 2,
 };
 const checkRow = {
-  id: checkId, user_id: userId, rule_id: ruleId, check_date: '2026-08-03', outcome: 'followed', notes: 'Patient entry.',
+  id: checkId, user_id: userId, rule_id: ruleId, check_date: parsePostgresDate('2026-08-03'), outcome: 'followed', notes: 'Patient entry.',
   trade_id: tradeId, journal_entry_id: entryId, created_at: '2026-08-03T10:00:00Z', updated_at: '2026-08-03T10:00:00Z',
   rule_name: ruleRow.name, rule_scope: 'trade', rule_is_active: true,
   trade_symbol: 'ES', trade_entry_datetime: '2026-08-03T09:00:00Z', trade_exit_datetime: null,
   trade_status: 'open', trade_pnl_net: null, account_id: '66666666-6666-4666-8666-666666666666',
   account_name: 'Primary', account_company: 'broker', account_number: 'A1',
-  journal_entry_type: 'trade_review', journal_entry_date: '2026-08-03', journal_entry_title: 'Review', journal_entry_is_complete: true,
+  journal_entry_type: 'trade_review', journal_entry_date: parsePostgresDate('2026-08-03'), journal_entry_title: 'Review', journal_entry_is_complete: true,
 };
 
 afterEach(() => {
@@ -262,7 +262,9 @@ describe('rules and checks persistence', () => {
     assert.match(calls[0].sql, /LEFT JOIN journal_entries/);
     assert.match(calls[0].sql, /ORDER BY rc\.check_date DESC, rc\.created_at DESC, rc\.id DESC/);
     assert.deepEqual(calls[0].params, [userId, 10, 10]);
+    assert.equal(result.checks[0].checkDate, '2026-08-03');
     assert.equal(result.checks[0].trade.symbol, 'ES');
+    assert.equal(result.checks[0].journalEntry.entryDate, '2026-08-03');
     assert.equal(result.checks[0].journalEntry.title, 'Review');
     assert.deepEqual(result.pagination, { page: 2, limit: 10, total: 1, totalPages: 1 });
   });
