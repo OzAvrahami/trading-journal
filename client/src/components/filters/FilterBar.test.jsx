@@ -9,19 +9,19 @@ vi.mock('../../api/accounts.js', () => ({ accountsApi: { list: apiMocks.accounts
 
 import { DEFAULT_TRADE_FILTERS, FilterBar } from './FilterBar.jsx';
 
-function StatefulFilterBar({ initial = DEFAULT_TRADE_FILTERS }) {
+function StatefulFilterBar({ initial = DEFAULT_TRADE_FILTERS, timezone }) {
   const [filters, setFilters] = useState(initial);
   return (
     <>
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} timezone={timezone} />
       <output aria-label="Filter state">{JSON.stringify(filters)}</output>
     </>
   );
 }
 
-function renderFilters(initial) {
+function renderFilters(initial, timezone) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return render(<QueryClientProvider client={client}><StatefulFilterBar initial={initial} /></QueryClientProvider>);
+  return render(<QueryClientProvider client={client}><StatefulFilterBar initial={initial} timezone={timezone} /></QueryClientProvider>);
 }
 
 describe('FilterBar', () => {
@@ -46,6 +46,14 @@ describe('FilterBar', () => {
     await userEvent.click(screen.getByRole('button', { name: 'All Time' }));
     expect(screen.getByLabelText('Filter state')).not.toHaveTextContent('"from"');
     expect(screen.getByLabelText('Filter state')).not.toHaveTextContent('"to"');
+  });
+
+  it('derives trade date presets from the supplied user timezone', async () => {
+    vi.setSystemTime(new Date('2026-08-01T21:30:00.000Z'));
+    renderFilters(DEFAULT_TRADE_FILTERS, 'UTC');
+    await userEvent.click(screen.getByRole('button', { name: 'Today' }));
+    expect(screen.getByLabelText('Filter state')).toHaveTextContent('"from":"2026-08-01"');
+    expect(screen.getByLabelText('Filter state')).toHaveTextContent('"to":"2026-08-01"');
   });
 
   it('maps company-labelled account choices to accountId and preserves supported filters', async () => {

@@ -5,7 +5,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../components/ui/Toast.jsx';
 
-vi.mock('../context/AuthContext.jsx', () => ({
+vi.mock('../context/AuthContext.jsx', async (importOriginal) => ({
+  ...(await importOriginal()),
   useAuth: () => ({ user: { email: 'goal.user@example.com' }, logout: vi.fn() }),
 }));
 

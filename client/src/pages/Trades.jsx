@@ -12,6 +12,7 @@ import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { downloadBlob } from '../utils/csvExport.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 function TradesSkeleton() {
   return (
@@ -39,6 +40,7 @@ function TradesSkeleton() {
 }
 
 export default function Trades() {
+  const timezone = useUserTimezone();
   const [filters, setFilters] = useState(DEFAULT_TRADE_FILTERS);
   const [addOpen, setAddOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -115,7 +117,7 @@ export default function Trades() {
         </div>
       </RouteHeaderControls>
 
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} timezone={timezone} />
 
       {tradesQuery.isError && hasUsableData && (
         <ErrorState

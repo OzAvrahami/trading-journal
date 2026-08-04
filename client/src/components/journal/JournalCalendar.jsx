@@ -5,6 +5,7 @@ import { journalApi } from '../../api/journal.js';
 import { useDirection } from '../../hooks/useDirection.js';
 import {
   addDaysToDateKey,
+  DEFAULT_TIMEZONE,
   dateKeyParts,
   formatDateKey,
   getMonthRange,
@@ -40,7 +41,7 @@ export function buildJournalCalendarGrid(month, summaries = []) {
   return grid;
 }
 
-export function JournalCalendar({ month, selectedDate, onMonthChange, onDateSelect, onEdit, onDelete, deletingId }) {
+export function JournalCalendar({ month, selectedDate, timezone = DEFAULT_TIMEZONE, onMonthChange, onDateSelect, onEdit, onDelete, deletingId }) {
   const { isRtl } = useDirection();
   const calendarQuery = useQuery({
     queryKey: ['journal', 'calendar', month],
@@ -57,7 +58,7 @@ export function JournalCalendar({ month, selectedDate, onMonthChange, onDateSele
   const monthLabel = formatDateKey(`${month}-01`, { month: 'long', year: 'numeric' });
   const PreviousIcon = isRtl ? CaretRight : CaretLeft;
   const NextIcon = isRtl ? CaretLeft : CaretRight;
-  const today = localTodayKey();
+  const today = localTodayKey(new Date(), timezone);
   const selectedEntries = selectedQuery.data?.entries ?? [];
 
   function goToday() {

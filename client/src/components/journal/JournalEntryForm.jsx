@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { MagnifyingGlass } from '@phosphor-icons/react';
 import { accountsApi } from '../../api/accounts.js';
 import { tradesApi } from '../../api/trades.js';
-import { formatDateKey, localTodayKey, normalizeDateKey } from '../../utils/dateOnly.js';
+import { DEFAULT_TIMEZONE, formatDateKey, localTodayKey, normalizeDateKey } from '../../utils/dateOnly.js';
 import { Button } from '../ui/Button.jsx';
 import { Checkbox, Field, Input, Select } from '../ui/FormControls.jsx';
 import { JOURNAL_ENTRY_TYPES, normalizeJournalTags } from './journalTypes.js';
@@ -14,14 +14,14 @@ function accountLabel(account) {
   return account.accountName || `${account.company} — ${account.accountNumber}`;
 }
 
-export function JournalEntryForm({ entry, onSubmit, loading = false }) {
+export function JournalEntryForm({ entry, timezone = DEFAULT_TIMEZONE, onSubmit, loading = false }) {
   const [tradeSearch, setTradeSearch] = useState('');
   const [selectedTrades, setSelectedTrades] = useState(() => new Map((entry?.trades ?? []).map((trade) => [trade.id, trade])));
   const isEdit = Boolean(entry);
   const { register, handleSubmit, formState: { errors }, setError } = useForm({
     defaultValues: {
       entryType: entry?.entryType ?? 'note',
-      entryDate: entry?.entryDate ?? localTodayKey(),
+      entryDate: entry?.entryDate ?? localTodayKey(new Date(), timezone),
       title: entry?.title ?? '',
       content: entry?.content ?? '',
       tags: entry?.tags?.join(', ') ?? '',

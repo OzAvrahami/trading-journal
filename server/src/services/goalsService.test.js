@@ -10,6 +10,7 @@ import {
   deleteGoal,
   deriveGoalState,
   getGoal,
+  goalTodayKey,
   listGoals,
   queryJournalGoalMetrics,
   queryRulesGoalMetrics,
@@ -165,6 +166,15 @@ describe('goals migration contract', () => {
 });
 
 describe('goal metric calculation and state', () => {
+  test('uses the user-local calendar date for lifecycle state', () => {
+    const instant = new Date('2026-08-01T21:30:00.000Z');
+    assert.equal(goalTodayKey('UTC', instant), '2026-08-01');
+    assert.equal(goalTodayKey('Asia/Jerusalem', instant), '2026-08-02');
+    const startsAugustSecond = { ...goal, startDate: '2026-08-02' };
+    assert.equal(deriveGoalState(startsAugustSecond, false, goalTodayKey('UTC', instant)), 'upcoming');
+    assert.equal(deriveGoalState(startsAugustSecond, false, goalTodayKey('Asia/Jerusalem', instant)), 'in_progress');
+  });
+
   test('calculates net PnL, preserves a genuine zero, and marks no trades unavailable', () => {
     assert.equal(calculateGoalProgress(goal, { closed_count: 2, net_pnl: '250.125' }, { today: '2026-08-10' }).currentValue, 250.13);
     const zero = calculateGoalProgress(goal, { closed_count: 2, net_pnl: '0' }, { today: '2026-08-10' });
@@ -225,15 +235,16 @@ describe('goal metric calculation and state', () => {
 });
 
 describe('batched, owned source queries', () => {
-  test('trade metrics are one user-scoped inclusive entry-date query', async () => {
+  test('trade metrics are one user-scoped half-open local entry-date query', async () => {
     let captured;
     const queryable = { query: async (sql, params) => { captured = { sql, params }; return { rows: [] }; } };
     await queryTradeGoalMetrics(queryable, userId, [goal]);
     assert.match(captured.sql, /t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
     assert.match(captured.sql, /t\.entry_datetime >=/);
-    assert.match(captured.sql, /T23:59:59\.999Z/);
-    assert.deepEqual(captured.params, [userId, [goalId], ['2026-08-01'], ['2026-08-31']]);
+    assert.match(captured.sql, /entry_datetime >= \(ranges\.start_date::timestamp AT TIME ZONE \$5\)/);
+    assert.match(captured.sql, /entry_datetime < \(\(ranges\.end_date \+ 1\)::timestamp AT TIME ZONE \$5\)/);
+    assert.deepEqual(captured.params, [userId, [goalId], ['2026-08-01'], ['2026-08-31'], 'Asia/Jerusalem']);
   });
 
   test('Rules and Journal batches use owned inclusive date fields', async () => {

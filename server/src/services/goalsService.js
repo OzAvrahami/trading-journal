@@ -1,5 +1,6 @@
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
+import { DEFAULT_TIMEZONE, dateKeyInTimezone } from '../utils/dateTime.js';
 
 export const GOAL_METRICS = Object.freeze([
   'net_pnl',
@@ -42,10 +43,8 @@ function round(value, decimals = 4) {
   return Math.round(Number(value) * factor) / factor;
 }
 
-export function utcTodayKey(now = new Date()) {
-  // Goal lifecycle dates use the server's UTC calendar day. This MVP does not
-  // claim per-user or per-account timezone support.
-  return now.toISOString().slice(0, 10);
+export function goalTodayKey(timezone = DEFAULT_TIMEZONE, now = new Date()) {
+  return dateKeyInTimezone(timezone, now);
 }
 
 export function validateGoalDefinition(goal) {
@@ -116,7 +115,7 @@ function rangeArrays(goals) {
   ];
 }
 
-export async function queryTradeGoalMetrics(queryable, userId, goals) {
+export async function queryTradeGoalMetrics(queryable, userId, goals, timezone = DEFAULT_TIMEZONE) {
   if (!goals.length) return new Map();
   const result = await queryable.query(
     `WITH goal_ranges AS (
@@ -133,10 +132,10 @@ export async function queryTradeGoalMetrics(queryable, userId, goals) {
      LEFT JOIN trades t
        ON t.user_id = $1
       AND t.status = 'closed'
-      AND t.entry_datetime >= (ranges.start_date::text || 'T00:00:00.000Z')::timestamptz
-      AND t.entry_datetime <= (ranges.end_date::text || 'T23:59:59.999Z')::timestamptz
+      AND t.entry_datetime >= (ranges.start_date::timestamp AT TIME ZONE $5)
+      AND t.entry_datetime < ((ranges.end_date + 1)::timestamp AT TIME ZONE $5)
      GROUP BY ranges.goal_id`,
-    [userId, ...rangeArrays(goals)],
+    [userId, ...rangeArrays(goals), timezone],
   );
   return new Map(result.rows.map((row) => [row.goal_id, row]));
 }
@@ -224,7 +223,7 @@ function metricResult(goal, raw, sourceFailed) {
   return { currentValue: journalCount, hasData: true, sourceDataCount: journalCount, unavailableReason: null };
 }
 
-export function deriveGoalState(goal, targetSatisfied, today = utcTodayKey()) {
+export function deriveGoalState(goal, targetSatisfied, today = goalTodayKey()) {
   if (goal.status === 'archived') return 'archived';
   if (goal.status === 'paused') return 'paused';
   if (today < goal.startDate) return 'upcoming';
@@ -233,7 +232,7 @@ export function deriveGoalState(goal, targetSatisfied, today = utcTodayKey()) {
   return 'in_progress';
 }
 
-export function calculateGoalProgress(goal, raw, { sourceFailed = false, today = utcTodayKey() } = {}) {
+export function calculateGoalProgress(goal, raw, { sourceFailed = false, today = goalTodayKey() } = {}) {
   const config = METRIC_CONFIG[goal.metricKey];
   const metric = metricResult(goal, raw, sourceFailed);
   const targetSatisfied = metric.hasData && (goal.comparison === 'at_least'
@@ -256,8 +255,15 @@ export function calculateGoalProgress(goal, raw, { sourceFailed = false, today =
   };
 }
 
-export async function computeProgressForGoals(userId, goals, queryable = pool, today = utcTodayKey()) {
+export async function computeProgressForGoals(
+  userId,
+  goals,
+  queryable = pool,
+  today = null,
+  timezone = DEFAULT_TIMEZONE,
+) {
   if (!goals.length) return [];
+  const lifecycleDate = today ?? goalTodayKey(timezone);
   const grouped = { trades: [], rules: [], journal: [] };
   goals.forEach((goal) => grouped[METRIC_CONFIG[goal.metricKey].source].push(goal));
   const tasks = Object.entries(grouped)
@@ -266,7 +272,7 @@ export async function computeProgressForGoals(userId, goals, queryable = pool, t
       source,
       sourceGoals,
       promise: source === 'trades'
-        ? queryTradeGoalMetrics(queryable, userId, sourceGoals)
+        ? queryTradeGoalMetrics(queryable, userId, sourceGoals, timezone)
         : source === 'rules'
           ? queryRulesGoalMetrics(queryable, userId, sourceGoals)
           : queryJournalGoalMetrics(queryable, userId, sourceGoals),
@@ -284,7 +290,7 @@ export async function computeProgressForGoals(userId, goals, queryable = pool, t
     const source = METRIC_CONFIG[goal.metricKey].source;
     return calculateGoalProgress(goal, sourceMaps.get(source)?.get(goal.id), {
       sourceFailed: failedSources.has(source),
-      today,
+      today: lifecycleDate,
     });
   });
 }
@@ -307,7 +313,7 @@ async function getOwnedGoalRow(userId, goalId, queryable = pool) {
   return result.rows[0];
 }
 
-export async function listGoals(userId, filters = {}) {
+export async function listGoals(userId, filters = {}, timezone = DEFAULT_TIMEZONE) {
   const { where, params } = buildGoalsListQueryParts(userId, filters);
   const result = await pool.query(
     `SELECT g.* FROM goals g
@@ -316,16 +322,16 @@ export async function listGoals(userId, filters = {}) {
               g.end_date ASC, g.created_at ASC, g.id ASC`,
     params,
   );
-  const goals = await computeProgressForGoals(userId, result.rows.map(mapStoredGoal));
+  const goals = await computeProgressForGoals(userId, result.rows.map(mapStoredGoal), pool, null, timezone);
   return { goals, summary: summarize(goals) };
 }
 
-export async function getGoal(userId, goalId) {
+export async function getGoal(userId, goalId, timezone = DEFAULT_TIMEZONE) {
   const goal = mapStoredGoal(await getOwnedGoalRow(userId, goalId));
-  return { goal: (await computeProgressForGoals(userId, [goal]))[0] };
+  return { goal: (await computeProgressForGoals(userId, [goal], pool, null, timezone))[0] };
 }
 
-export async function createGoal(userId, data) {
+export async function createGoal(userId, data, timezone = DEFAULT_TIMEZONE) {
   assertGoalDefinition(data);
   const result = await pool.query(
     `INSERT INTO goals
@@ -335,10 +341,10 @@ export async function createGoal(userId, data) {
     [userId, data.name, data.description, data.metricKey, data.comparison, data.targetValue, data.startDate, data.endDate, data.status],
   );
   const goal = mapStoredGoal(result.rows[0]);
-  return { goal: (await computeProgressForGoals(userId, [goal]))[0] };
+  return { goal: (await computeProgressForGoals(userId, [goal], pool, null, timezone))[0] };
 }
 
-export async function updateGoal(userId, goalId, data) {
+export async function updateGoal(userId, goalId, data, timezone = DEFAULT_TIMEZONE) {
   const existing = mapStoredGoal(await getOwnedGoalRow(userId, goalId));
   const next = { ...existing, ...data };
   assertGoalDefinition(next);
@@ -362,7 +368,7 @@ export async function updateGoal(userId, goalId, data) {
   );
   if (!result.rows[0]) throw createError('GOAL_NOT_FOUND', 'Goal not found.', 404);
   const goal = mapStoredGoal(result.rows[0]);
-  return { goal: (await computeProgressForGoals(userId, [goal]))[0] };
+  return { goal: (await computeProgressForGoals(userId, [goal], pool, null, timezone))[0] };
 }
 
 export async function deleteGoal(userId, goalId) {

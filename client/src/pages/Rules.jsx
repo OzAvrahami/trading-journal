@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { format, startOfMonth, startOfWeek } from 'date-fns';
 import {
   CheckCircle, ListChecks, MinusCircle, NotePencil, PencilSimple, Plus, Power, Trash, WarningCircle,
 } from '@phosphor-icons/react';
@@ -17,7 +16,8 @@ import { EmptyState, ErrorState } from '../components/ui/States.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
-import { formatDateKey } from '../utils/dateOnly.js';
+import { formatDateKey, periodRange } from '../utils/dateOnly.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 const PERIODS = [
   { id: 'today', label: 'Today' },
@@ -32,14 +32,6 @@ const VIEWS = [
 ];
 const DEFAULT_RULE_FILTERS = Object.freeze({ status: 'all', scope: '', search: '' });
 const DEFAULT_CHECK_FILTERS = Object.freeze({ ruleId: '', outcome: '', page: 1, limit: 25 });
-
-function periodRange(period) {
-  const today = new Date();
-  const to = format(today, 'yyyy-MM-dd');
-  if (period === 'today') return { from: to, to };
-  if (period === 'wtd') return { from: format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'), to };
-  return { from: format(startOfMonth(today), 'yyyy-MM-dd'), to };
-}
 
 function compactParams(values) {
   return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== '' && value != null));
@@ -173,9 +165,10 @@ function CheckList({ checks, pagination, onEdit, onDelete, deletingId, onPageCha
 }
 
 export default function Rules() {
+  const timezone = useUserTimezone();
   const [view, setView] = useState('overview');
   const [period, setPeriod] = useState('mtd');
-  const [dateRange, setDateRange] = useState(() => periodRange('mtd'));
+  const [dateRange, setDateRange] = useState(() => periodRange('mtd', timezone));
   const [ruleFilters, setRuleFilters] = useState({ ...DEFAULT_RULE_FILTERS });
   const [checkFilters, setCheckFilters] = useState({ ...DEFAULT_CHECK_FILTERS });
   const [ruleFormOpen, setRuleFormOpen] = useState(false);
@@ -274,7 +267,7 @@ export default function Rules() {
   function applyPeriod(nextPeriod) {
     setPeriod(nextPeriod);
     setCheckFilters((current) => ({ ...current, page: 1 }));
-    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod));
+    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod, timezone));
   }
   function updateCustomDate(key, value) {
     setPeriod('custom');
@@ -412,7 +405,7 @@ export default function Rules() {
         <RuleForm key={editingRule?.id ?? 'new'} rule={editingRule} onSubmit={submitRule} loading={createRuleMutation.isPending || updateRuleMutation.isPending} />
       </Modal>
       <Modal open={checkFormOpen} onClose={() => { if (!createCheckMutation.isPending && !updateCheckMutation.isPending) { setCheckFormOpen(false); setEditingCheck(null); setInitialRuleId(''); } }} title={editingCheck ? 'Edit rule check' : 'Record rule check'} size="lg">
-        <RuleCheckForm key={editingCheck?.id ?? `new-${initialRuleId}`} check={editingCheck} rules={allRuleRows} initialRuleId={initialRuleId} onSubmit={submitCheck} loading={createCheckMutation.isPending || updateCheckMutation.isPending} />
+        <RuleCheckForm key={editingCheck?.id ?? `new-${initialRuleId}`} check={editingCheck} rules={allRuleRows} initialRuleId={initialRuleId} timezone={timezone} onSubmit={submitCheck} loading={createCheckMutation.isPending || updateCheckMutation.isPending} />
       </Modal>
     </div>
   );

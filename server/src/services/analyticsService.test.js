@@ -9,7 +9,9 @@ import {
   buildQueryParts,
   calculateExpectancy,
   getBreakdown,
+  getCalendar,
   getDistribution,
+  getEquityCurve,
   getRDistribution,
   getSummary,
 } from './analyticsService.js';
@@ -29,7 +31,7 @@ describe('analytics validation and safe dimensions', () => {
       'symbol', 'strategy', 'timeframe', 'direction', 'account', 'company', 'market', 'weekday',
     ]);
     assert.equal(BREAKDOWN_DIMENSIONS.market.expression, 't.market');
-    assert.match(BREAKDOWN_DIMENSIONS.weekday.expression, /ISODOW/);
+    assert.equal(BREAKDOWN_DIMENSIONS.weekday.expression, null);
     assert.equal(breakdownSchema.safeParse({ by: 'market' }).success, true);
     assert.equal(breakdownSchema.safeParse({ by: 'weekday' }).success, true);
   });
@@ -51,10 +53,10 @@ describe('analytics validation and safe dimensions', () => {
   test('preserves ownership and date/account/company filter parameterization', () => {
     const accountParts = buildQueryParts(userId, { from: '2026-08-01', to: '2026-08-04', accountId });
     assert.match(accountParts.where, /t\.user_id = \$1/);
-    assert.match(accountParts.where, /t\.entry_datetime >= \$2/);
-    assert.match(accountParts.where, /t\.entry_datetime <= \$3/);
-    assert.match(accountParts.where, /t\.account_id = \$4/);
-    assert.deepEqual(accountParts.params, [userId, '2026-08-01', '2026-08-04T23:59:59.999Z', accountId]);
+    assert.match(accountParts.where, /t\.entry_datetime >= \(\$2::date::timestamp AT TIME ZONE \$3\)/);
+    assert.match(accountParts.where, /t\.entry_datetime < \(\(\$4::date \+ 1\)::timestamp AT TIME ZONE \$3\)/);
+    assert.match(accountParts.where, /t\.account_id = \$5/);
+    assert.deepEqual(accountParts.params, [userId, '2026-08-01', 'Asia/Jerusalem', '2026-08-04', accountId]);
 
     const companyParts = buildQueryParts(userId, { company: ' Broker A ' });
     assert.match(companyParts.join, /JOIN trading_accounts ta/);
@@ -71,7 +73,7 @@ describe('analytics validation and safe dimensions', () => {
     const result = await getBreakdown(userId, { by: 'strategy', from: '2026-08-01' });
     assert.match(captured.sql, /WHERE t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
-    assert.deepEqual(captured.params, [userId, '2026-08-01']);
+    assert.deepEqual(captured.params, [userId, '2026-08-01', 'Asia/Jerusalem']);
     assert.deepEqual(result.data[0], {
       key: 'momentum', label: 'momentum', tradesCount: 2, winners: 1, losers: 1,
       winRate: 0.5, pnlNet: 25.5, avgRMultiple: 0.75,
@@ -87,7 +89,8 @@ describe('analytics validation and safe dimensions', () => {
       })) };
     };
     const result = await getBreakdown(userId, { by: 'weekday' });
-    assert.match(sql, /ORDER BY EXTRACT\(ISODOW FROM t\.entry_datetime\)::int ASC/);
+    assert.match(sql, /AT TIME ZONE \$2/);
+    assert.match(sql, /ORDER BY EXTRACT\(ISODOW FROM \(t\.entry_datetime AT TIME ZONE \$2\)\)::int ASC/);
     assert.deepEqual(result.data.map(({ key, label }) => ({ key, label })), [
       { key: 'monday', label: 'Monday' }, { key: 'tuesday', label: 'Tuesday' },
       { key: 'wednesday', label: 'Wednesday' }, { key: 'thursday', label: 'Thursday' },
@@ -123,9 +126,9 @@ describe('R-multiple distribution', () => {
     assert.match(captured.sql, /t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
     assert.match(captured.sql, /t\.r_multiple IS NOT NULL/);
-    assert.match(captured.sql, /t\.account_id = \$4/);
+    assert.match(captured.sql, /t\.account_id = \$5/);
     assert.doesNotMatch(captured.sql, /ta\.company/);
-    assert.deepEqual(captured.params, [userId, '2026-08-01', '2026-08-04T23:59:59.999Z', accountId]);
+    assert.deepEqual(captured.params, [userId, '2026-08-01', 'Asia/Jerusalem', '2026-08-04', accountId]);
     assert.equal(result.totalTrades, 3);
     assert.deepEqual(result.buckets.map((bucket) => bucket.count), [1, 0, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
@@ -229,9 +232,36 @@ describe('dollar-PnL distribution', () => {
     assert.match(captured.sql, /t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
     assert.match(captured.sql, /t\.pnl_net IS NOT NULL/);
-    assert.deepEqual(captured.params, [userId, '2026-08-01', accountId]);
+    assert.deepEqual(captured.params, [userId, '2026-08-01', 'Asia/Jerusalem', accountId]);
     assert.ok(Array.isArray(result.buckets));
     assert.deepEqual(Object.keys(result.buckets[0]), ['range', 'min', 'max', 'count']);
     assert.equal(result.buckets.reduce((sum, bucket) => sum + bucket.count, 0), 2);
+  });
+});
+
+describe('user-local Analytics dates', () => {
+  test('groups equity and calendar rows by parameterized local entry date', async () => {
+    const calls = [];
+    pool.query = async (sql, params) => {
+      calls.push({ sql, params });
+      return { rows: [] };
+    };
+    await getEquityCurve(userId, {}, 'America/New_York');
+    await getCalendar(userId, {}, 'Asia/Jerusalem');
+    assert.match(calls[0].sql, /\(t\.entry_datetime AT TIME ZONE \$2\)::date AS date/);
+    assert.match(calls[0].sql, /GROUP BY \(t\.entry_datetime AT TIME ZONE \$2\)::date/);
+    assert.deepEqual(calls[0].params, [userId, 'America/New_York']);
+    assert.match(calls[1].sql, /\(t\.entry_datetime AT TIME ZONE \$2\)::date AS date/);
+    assert.deepEqual(calls[1].params, [userId, 'Asia/Jerusalem']);
+  });
+
+  test('summary exposes timezone metadata without changing existing metric fields', async () => {
+    pool.query = async (sql) => /AS total/.test(sql)
+      ? { rows: [{ total: '0', closed: '0', open: '0', winners: '0', losers: '0', pnl_net_sum: '0', pnl_gross_sum: '0', fees_sum: '0', avg_win: null, avg_loss: null, avg_r: null, avg_duration: null, gross_profit: '0', gross_loss: '0' }] }
+      : { rows: [{ cnt: '0', pnl: '0' }] };
+    const result = await getSummary(userId, {}, 'Asia/Jerusalem', new Date('2026-08-01T21:30:00.000Z'));
+    assert.equal(result.timezone, 'Asia/Jerusalem');
+    assert.ok(Object.hasOwn(result, 'totals'));
+    assert.ok(Object.hasOwn(result, 'today'));
   });
 });

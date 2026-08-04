@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { validateQuery } from '../middleware/validate.js';
 import * as analyticsService from '../services/analyticsService.js';
+import { getUserTimezone } from '../utils/dateTime.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -36,7 +37,8 @@ export const breakdownSchema = z.object({
 // GET /api/analytics/summary
 router.get('/summary', validateQuery(baseSchema), async (req, res, next) => {
   try {
-    const data = await analyticsService.getSummary(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const data = await analyticsService.getSummary(req.user.id, req.query, timezone);
     res.json(data);
   } catch (err) { next(err); }
 });
@@ -44,7 +46,8 @@ router.get('/summary', validateQuery(baseSchema), async (req, res, next) => {
 // GET /api/analytics/equity-curve
 router.get('/equity-curve', validateQuery(baseSchema), async (req, res, next) => {
   try {
-    const data = await analyticsService.getEquityCurve(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const data = await analyticsService.getEquityCurve(req.user.id, req.query, timezone);
     res.json(data);
   } catch (err) { next(err); }
 });
@@ -52,7 +55,8 @@ router.get('/equity-curve', validateQuery(baseSchema), async (req, res, next) =>
 // GET /api/analytics/calendar
 router.get('/calendar', validateQuery(baseSchema), async (req, res, next) => {
   try {
-    const data = await analyticsService.getCalendar(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const data = await analyticsService.getCalendar(req.user.id, req.query, timezone);
     res.json(data);
   } catch (err) { next(err); }
 });
@@ -60,7 +64,8 @@ router.get('/calendar', validateQuery(baseSchema), async (req, res, next) => {
 // GET /api/analytics/distribution
 router.get('/distribution', validateQuery(baseSchema), async (req, res, next) => {
   try {
-    const data = await analyticsService.getDistribution(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const data = await analyticsService.getDistribution(req.user.id, req.query, timezone);
     res.json(data);
   } catch (err) { next(err); }
 });
@@ -68,7 +73,8 @@ router.get('/distribution', validateQuery(baseSchema), async (req, res, next) =>
 // GET /api/analytics/r-distribution
 router.get('/r-distribution', validateQuery(baseSchema), async (req, res, next) => {
   try {
-    const data = await analyticsService.getRDistribution(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const data = await analyticsService.getRDistribution(req.user.id, req.query, timezone);
     res.json(data);
   } catch (err) { next(err); }
 });
@@ -76,7 +82,8 @@ router.get('/r-distribution', validateQuery(baseSchema), async (req, res, next) 
 // GET /api/analytics/breakdown?by=<supported dimension>
 router.get('/breakdown', validateQuery(breakdownSchema), async (req, res, next) => {
   try {
-    const data = await analyticsService.getBreakdown(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const data = await analyticsService.getBreakdown(req.user.id, req.query, timezone);
     res.json(data);
   } catch (err) { next(err); }
 });

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format, startOfMonth, startOfWeek } from 'date-fns';
 import { Bank } from '@phosphor-icons/react';
 import { analyticsApi } from '../api/analytics.js';
 import { accountsApi } from '../api/accounts.js';
@@ -10,6 +9,8 @@ import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { EmptyState, ErrorState } from '../components/ui/States.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
+import { periodRange } from '../utils/dateOnly.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 const PERIODS = [
   { id: 'today', label: 'Today' },
@@ -18,25 +19,17 @@ const PERIODS = [
   { id: 'custom', label: 'Custom' },
 ];
 
-function periodRange(period) {
-  const today = new Date();
-  const to = format(today, 'yyyy-MM-dd');
-  if (period === 'today') return { from: to, to };
-  if (period === 'wtd') return { from: format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'), to };
-  return { from: format(startOfMonth(today), 'yyyy-MM-dd'), to };
-}
-
 function accountLabel(account) {
   const base = `${account.company} — ${account.accountNumber}`;
   return account.accountName ? `${base} (${account.accountName})` : base;
 }
 
-function ScopeSummary({ closedTrades, dateRange, scopeLabel, isLoading, error, onRetry }) {
+function ScopeSummary({ closedTrades, dateRange, scopeLabel, timezone, isLoading, error, onRetry }) {
   if (isLoading) return <Skeleton className="h-20 w-full" label="Loading Analytics scope summary" />;
   if (error) return <ErrorState title="Scope summary could not be loaded" detail="The closed-trade count is unavailable." available="Scope controls and any successful analysis widgets" onRetry={onRetry} />;
   return (
     <Card density="compact" aria-label="Analytics scope summary">
-      <dl className="grid gap-3 adaptive:grid-cols-3">
+      <dl className="grid gap-3 adaptive:grid-cols-4">
         <div>
           <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted">Closed trades</dt>
           <dd className="mt-1 font-mono text-lg font-semibold text-primary" dir="ltr">{closedTrades}</dd>
@@ -49,14 +42,19 @@ function ScopeSummary({ closedTrades, dateRange, scopeLabel, isLoading, error, o
           <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted">Account scope</dt>
           <dd className="mt-1 truncate text-sm text-primary">{scopeLabel}</dd>
         </div>
+        <div>
+          <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted">Calendar timezone</dt>
+          <dd className="mt-1 whitespace-nowrap font-mono text-sm text-primary" dir="ltr">{timezone}</dd>
+        </div>
       </dl>
     </Card>
   );
 }
 
 export default function Analytics() {
+  const timezone = useUserTimezone();
   const [period, setPeriod] = useState('mtd');
-  const [dateRange, setDateRange] = useState(() => periodRange('mtd'));
+  const [dateRange, setDateRange] = useState(() => periodRange('mtd', timezone));
   const [scope, setScope] = useState({ type: 'all' });
   const [dimension, setDimension] = useState('market');
 
@@ -98,7 +96,7 @@ export default function Analytics() {
 
   function applyPeriod(nextPeriod) {
     setPeriod(nextPeriod);
-    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod));
+    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod, timezone));
   }
 
   function updateCustomDate(key, value) {
@@ -192,6 +190,7 @@ export default function Analytics() {
             closedTrades={closedTrades}
             dateRange={dateRange}
             scopeLabel={scopeLabel}
+            timezone={timezone}
             isLoading={summaryQuery.isLoading}
             error={summaryQuery.error}
             onRetry={summaryQuery.refetch}

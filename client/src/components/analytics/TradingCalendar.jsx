@@ -8,6 +8,7 @@ import { ValueIndicator } from '../ui/ValueIndicator.jsx';
 import { formatSignedCurrency, rawCurrency } from '../../utils/formatters.js';
 import {
   addDaysToDateKey,
+  DEFAULT_TIMEZONE,
   dateKeyParts,
   formatDateKey,
   getMonthRange,
@@ -43,7 +44,7 @@ function dayTone(day) {
   return 'border-strong bg-surface-raised text-secondary';
 }
 
-export function TradingCalendar({ qParams, errorsOnly = false }) {
+export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOnly = false }) {
   const monthRange = getMonthRange(qParams?.from);
   const calendarParams = useMemo(() => (
     monthRange ? { ...qParams, from: monthRange.monthStart, to: monthRange.monthEnd } : null
@@ -70,7 +71,7 @@ export function TradingCalendar({ qParams, errorsOnly = false }) {
   const pnlByDate = new Map(apiDays.map(day => [normalizeDateKey(day.date), day]).filter(([key]) => key));
   const days = buildCalendarDays(calendarParams.from, calendarParams.to, pnlByDate);
   const grid = buildCalendarGrid(days, calendarParams.from);
-  const today = localTodayKey();
+  const today = localTodayKey(new Date(), timezone);
   const total = apiDays.reduce((sum, day) => sum + Number(day.pnlNet ?? 0), 0);
   const tradingDays = apiDays.filter(day => Number(day.tradesCount ?? 0) > 0).length;
   const monthParts = dateKeyParts(calendarParams.from);

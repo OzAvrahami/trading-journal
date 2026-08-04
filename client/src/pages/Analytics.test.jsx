@@ -26,6 +26,7 @@ vi.mock('recharts', () => {
 import Analytics from './Analytics.jsx';
 import { Header } from '../components/layout/Header.jsx';
 import { HeaderControlsProvider } from '../components/layout/HeaderControls.jsx';
+import { AuthContext } from '../context/AuthContext.jsx';
 import { resolveRouteMetadata } from '../routeMetadata.js';
 
 const accounts = [
@@ -47,18 +48,20 @@ function setSuccess() {
   apiMocks.rDistribution.mockResolvedValue(rDistribution);
 }
 
-function renderAnalytics() {
+function renderAnalytics(timezone = null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   const metadata = resolveRouteMetadata('/insights/analytics');
   return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/insights/analytics']}>
-        <HeaderControlsProvider metadata={metadata}>
-          <Header metadata={metadata} />
-          <main><Analytics /></main>
-        </HeaderControlsProvider>
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <AuthContext.Provider value={timezone ? { user: { timezone } } : null}>
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/insights/analytics']}>
+          <HeaderControlsProvider metadata={metadata}>
+            <Header metadata={metadata} />
+            <main><Analytics /></main>
+          </HeaderControlsProvider>
+        </MemoryRouter>
+      </QueryClientProvider>
+    </AuthContext.Provider>,
   );
 }
 
@@ -76,6 +79,9 @@ describe('Analytics page', () => {
     expect(screen.getByRole('group', { name: 'Analytics period' }).closest('header')).toBeInTheDocument();
     expect(screen.getAllByLabelText('Account')).toHaveLength(1);
     expect(within(await screen.findByRole('region', { name: 'Analytics scope summary' })).getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Calendar timezone')).toBeInTheDocument();
+    expect(screen.getByText('Asia/Jerusalem')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /timezone/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(/Futures/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/account balance/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/observation/i)).not.toBeInTheDocument();
@@ -115,6 +121,20 @@ describe('Analytics page', () => {
     const today = format(new Date(), 'yyyy-MM-dd');
     await waitFor(() => expect(apiMocks.summary).toHaveBeenCalledWith({ from: format(startOfMonth(new Date()), 'yyyy-MM-dd'), to: today }));
     expect(screen.getByRole('button', { name: 'MTD' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('initializes Analytics presets and timezone visibility from the authenticated user timezone', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-08-01T21:30:00.000Z'));
+      setSuccess();
+      renderAnalytics('UTC');
+      expect(apiMocks.summary).toHaveBeenCalledWith({ from: '2026-08-01', to: '2026-08-01' });
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(await screen.findByText('UTC')).toBeInTheDocument();
+    expect(screen.getAllByText('Calendar timezone')).toHaveLength(1);
   });
 
   it('shows layout loading states', () => {

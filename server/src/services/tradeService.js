@@ -1,6 +1,7 @@
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
 import { validateAccountOwnership } from './accountService.js';
+import { DEFAULT_TIMEZONE, addTimestampDateRange } from '../utils/dateTime.js';
 
 // ---- Computation helpers ----------------------------------------------------
 
@@ -100,7 +101,7 @@ function mapTrade(row) {
 
 // ---- Public service functions -----------------------------------------------
 
-export async function listTrades(userId, filters = {}) {
+export async function listTrades(userId, filters = {}, timezone = DEFAULT_TIMEZONE) {
   const {
     from, to, symbol, market, direction, status,
     strategy, timeframe, outcome, accountId,
@@ -111,8 +112,8 @@ export async function listTrades(userId, filters = {}) {
   const params = [userId];
   let idx = 2;
 
-  if (from)      { conditions.push(`entry_datetime >= $${idx++}`); params.push(from); }
-  if (to)        { conditions.push(`entry_datetime <= $${idx++}`); params.push(`${to}T23:59:59.999Z`); }
+  addTimestampDateRange({ conditions, params, column: 'entry_datetime', from, to, timezone });
+  idx = params.length + 1;
   if (symbol)    { conditions.push(`symbol ILIKE $${idx++}`);      params.push(`%${symbol}%`); }
   if (market)    { conditions.push(`market = $${idx++}`);          params.push(market); }
   if (direction) { conditions.push(`direction = $${idx++}`);       params.push(direction); }
@@ -281,7 +282,7 @@ export async function deleteTrade(userId, tradeId) {
   return { deleted: true, id: tradeId };
 }
 
-export async function exportTradesCsv(userId, filters) {
-  const { data } = await listTrades(userId, { ...filters, limit: 10000, page: 1 });
+export async function exportTradesCsv(userId, filters, timezone = DEFAULT_TIMEZONE) {
+  const { data } = await listTrades(userId, { ...filters, limit: 10000, page: 1 }, timezone);
   return data;
 }

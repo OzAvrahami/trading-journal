@@ -14,6 +14,7 @@ import { Modal } from '../components/ui/Modal.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { localTodayKey } from '../utils/dateOnly.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 const DEFAULT_FILTERS = Object.freeze({
   search: '', type: '', status: 'all', from: '', to: '', page: 1, limit: 25,
@@ -38,10 +39,11 @@ function queryParams(filters) {
 }
 
 export default function Journal() {
+  const timezone = useUserTimezone();
   const [view, setView] = useState('timeline');
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
-  const [month, setMonth] = useState(() => localTodayKey().slice(0, 7));
-  const [selectedDate, setSelectedDate] = useState(() => localTodayKey());
+  const [month, setMonth] = useState(() => localTodayKey(new Date(), timezone).slice(0, 7));
+  const [selectedDate, setSelectedDate] = useState(() => localTodayKey(new Date(), timezone));
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -245,6 +247,7 @@ export default function Journal() {
         </>
       ) : (
         <JournalCalendar
+          timezone={timezone}
           month={month}
           selectedDate={selectedDate}
           onMonthChange={changeMonth}
@@ -259,6 +262,7 @@ export default function Journal() {
         <JournalEntryForm
           key={editingEntry?.id ?? 'new'}
           entry={editingEntry}
+          timezone={timezone}
           onSubmit={submitEntry}
           loading={createMutation.isPending || updateMutation.isPending}
         />

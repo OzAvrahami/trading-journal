@@ -18,6 +18,7 @@ import { Modal } from '../components/ui/Modal.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { formatDateKey } from '../utils/dateOnly.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 const DEFAULT_FILTERS = Object.freeze({ status: 'all', metric: '', search: '' });
 
@@ -156,6 +157,7 @@ function GoalSection({ title, goals, ...actions }) {
 }
 
 export default function Goals() {
+  const timezone = useUserTimezone();
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [formOpen, setFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
@@ -268,7 +270,7 @@ export default function Goals() {
       )}
 
       <Modal open={formOpen} onClose={closeForm} title={editingGoal ? 'Edit goal' : 'New goal'} size="lg">
-        <GoalForm key={editingGoal?.id ?? 'new'} goal={editingGoal} onSubmit={submitGoal} loading={createMutation.isPending || updateMutation.isPending} />
+        <GoalForm key={editingGoal?.id ?? 'new'} goal={editingGoal} timezone={timezone} onSubmit={submitGoal} loading={createMutation.isPending || updateMutation.isPending} />
       </Modal>
     </div>
   );

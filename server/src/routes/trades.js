@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import * as tradeService from '../services/tradeService.js';
+import { getUserTimezone, isValidDateKey } from '../utils/dateTime.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -91,9 +92,11 @@ export const updateSchema = z.object({
   screenshotLinks: z.array(z.string().url()).max(10).optional().nullable(),
 });
 
-const filtersSchema = z.object({
-  from:      z.string().optional(),
-  to:        z.string().optional(),
+const filterDate = z.string().refine(isValidDateKey, 'Expected a valid YYYY-MM-DD date.');
+
+export const filtersSchema = z.object({
+  from:      filterDate.optional(),
+  to:        filterDate.optional(),
   symbol:    z.string().optional(),
   market:    z.enum(MARKETS).optional(),
   direction: z.enum(DIRECTIONS).optional(),
@@ -106,6 +109,10 @@ const filtersSchema = z.object({
   limit:     z.coerce.number().int().min(1).max(200).default(50),
   sort:      z.enum(['entry_datetime', 'pnl_net', 'symbol', 'created_at']).default('entry_datetime'),
   order:     z.enum(['asc', 'desc']).default('desc'),
+}).superRefine((value, context) => {
+  if (value.from && value.to && value.from > value.to) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['to'], message: 'End date must not precede start date.' });
+  }
 });
 
 // ---- Routes -----------------------------------------------------------------
@@ -113,7 +120,8 @@ const filtersSchema = z.object({
 // GET /api/trades
 router.get('/', validateQuery(filtersSchema), async (req, res, next) => {
   try {
-    const result = await tradeService.listTrades(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const result = await tradeService.listTrades(req.user.id, req.query, timezone);
     res.json(result);
   } catch (err) { next(err); }
 });
@@ -121,7 +129,8 @@ router.get('/', validateQuery(filtersSchema), async (req, res, next) => {
 // GET /api/trades/export  — must come before /:id
 router.get('/export', validateQuery(filtersSchema), async (req, res, next) => {
   try {
-    const trades = await tradeService.exportTradesCsv(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const trades = await tradeService.exportTradesCsv(req.user.id, req.query, timezone);
 
     const headers = [
       'id', 'accountId', 'symbol', 'market', 'direction',

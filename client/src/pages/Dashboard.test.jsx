@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { format, startOfWeek } from 'date-fns';
+import { currentDateKey, mondayForDateKey } from '../utils/dateOnly.js';
 
 const apiMocks = vi.hoisted(() => ({
   accounts: vi.fn(),
@@ -29,6 +29,7 @@ vi.mock('../components/trades/QuickAddModal.jsx', () => ({ QuickAddModal: ({ ope
 import Dashboard from './Dashboard.jsx';
 import { Header } from '../components/layout/Header.jsx';
 import { HeaderControlsProvider } from '../components/layout/HeaderControls.jsx';
+import { AuthContext } from '../context/AuthContext.jsx';
 import { resolveRouteMetadata } from '../routeMetadata.js';
 
 const successSummary = {
@@ -52,18 +53,20 @@ function setSuccess(summary = successSummary) {
   apiMocks.breakdown.mockResolvedValue({ data: [] });
 }
 
-function renderDashboard() {
+function renderDashboard(timezone = null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   const metadata = resolveRouteMetadata('/dashboard');
   return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <HeaderControlsProvider metadata={metadata}>
-          <Header metadata={metadata} />
-          <Dashboard />
-        </HeaderControlsProvider>
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <AuthContext.Provider value={timezone ? { user: { timezone } } : null}>
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <HeaderControlsProvider metadata={metadata}>
+            <Header metadata={metadata} />
+            <Dashboard />
+          </HeaderControlsProvider>
+        </MemoryRouter>
+      </QueryClientProvider>
+    </AuthContext.Provider>,
   );
 }
 
@@ -172,13 +175,28 @@ describe('Dashboard', () => {
     renderDashboard();
     const user = userEvent.setup();
     const now = new Date();
-    const today = format(now, 'yyyy-MM-dd');
-    const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const today = currentDateKey('Asia/Jerusalem', now);
+    const weekStart = mondayForDateKey(today);
 
     await user.click(screen.getByRole('button', { name: 'Today' }));
     await waitFor(() => expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: today, to: today }));
 
     await user.click(screen.getByRole('button', { name: 'WTD' }));
     await waitFor(() => expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: weekStart, to: today }));
+  });
+
+  it('maps Dashboard presets from the authenticated user timezone', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-08-01T21:30:00.000Z'));
+      setSuccess();
+      renderDashboard('UTC');
+      fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+      expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: '2026-08-01', to: '2026-08-01' });
+      fireEvent.click(screen.getByRole('button', { name: 'WTD' }));
+      expect(apiMocks.summary).toHaveBeenLastCalledWith({ from: '2026-07-27', to: '2026-08-01' });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

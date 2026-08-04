@@ -3,7 +3,7 @@ import axios from 'axios';
 import { authApi } from '../api/auth.js';
 import { setAccessToken, clearAccessToken } from '../api/client.js';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

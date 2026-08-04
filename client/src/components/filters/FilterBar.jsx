@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format, startOfWeek, startOfMonth, subWeeks } from 'date-fns';
 import { CaretDown, CaretUp, FunnelSimple, X } from '@phosphor-icons/react';
 import { accountsApi } from '../../api/accounts.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Field, Input, Select } from '../ui/FormControls.jsx';
+import { DEFAULT_TIMEZONE, addDaysToDateKey, currentDateKey, mondayForDateKey, periodRange } from '../../utils/dateOnly.js';
 
 export const DEFAULT_TRADE_FILTERS = {
   page: 1,
@@ -28,11 +28,11 @@ export const TRADE_FILTER_KEYS = [
 ];
 
 export const DATE_PRESETS = [
-  { label: 'Today', getRange: () => { const d = format(new Date(), 'yyyy-MM-dd'); return { from: d, to: d }; } },
-  { label: 'Yesterday', getRange: () => { const d = format(new Date(Date.now() - 86400000), 'yyyy-MM-dd'); return { from: d, to: d }; } },
-  { label: 'This Week', getRange: () => ({ from: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), to: format(new Date(), 'yyyy-MM-dd') }) },
-  { label: 'Last Week', getRange: () => { const s = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }); const e = new Date(s); e.setDate(s.getDate() + 6); return { from: format(s, 'yyyy-MM-dd'), to: format(e, 'yyyy-MM-dd') }; } },
-  { label: 'This Month', getRange: () => ({ from: format(startOfMonth(new Date()), 'yyyy-MM-dd'), to: format(new Date(), 'yyyy-MM-dd') }) },
+  { label: 'Today', getRange: (timezone, now = new Date()) => { const d = currentDateKey(timezone, now); return { from: d, to: d }; } },
+  { label: 'Yesterday', getRange: (timezone, now = new Date()) => { const d = addDaysToDateKey(currentDateKey(timezone, now), -1); return { from: d, to: d }; } },
+  { label: 'This Week', getRange: (timezone, now = new Date()) => periodRange('wtd', timezone, now) },
+  { label: 'Last Week', getRange: (timezone, now = new Date()) => { const s = addDaysToDateKey(mondayForDateKey(currentDateKey(timezone, now)), -7); return { from: s, to: addDaysToDateKey(s, 6) }; } },
+  { label: 'This Month', getRange: (timezone, now = new Date()) => periodRange('mtd', timezone, now) },
   { label: 'All Time', getRange: () => ({ from: '', to: '' }) },
 ];
 
@@ -51,7 +51,7 @@ function accountLabel(account) {
   return account.accountName ? `${base} (${account.accountName})` : base;
 }
 
-export function FilterBar({ filters, onChange }) {
+export function FilterBar({ filters, onChange, timezone = DEFAULT_TIMEZONE }) {
   const [expanded, setExpanded] = useState(false);
   const activeKeys = getActiveTradeFilterKeys(filters);
 
@@ -65,7 +65,7 @@ export function FilterBar({ filters, onChange }) {
   }
 
   function applyPreset(preset) {
-    const range = preset.getRange();
+    const range = preset.getRange(timezone);
     onChange({ ...filters, from: range.from || undefined, to: range.to || undefined, page: 1 });
   }
 

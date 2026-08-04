@@ -5,7 +5,7 @@ import { MagnifyingGlass } from '@phosphor-icons/react';
 import { accountsApi } from '../../api/accounts.js';
 import { journalApi } from '../../api/journal.js';
 import { tradesApi } from '../../api/trades.js';
-import { formatDateKey, localTodayKey, normalizeDateKey } from '../../utils/dateOnly.js';
+import { DEFAULT_TIMEZONE, formatDateKey, localTodayKey, normalizeDateKey } from '../../utils/dateOnly.js';
 import { Button } from '../ui/Button.jsx';
 import { Field, Input, Select } from '../ui/FormControls.jsx';
 import { RULE_OUTCOMES, scopeLabel } from './ruleTypes.js';
@@ -20,7 +20,7 @@ function accountLabel(account) {
   return account.accountName || `${account.company} — ${account.accountNumber}`;
 }
 
-export function RuleCheckForm({ check, rules, initialRuleId, onSubmit, loading = false }) {
+export function RuleCheckForm({ check, rules, initialRuleId, timezone = DEFAULT_TIMEZONE, onSubmit, loading = false }) {
   const [tradeSearch, setTradeSearch] = useState('');
   const [journalSearch, setJournalSearch] = useState('');
   const [tradeId, setTradeId] = useState(check?.trade?.id ?? '');
@@ -34,7 +34,7 @@ export function RuleCheckForm({ check, rules, initialRuleId, onSubmit, loading =
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: {
       ruleId: check?.ruleId ?? initialRuleId ?? '',
-      checkDate: check?.checkDate ?? localTodayKey(),
+      checkDate: check?.checkDate ?? localTodayKey(new Date(), timezone),
       outcome: check?.outcome ?? '',
       notes: check?.notes ?? '',
     },

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, test } from 'node:test';
 import pool from '../db/client.js';
-import { createSchema, updateSchema } from '../routes/trades.js';
-import { computeFields, createTrade, updateTrade, validateTradeState } from './tradeService.js';
+import { createSchema, filtersSchema, updateSchema } from '../routes/trades.js';
+import { computeFields, createTrade, exportTradesCsv, listTrades, updateTrade, validateTradeState } from './tradeService.js';
 
 const originalQuery = pool.query;
 const userId = '11111111-1111-4111-8111-111111111111';
@@ -232,5 +232,42 @@ describe('trade update state and duration', () => {
       exitDatetime: '2026-08-01T09:59:00.000Z',
       exitPrice: 99,
     })), error => error.code === 'VALIDATION_ERROR');
+  });
+});
+
+describe('trade list timezone boundaries', () => {
+  test('validates strict inclusive product date filters', () => {
+    assert.equal(filtersSchema.safeParse({ from: '2026-03-27', to: '2026-03-28' }).success, true);
+    assert.equal(filtersSchema.safeParse({ from: '2026-02-30' }).success, false);
+    assert.equal(filtersSchema.safeParse({ from: '2026-03-28', to: '2026-03-27' }).success, false);
+  });
+
+  test('list uses parameterized local start and exclusive day-after-to boundaries', async () => {
+    const calls = [];
+    pool.query = async (sql, params) => {
+      calls.push({ sql, params });
+      return /COUNT/.test(sql) ? { rows: [{ count: '0' }] } : { rows: [] };
+    };
+    await listTrades(userId, { from: '2026-03-27', to: '2026-03-28' }, 'Asia/Jerusalem');
+    const dataCall = calls.find((call) => /SELECT \*/.test(call.sql));
+    assert.match(dataCall.sql, /entry_datetime >= \(\$2::date::timestamp AT TIME ZONE \$3\)/);
+    assert.match(dataCall.sql, /entry_datetime < \(\(\$4::date \+ 1\)::timestamp AT TIME ZONE \$3\)/);
+    assert.deepEqual(dataCall.params.slice(0, 4), [userId, '2026-03-27', 'Asia/Jerusalem', '2026-03-28']);
+  });
+
+  test('CSV export delegates to the identical list boundary semantics', async () => {
+    const calls = [];
+    pool.query = async (sql, params) => {
+      calls.push({ sql, params });
+      return /COUNT/.test(sql) ? { rows: [{ count: '0' }] } : { rows: [] };
+    };
+    assert.deepEqual(
+      await exportTradesCsv(userId, { from: '2026-11-01', to: '2026-11-01' }, 'America/New_York'),
+      [],
+    );
+    const dataCall = calls.find((call) => /SELECT \*/.test(call.sql));
+    assert.match(dataCall.sql, /entry_datetime >=/);
+    assert.match(dataCall.sql, /entry_datetime </);
+    assert.deepEqual(dataCall.params.slice(0, 4), [userId, '2026-11-01', 'America/New_York', '2026-11-01']);
   });
 });
