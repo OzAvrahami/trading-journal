@@ -1,11 +1,11 @@
 import { useForm } from 'react-hook-form';
-import { addDaysToDateKey, localTodayKey } from '../../utils/dateOnly.js';
+import { DEFAULT_TIMEZONE, addDaysToDateKey, localTodayKey } from '../../utils/dateOnly.js';
 import { Button } from '../ui/Button.jsx';
 import { Field, Input, Select } from '../ui/FormControls.jsx';
 import { GOAL_METRICS, GOAL_STATUSES, metricMeta } from './goalTypes.js';
 
-export function GoalForm({ goal, onSubmit, loading = false }) {
-  const today = localTodayKey();
+export function GoalForm({ goal, timezone = DEFAULT_TIMEZONE, onSubmit, loading = false }) {
+  const today = localTodayKey(new Date(), timezone);
   const isEdit = Boolean(goal);
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
     defaultValues: {

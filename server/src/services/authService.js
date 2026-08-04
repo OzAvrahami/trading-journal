@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
+import { DEFAULT_TIMEZONE, isValidTimezone } from '../utils/dateTime.js';
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -31,13 +32,14 @@ async function saveRefreshToken(userId, rawToken) {
   );
 }
 
-function formatUser(row) {
+export function formatUser(row) {
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
     defaultMarket: row.default_market,
     defaultTimeframe: row.default_timeframe,
+    timezone: isValidTimezone(row.timezone) ? row.timezone : DEFAULT_TIMEZONE,
     createdAt: row.created_at,
   };
 }

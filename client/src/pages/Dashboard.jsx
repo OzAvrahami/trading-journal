@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format, startOfMonth, startOfWeek } from 'date-fns';
 import { Bank, Plus } from '@phosphor-icons/react';
 import { analyticsApi } from '../api/analytics.js';
 import { accountsApi } from '../api/accounts.js';
@@ -14,23 +13,14 @@ import { Button } from '../components/ui/Button.jsx';
 import { EmptyState, ErrorState } from '../components/ui/States.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
-
-const DEFAULT_FROM = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-const DEFAULT_TO = format(new Date(), 'yyyy-MM-dd');
+import { periodRange } from '../utils/dateOnly.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 const PERIODS = [
   { id: 'today', label: 'Today' },
   { id: 'wtd', label: 'WTD' },
   { id: 'mtd', label: 'MTD' },
   { id: 'custom', label: 'Custom' },
 ];
-
-function periodRange(period) {
-  const today = new Date();
-  const to = format(today, 'yyyy-MM-dd');
-  if (period === 'today') return { from: to, to };
-  if (period === 'wtd') return { from: format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'), to };
-  return { from: format(startOfMonth(today), 'yyyy-MM-dd'), to };
-}
 
 function MetricsSkeleton() {
   return (
@@ -46,7 +36,8 @@ function MetricsSkeleton() {
 }
 
 export default function Dashboard() {
-  const [dateRange, setDateRange] = useState({ from: DEFAULT_FROM, to: DEFAULT_TO });
+  const timezone = useUserTimezone();
+  const [dateRange, setDateRange] = useState(() => periodRange('mtd', timezone));
   const [breakdownBy, setBreakdownBy] = useState('strategy');
   const [addOpen, setAddOpen] = useState(false);
   const [scope, setScope] = useState({ type: 'all' });
@@ -101,7 +92,7 @@ export default function Dashboard() {
 
   function applyPeriod(nextPeriod) {
     setPeriod(nextPeriod);
-    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod));
+    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod, timezone));
   }
 
   function updateCustomDate(key, value) {
@@ -207,7 +198,7 @@ export default function Dashboard() {
           {breakdownQuery.isError && (
             <BreakdownChart accounts={accounts} by={breakdownBy} onByChange={setBreakdownBy} error={breakdownQuery.error} onRetry={breakdownQuery.refetch} />
           )}
-          <TradingCalendar qParams={qParams} errorsOnly />
+          <TradingCalendar qParams={qParams} timezone={timezone} errorsOnly />
         </>
       ) : fullFailure ? (
         <ErrorState title="Dashboard analytics could not be loaded" detail="Summary metrics and all chart queries failed for the selected scope." available="Filters, Add Trade, and the independently loaded calendar" onRetry={retryAnalytics} />
@@ -215,7 +206,7 @@ export default function Dashboard() {
         <>
           <EquityCurve data={equityQuery.data?.data} isLoading={equityQuery.isLoading} error={equityQuery.error} onRetry={equityQuery.refetch} />
           <div className="grid grid-cols-1 gap-4 compact:grid-cols-2">
-            <TradingCalendar qParams={qParams} />
+            <TradingCalendar qParams={qParams} timezone={timezone} />
             <PnLHistogram data={distributionQuery.data?.buckets} isLoading={distributionQuery.isLoading} error={distributionQuery.error} onRetry={distributionQuery.refetch} />
           </div>
           <BreakdownChart
@@ -230,7 +221,7 @@ export default function Dashboard() {
         </>
       )}
 
-      {fullFailure && <TradingCalendar qParams={qParams} />}
+      {fullFailure && <TradingCalendar qParams={qParams} timezone={timezone} />}
       <QuickAddModal open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   );

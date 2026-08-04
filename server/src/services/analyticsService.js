@@ -1,26 +1,13 @@
 import pool from '../db/client.js';
-
-// ---- Date helpers -----------------------------------------------------------
-
-function startOfDay(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-}
-
-function endOfDay(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
-}
-
-function startOfWeek(d = new Date()) {
-  const day = d.getDay(); // 0=Sun
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString();
-}
-
-function startOfMonth(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
-}
+import {
+  DEFAULT_TIMEZONE,
+  addTimestampDateRange,
+  dateKeyInTimezone,
+  ensureTimezoneParameter,
+  localDateSql,
+  mondayOfDateKey,
+  monthStartDateKey,
+} from '../utils/dateTime.js';
 
 // ---- Query builder helpers --------------------------------------------------
 
@@ -31,13 +18,14 @@ function startOfMonth(d = new Date()) {
  * accountId filter → direct column condition, no JOIN needed.
  * company filter   → JOIN trading_accounts ta needed.
  */
-export function buildQueryParts(userId, { from, to, accountId, company }) {
+export function buildQueryParts(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
   const params = [userId];
   const conds  = ['t.user_id = $1'];
   let join     = '';
 
-  if (from) { params.push(from);                    conds.push(`t.entry_datetime >= $${params.length}`); }
-  if (to)   { params.push(`${to}T23:59:59.999Z`);   conds.push(`t.entry_datetime <= $${params.length}`); }
+  const timezonePlaceholder = addTimestampDateRange({
+    conditions: conds, params, column: 't.entry_datetime', from, to, timezone,
+  });
 
   if (accountId) {
     params.push(accountId);
@@ -48,14 +36,14 @@ export function buildQueryParts(userId, { from, to, accountId, company }) {
     conds.push(`ta.company = $${params.length}`);
   }
 
-  return { params, where: conds.join(' AND '), join };
+  return { params, where: conds.join(' AND '), join, timezonePlaceholder };
 }
 
 /**
  * Builds a simple COUNT+SUM query for a fixed date period (today/WTD/MTD).
  * Uses the same account/company filter as the main query but independent params.
  */
-function buildPeriodQuery(userId, { accountId, company }, startDate, endDate) {
+function buildPeriodQuery(userId, { accountId, company }, from, to, timezone) {
   const params = [userId];
   const conds  = ["t.user_id = $1", "t.status = 'closed'"];
   let join     = '';
@@ -69,13 +57,7 @@ function buildPeriodQuery(userId, { accountId, company }, startDate, endDate) {
     conds.push(`ta.company = $${params.length}`);
   }
 
-  params.push(startDate);
-  conds.push(`t.entry_datetime >= $${params.length}`);
-
-  if (endDate) {
-    params.push(endDate);
-    conds.push(`t.entry_datetime <= $${params.length}`);
-  }
+  addTimestampDateRange({ conditions: conds, params, column: 't.entry_datetime', from, to, timezone });
 
   return {
     sql: `SELECT COUNT(*) AS cnt, COALESCE(SUM(t.pnl_net), 0) AS pnl
@@ -86,14 +68,13 @@ function buildPeriodQuery(userId, { accountId, company }, startDate, endDate) {
 
 // ---- Summary ----------------------------------------------------------------
 
-export async function getSummary(userId, { from, to, accountId, company }) {
-  const now = new Date();
+export async function getSummary(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, now = new Date()) {
+  const today = dateKeyInTimezone(timezone, now);
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
 
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
-
-  const todayQ = buildPeriodQuery(userId, { accountId, company }, startOfDay(now), endOfDay(now));
-  const wtdQ   = buildPeriodQuery(userId, { accountId, company }, startOfWeek(now));
-  const mtdQ   = buildPeriodQuery(userId, { accountId, company }, startOfMonth(now));
+  const todayQ = buildPeriodQuery(userId, { accountId, company }, today, today, timezone);
+  const wtdQ   = buildPeriodQuery(userId, { accountId, company }, mondayOfDateKey(today), today, timezone);
+  const mtdQ   = buildPeriodQuery(userId, { accountId, company }, monthStartDateKey(today), today, timezone);
 
   const [mainRes, todayRes, wtdRes, mtdRes] = await Promise.all([
     pool.query(`
@@ -136,6 +117,7 @@ export async function getSummary(userId, { from, to, accountId, company }) {
   const fmt4 = v => v != null ? parseFloat(parseFloat(v).toFixed(4)) : null;
 
   return {
+    timezone,
     period: { from: from || null, to: to || null },
     totals: {
       tradesTotal:        parseInt(r.total) || 0,
@@ -168,14 +150,17 @@ export function calculateExpectancy(totalNetPnl, closedTrades) {
 
 // ---- Equity curve -----------------------------------------------------------
 
-export async function getEquityCurve(userId, { from, to, accountId, company }) {
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+export async function getEquityCurve(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+  const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
+  const timezonePlaceholder = ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder);
+  const dateExpression = localDateSql('t.entry_datetime', timezonePlaceholder);
+  const { params, where, join } = parts;
 
   const result = await pool.query(`
-    SELECT DATE(t.entry_datetime) AS date, SUM(t.pnl_net) AS daily_pnl
+    SELECT ${dateExpression} AS date, SUM(t.pnl_net) AS daily_pnl
     FROM trades t${join}
     WHERE ${where} AND t.status = 'closed'
-    GROUP BY DATE(t.entry_datetime)
+    GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
 
@@ -191,17 +176,20 @@ export async function getEquityCurve(userId, { from, to, accountId, company }) {
 
 // ---- Calendar  --------------------------------------------------------------
 
-export async function getCalendar(userId, { from, to, accountId, company }) {
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+export async function getCalendar(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+  const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
+  const timezonePlaceholder = ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder);
+  const dateExpression = localDateSql('t.entry_datetime', timezonePlaceholder);
+  const { params, where, join } = parts;
 
   const result = await pool.query(`
     SELECT
-      DATE(t.entry_datetime) AS date,
+      ${dateExpression} AS date,
       SUM(t.pnl_net) AS pnl_net,
       COUNT(*) AS trades_count
     FROM trades t${join}
     WHERE ${where} AND t.status = 'closed'
-    GROUP BY DATE(t.entry_datetime)
+    GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
 
@@ -216,8 +204,8 @@ export async function getCalendar(userId, { from, to, accountId, company }) {
 
 // ---- PnL distribution -------------------------------------------------------
 
-export async function getDistribution(userId, { from, to, accountId, company }) {
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+export async function getDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
 
   const result = await pool.query(`
     SELECT t.pnl_net FROM trades t${join}
@@ -297,8 +285,8 @@ export function bucketRValues(values) {
   }));
 }
 
-export async function getRDistribution(userId, { from, to, accountId, company }) {
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+export async function getRDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
   const result = await pool.query(`
     SELECT t.r_multiple FROM trades t${join}
     WHERE ${where} AND t.status = 'closed' AND t.r_multiple IS NOT NULL
@@ -332,17 +320,22 @@ export const BREAKDOWN_DIMENSIONS = Object.freeze({
   account:   { expression: 't.account_id', needsJoin: false },
   company:   { expression: 'ta.company', needsJoin: true },
   market:    { expression: 't.market', needsJoin: false },
-  weekday:   { expression: 'EXTRACT(ISODOW FROM t.entry_datetime)::int', needsJoin: false, ordered: true },
+  weekday:   { expression: null, needsJoin: false, ordered: true },
 });
 
-export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }) {
+export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
   // account: group by account_id (UUID) — frontend maps to display name.
   // company: group by ta.company — requires JOIN.
   const dim = BREAKDOWN_DIMENSIONS[by];
   if (!dim) throw new RangeError(`Unsupported analytics breakdown dimension: ${by}`);
-  const col = dim.expression;
-
-  const { params, where, join: filterJoin } = buildQueryParts(userId, { from, to, accountId, company });
+  const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
+  const timezonePlaceholder = by === 'weekday'
+    ? ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder)
+    : parts.timezonePlaceholder;
+  const col = by === 'weekday'
+    ? `EXTRACT(ISODOW FROM (t.entry_datetime AT TIME ZONE ${timezonePlaceholder}))::int`
+    : dim.expression;
+  const { params, where, join: filterJoin } = parts;
 
   // If grouping by company we always need the JOIN, even if the filter doesn't require it.
   const groupJoin = dim.needsJoin && !filterJoin

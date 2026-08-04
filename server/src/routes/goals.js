@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import * as goalsService from '../services/goalsService.js';
+import { getUserTimezone } from '../utils/dateTime.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -86,19 +87,31 @@ function validateIdParam(req, res, next) {
 }
 
 router.get('/', validateQuery(listGoalsSchema), async (req, res, next) => {
-  try { res.json(await goalsService.listGoals(req.user.id, req.query)); } catch (error) { next(error); }
+  try {
+    const timezone = await getUserTimezone(req.user.id);
+    res.json(await goalsService.listGoals(req.user.id, req.query, timezone));
+  } catch (error) { next(error); }
 });
 
 router.get('/:id', validateIdParam, async (req, res, next) => {
-  try { res.json(await goalsService.getGoal(req.user.id, req.params.id)); } catch (error) { next(error); }
+  try {
+    const timezone = await getUserTimezone(req.user.id);
+    res.json(await goalsService.getGoal(req.user.id, req.params.id, timezone));
+  } catch (error) { next(error); }
 });
 
 router.post('/', validateBody(createGoalSchema), async (req, res, next) => {
-  try { res.status(201).json(await goalsService.createGoal(req.user.id, req.body)); } catch (error) { next(error); }
+  try {
+    const timezone = await getUserTimezone(req.user.id);
+    res.status(201).json(await goalsService.createGoal(req.user.id, req.body, timezone));
+  } catch (error) { next(error); }
 });
 
 router.patch('/:id', validateIdParam, validateBody(updateGoalSchema), async (req, res, next) => {
-  try { res.json(await goalsService.updateGoal(req.user.id, req.params.id, req.body)); } catch (error) { next(error); }
+  try {
+    const timezone = await getUserTimezone(req.user.id);
+    res.json(await goalsService.updateGoal(req.user.id, req.params.id, req.body, timezone));
+  } catch (error) { next(error); }
 });
 
 router.delete('/:id', validateIdParam, async (req, res, next) => {

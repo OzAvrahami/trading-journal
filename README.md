@@ -111,3 +111,14 @@ Server calculates these automatically on every create/update:
 | `rMultiple` | `pnlNet / riskAmount` |
 | `durationMinutes` | `(exitTime - entryTime) / 60` |
 | `status` | `'open'` if no exit, `'closed'` otherwise |
+
+## Date and Time Convention
+
+- Each user has one IANA timezone. Existing and new users default to `Asia/Jerusalem`.
+- A product calendar day runs from 00:00 in that timezone to the start of the next local day. Inclusive `from`/`to` date filters are implemented as a half-open timestamp interval: `>=` local midnight on `from` and `<` local midnight on the day after `to`.
+- Week-to-date starts on Monday. Calendar grids may remain Sunday-first.
+- Trade analytics, trade lists, exports, and trade-backed Goals continue to attribute timestamps by `entry_datetime` for backward compatibility. They do not claim exchange-local or New York-session semantics.
+- `journal_entries.entry_date`, `rule_checks.check_date`, Goal start/end dates, and other PostgreSQL `DATE` values remain date-only calendar values; they are not converted through UTC timestamps.
+- Per-account timezones, exchange timezones, market-session dates, and exit-date attribution are deferred.
+
+Stored timestamps and historical records are not rewritten. Timezone-aware filtering and grouping can move previously displayed results near midnight to a different calendar day while leaving the source record unchanged.
