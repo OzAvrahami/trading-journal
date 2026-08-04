@@ -47,4 +47,16 @@ describe('route metadata', () => {
     });
     expect(resolveRouteMetadata('/insights/rules').headerControls).not.toContain('analyticsScope');
   });
+
+  it('resolves Goals metadata with only the New Goal action', () => {
+    expect(resolveRouteMetadata('/insights/goals')).toMatchObject({
+      title: 'Goals',
+      description: 'Set measurable trading and process goals, then track progress from your real activity.',
+      breadcrumbs: ['Insights', 'Goals'],
+      nav: '/insights/goals',
+      headerControls: ['goalsActions'],
+      commandActions: ['newGoal'],
+    });
+    expect(resolveRouteMetadata('/insights/goals').headerControls).not.toContain('analyticsScope');
+  });
 });
