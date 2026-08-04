@@ -14,6 +14,7 @@ vi.mock('./components/layout/AppShell.jsx', () => ({
 }));
 vi.mock('./pages/Analytics.jsx', () => ({ default: () => <span>Analytics page</span> }));
 vi.mock('./pages/Journal.jsx', () => ({ default: () => <span>Journal page</span> }));
+vi.mock('./pages/Rules.jsx', () => ({ default: () => <span>Rules page</span> }));
 vi.mock('./pages/Login.jsx', () => ({ default: () => <span>Login page</span> }));
 
 import { AppRoutes, ProtectedRoute, PublicRoute } from './App.jsx';
@@ -75,5 +76,17 @@ describe('route guards', () => {
     render(<MemoryRouter initialEntries={['/insights/journal']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Login page')).toBeInTheDocument();
     expect(screen.queryByText('Journal page')).not.toBeInTheDocument();
+  });
+
+  it('renders Rules as an authenticated protected route', () => {
+    authState.current = { user: { id: 'user-1' }, loading: false };
+    render(<MemoryRouter initialEntries={['/insights/rules']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Rules page');
+  });
+
+  it('protects the Rules route from unauthenticated access', () => {
+    render(<MemoryRouter initialEntries={['/insights/rules']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByText('Login page')).toBeInTheDocument();
+    expect(screen.queryByText('Rules page')).not.toBeInTheDocument();
   });
 });

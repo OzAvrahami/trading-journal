@@ -12,6 +12,7 @@ import Import from './pages/Import.jsx';
 import Accounts from './pages/Accounts.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Journal from './pages/Journal.jsx';
+import Rules from './pages/Rules.jsx';
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ export function AppRoutes() {
       <Route path="/accounts"  element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
       <Route path="/insights/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/insights/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
+      <Route path="/insights/rules" element={<ProtectedRoute><Rules /></ProtectedRoute>} />
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

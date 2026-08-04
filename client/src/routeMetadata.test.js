@@ -35,4 +35,16 @@ describe('route metadata', () => {
     });
     expect(resolveRouteMetadata('/insights/journal').headerControls).not.toContain('analyticsScope');
   });
+
+  it('resolves Rules metadata, header actions, and no account scope', () => {
+    expect(resolveRouteMetadata('/insights/rules')).toMatchObject({
+      title: 'Rules & Adherence',
+      description: 'Define your trading rules, record what happened, and measure process consistency over time.',
+      breadcrumbs: ['Insights', 'Rules & Adherence'],
+      nav: '/insights/rules',
+      headerControls: ['rulesActions'],
+      commandActions: ['newRule', 'recordRuleCheck'],
+    });
+    expect(resolveRouteMetadata('/insights/rules').headerControls).not.toContain('analyticsScope');
+  });
 });
