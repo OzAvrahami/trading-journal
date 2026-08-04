@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CaretLeft, CaretRight, ListChecks, MagnifyingGlass, Moon, Notebook, Plus, Sun } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, ListChecks, MagnifyingGlass, Moon, Notebook, Plus, Sun, Target } from '@phosphor-icons/react';
 import { IconButton } from '../ui/IconButton.jsx';
 import { useDirection } from '../../hooks/useDirection.js';
 import { useTheme } from '../../hooks/useTheme.js';
@@ -66,6 +66,14 @@ export function Header({ metadata }) {
       keywords: 'rules adherence followed broken check',
       Icon: ListChecks,
       action: () => navigate('/insights/rules?action=record-check'),
+    },
+    {
+      id: 'newGoal',
+      label: 'New Goal',
+      description: 'Create a measurable goal',
+      keywords: 'goals target progress create',
+      Icon: Target,
+      action: () => navigate('/insights/goals?action=new-goal'),
     },
     ...getRouteCommands(),
   ], [getRouteCommands, navigate, commandOpen]);

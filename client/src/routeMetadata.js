@@ -71,6 +71,15 @@ const ROUTES = [
     headerControls: ['rulesActions'],
     commandActions: ['newRule', 'recordRuleCheck'],
   },
+  {
+    match: (pathname) => pathname === '/insights/goals',
+    title: 'Goals',
+    description: 'Set measurable trading and process goals, then track progress from your real activity.',
+    breadcrumbs: ['Insights', 'Goals'],
+    nav: '/insights/goals',
+    headerControls: ['goalsActions'],
+    commandActions: ['newGoal'],
+  },
 ];
 
 const FALLBACK = {

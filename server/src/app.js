@@ -13,6 +13,7 @@ import importRoutes from './routes/importRoutes.js';
 import accountsRoutes from './routes/accounts.js';
 import journalRoutes from './routes/journal.js';
 import rulesRoutes from './routes/rules.js';
+import goalsRoutes from './routes/goals.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -63,6 +64,7 @@ app.use('/api/trades', tradesRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/rules', rulesRoutes);
+app.use('/api/goals', goalsRoutes);
 app.use('/api/imports', importRoutes);
 
 // 404 handler
