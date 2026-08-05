@@ -7,6 +7,7 @@ import { tradesApi } from '../../api/trades.js';
 import { strategiesApi } from '../../api/strategies.js';
 import { useUserTimezone } from '../../hooks/useUserTimezone.js';
 import { Modal } from '../ui/Modal.jsx';
+import { Button } from '../ui/Button.jsx';
 import { ErrorState, EmptyState } from '../ui/States.jsx';
 import { useToast } from '../ui/Toast.jsx';
 import { TradeForm } from './TradeForm.jsx';
@@ -20,7 +21,7 @@ export function QuickAddModal({ open, onClose }) {
   const toast = useToast();
   const [dirty, setDirty] = useState(false);
   const submitGuardRef = useRef(false);
-  const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: accountsApi.list, enabled: open });
+  const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: () => accountsApi.list(), enabled: open });
   const strategiesQuery = useQuery({
     queryKey: ['strategies', { includeArchived: false }],
     queryFn: () => strategiesApi.list({ includeArchived: 'false' }),
@@ -72,10 +73,11 @@ export function QuickAddModal({ open, onClose }) {
       ) : accountsQuery.isError ? (
         <ErrorState title={t('trades.accountsLoadFailed')} detail={t('trades.accountsLoadFailedDetail')} onRetry={accountsQuery.refetch} />
       ) : activeAccounts.length === 0 ? (
-        <EmptyState title={t('accounts.noAccounts')} detail={t('accounts.noAccountsDetail')} />
+        <EmptyState title={t('accounts.noAccounts')} detail={t('accounts.noAccountsDetail')} action={<Button type="button" variant="primary" onClick={() => { setDirty(false); onClose(); navigate('/accounts'); }}>{t('trades.openAccounts')}</Button>} />
       ) : (
         <TradeForm
           accounts={accounts}
+          preservedAccountId={activeAccounts.find(account => account.isDefault)?.id || ''}
           managedStrategies={strategiesQuery.data?.strategies || []}
           timezone={timezone}
           variant="quick"

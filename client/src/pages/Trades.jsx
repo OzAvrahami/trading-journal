@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DownloadSimple, Plus } from '@phosphor-icons/react';
 import { tradesApi } from '../api/trades.js';
@@ -45,7 +45,8 @@ function TradesSkeleton() {
 export default function Trades() {
   const { t } = useTranslation();
   const timezone = useUserTimezone();
-  const [filters, setFilters] = useState(DEFAULT_TRADE_FILTERS);
+  const [searchParams] = useSearchParams();
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_TRADE_FILTERS, accountId: searchParams.get('accountId') || '' }));
   const [addOpen, setAddOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const toast = useToast();

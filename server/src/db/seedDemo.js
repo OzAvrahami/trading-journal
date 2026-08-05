@@ -193,10 +193,12 @@ async function insertAccounts(client, accounts) {
   for (const account of accounts) {
     await client.query(
       `INSERT INTO trading_accounts
-         (id, user_id, company, account_number, account_name, account_type, status, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+         (id, user_id, company, account_number, account_name, account_type, status,
+          base_currency, opening_balance, is_default, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
       [account.id, account.userId, account.company, account.accountNumber, account.accountName,
-        account.accountType, account.status, account.createdAt, account.updatedAt],
+        account.accountType, account.status, account.baseCurrency, account.openingBalance, account.isDefault,
+        account.createdAt, account.updatedAt],
     );
   }
 }
@@ -316,6 +318,12 @@ export async function insertDemoDataset(client, dataset) {
 
 const INTEGRITY_SQL = `SELECT
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1) AS accounts,
+  (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND is_default) AS default_accounts,
+  (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND is_default AND status <> 'active') AS invalid_defaults,
+  (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND base_currency !~ '^[A-Z]{3}$') AS invalid_currencies,
+  (SELECT COUNT(*)::int FROM trading_accounts a WHERE a.user_id = $1 AND a.status = 'archived' AND EXISTS (
+    SELECT 1 FROM trades t WHERE t.user_id = $1 AND t.account_id = a.id
+  )) AS archived_accounts_with_trades,
   (SELECT COUNT(*)::int FROM strategies WHERE user_id = $1) AS managed_strategies,
   (SELECT COUNT(*)::int FROM setups WHERE user_id = $1) AS managed_setups,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1) AS trades,
@@ -407,6 +415,10 @@ export async function validatePersistedDemo(client, dataset) {
   for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links']) {
     expectCount(row, key, 0);
   }
+  expectCount(row, 'default_accounts', 1);
+  expectCount(row, 'invalid_defaults', 0);
+  expectCount(row, 'invalid_currencies', 0);
+  if (Number(row.archived_accounts_with_trades) < 1) throw new Error('Post-seed archived Account history is missing.');
   if (Number(row.rules_without_eligible) < 1 || Number(row.inactive_rules_with_history) < 1) {
     throw new Error('Post-seed Rule history invariants were not satisfied.');
   }

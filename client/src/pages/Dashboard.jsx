@@ -78,6 +78,7 @@ export default function Dashboard() {
   const fullFailure = analyticsQueries.every(query => query.isError);
   const refreshing = analyticsQueries.some(query => query.isFetching && !query.isLoading);
   const noClosedTrades = summaryQuery.isSuccess && (summaryQuery.data?.totals?.tradesClosed ?? 0) === 0;
+  const mixedCurrencies = summaryQuery.data?.isMixedCurrency === true;
 
   function retryAnalytics() {
     return Promise.all(analyticsQueries.map(query => query.refetch()));
@@ -183,6 +184,8 @@ export default function Dashboard() {
 
       {refreshing && <p className="text-xs text-muted" role="status">{t('common.loading')}</p>}
 
+      {mixedCurrencies && <div role="status" className="rounded-lg border border-information bg-information-soft p-3 text-sm text-secondary"><p className="font-semibold text-primary">{t('analytics.mixedCurrencies')}</p><p className="mt-1">{t('analytics.mixedCurrenciesDetail')}</p></div>}
+
       {summaryQuery.isLoading ? <MetricsSkeleton /> : summaryQuery.isError && !fullFailure ? (
         <ErrorState title={t('errors.loadFailed')} detail={t('analytics.noData')} available={t('common.filters')} onRetry={summaryQuery.refetch} />
       ) : <SummaryCards data={summaryQuery.data} />}
@@ -205,6 +208,11 @@ export default function Dashboard() {
         </>
       ) : fullFailure ? (
         <ErrorState title={t('dashboard.loadFailed')} detail={t('dashboard.loadFailedDetail')} available={t('common.filters')} onRetry={retryAnalytics} />
+      ) : mixedCurrencies ? (
+        <>
+          <TradingCalendar qParams={qParams} timezone={timezone} />
+          {breakdownQuery.isError && <BreakdownChart accounts={accounts} by={breakdownBy} onByChange={setBreakdownBy} error={breakdownQuery.error} onRetry={breakdownQuery.refetch} />}
+        </>
       ) : (
         <>
           <EquityCurve data={equityQuery.data?.data} isLoading={equityQuery.isLoading} error={equityQuery.error} onRetry={equityQuery.refetch} />

@@ -11,6 +11,7 @@ import TradeDetail from './pages/TradeDetail.jsx';
 import TradeEditor from './pages/TradeEditor.jsx';
 import Import from './pages/Import.jsx';
 import Accounts from './pages/Accounts.jsx';
+import AccountDetail from './pages/AccountDetail.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Journal from './pages/Journal.jsx';
 import Rules from './pages/Rules.jsx';
@@ -57,6 +58,7 @@ export function AppRoutes() {
       <Route path="/daily-review/:date" element={<ProtectedRoute><DailyReview /></ProtectedRoute>} />
       <Route path="/import"    element={<ProtectedRoute><Import /></ProtectedRoute>} />
       <Route path="/accounts"  element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+      <Route path="/accounts/:accountId" element={<ProtectedRoute><AccountDetail /></ProtectedRoute>} />
       <Route path="/insights/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/insights/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
       <Route path="/insights/rules" element={<ProtectedRoute><Rules /></ProtectedRoute>} />

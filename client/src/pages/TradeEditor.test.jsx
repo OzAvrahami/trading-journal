@@ -13,7 +13,7 @@ vi.mock('../hooks/useUserTimezone.js', () => ({ useUserTimezone: () => 'Asia/Jer
 vi.mock('../hooks/useDirection.js', () => ({ useDirection: () => ({ isRtl: false }) }));
 vi.mock('../components/trades/TradeForm.jsx', () => ({
   TradeForm: (props) => (
-    <div data-testid="editor-form">
+    <div data-testid="editor-form" data-account-id={props.preservedAccountId || props.defaultValues?.accountId || ''}>
       <span>{props.isEdit ? `Editing ${props.defaultValues?.symbol}` : 'Creating trade'}</span>
       <button onClick={() => props.onDirtyChange(true)}>Make dirty</button>
       <button onClick={() => props.onSubmit({ quantity: 2 }, 'save', { accountId: 'a1' })}>Save mocked</button>
@@ -59,6 +59,19 @@ describe('TradeEditor', () => {
     await waitFor(() => expect(api.create).toHaveBeenCalledTimes(1));
     expect(api.update).not.toHaveBeenCalled();
     expect(await screen.findByText('Trade detail destination')).toBeInTheDocument();
+  });
+
+  it('preselects an explicit active Account, otherwise the active default, and ignores archived query Accounts', async () => {
+    api.accounts.mockResolvedValue([{ ...account, id: 'default-id', isDefault: true }, { ...account, id: 'explicit-id' }, { ...account, id: 'archived-id', status: 'archived' }]);
+    const explicit = renderEditor('/trades/new?accountId=explicit-id');
+    expect(await screen.findByTestId('editor-form')).toHaveAttribute('data-account-id', 'explicit-id');
+    explicit.unmount();
+    const archivedQuery = renderEditor('/trades/new?accountId=archived-id');
+    expect(await screen.findByTestId('editor-form')).toHaveAttribute('data-account-id', 'default-id');
+    archivedQuery.unmount();
+    const invalidQuery = renderEditor('/trades/new?accountId=foreign-id');
+    expect(await screen.findByTestId('editor-form')).toHaveAttribute('data-account-id', 'default-id');
+    invalidQuery.unmount();
   });
 
   it('save and add another remains in create mode and does not duplicate', async () => {

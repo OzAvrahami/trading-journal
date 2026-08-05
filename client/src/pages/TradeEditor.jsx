@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, Wallet } from '@phosphor-icons/react';
 import { accountsApi } from '../api/accounts.js';
@@ -43,6 +43,7 @@ export default function TradeEditor() {
   const { isRtl } = useDirection();
   const timezone = useUserTimezone();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [dirty, setDirty] = useState(false);
@@ -52,7 +53,7 @@ export default function TradeEditor() {
   const submitGuardRef = useRef(false);
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
-  const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: accountsApi.list });
+  const accountsQuery = useQuery({ queryKey: ['accounts', { includeArchived: isEdit }], queryFn: () => accountsApi.list({ includeArchived: String(isEdit) }) });
   const strategiesQuery = useQuery({
     queryKey: ['strategies', { includeArchived: isEdit }],
     queryFn: () => strategiesApi.list({ includeArchived: String(isEdit) }),
@@ -112,6 +113,13 @@ export default function TradeEditor() {
     || tradeQuery.error?.response?.data?.error?.code === 'TRADE_NOT_FOUND'
   );
   const defaults = useMemo(() => isEdit && tradeQuery.data ? mapTradeToFormValues(tradeQuery.data, timezone) : undefined, [isEdit, timezone, tradeQuery.data]);
+  const initialAccountId = useMemo(() => {
+    if (isEdit) return '';
+    const accounts = accountsQuery.data || [];
+    const requested = accounts.find(account => account.id === searchParams.get('accountId') && account.status === 'active');
+    const selected = requested || accounts.find(account => account.isDefault && account.status === 'active');
+    return selected?.id || '';
+  }, [accountsQuery.data, isEdit, searchParams]);
 
   if (!validTradeId) {
     return <ErrorState title={t('trades.invalidTrade')} detail={t('trades.invalidTradeDetail')} />;
@@ -122,7 +130,7 @@ export default function TradeEditor() {
   if (tradeQuery.isError) return <ErrorState title={t('trades.loadError')} detail={t('trades.unavailableRecord')} onRetry={tradeQuery.refetch} />;
   if (accountsQuery.isError) return <ErrorState title={t('trades.accountsLoadFailed')} detail={t('trades.accountsLoadFailedDetail')} onRetry={accountsQuery.refetch} />;
   if (accountsQuery.isLoading || strategiesQuery.isLoading || setupsQuery.isLoading || (isEdit && tradeQuery.isLoading)) return <EditorSkeleton />;
-  if (!isEdit && (accountsQuery.data?.length ?? 0) === 0) {
+  if (!isEdit && !(accountsQuery.data || []).some(account => account.status === 'active')) {
     return <EmptyState title={t('accounts.noAccounts')} detail={t('accounts.noAccountsDetail')} action={<Button variant="primary" leadingIcon={<Wallet size={17} aria-hidden="true" />} onClick={() => navigate('/accounts')}>{t('trades.openAccounts')}</Button>} />;
   }
 
@@ -151,7 +159,7 @@ export default function TradeEditor() {
         isEdit={isEdit}
         loading={mutation.isPending}
         resetVersion={resetVersion}
-        preservedAccountId={preservedAccountId}
+        preservedAccountId={preservedAccountId || initialAccountId}
         onSubmit={save}
         onCancel={cancel}
         onDirtyChange={setDirty}

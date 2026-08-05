@@ -9,6 +9,11 @@ import {
   mondayOfDateKey,
   monthStartDateKey,
 } from '../utils/dateTime.js';
+import { getScopeCurrencyMetadata } from './accountService.js';
+
+function currencyResponse(metadata) {
+  return metadata.currencies.length ? metadata : {};
+}
 
 // ---- Query builder helpers --------------------------------------------------
 
@@ -101,6 +106,7 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
     queryable.query(wtdQ.sql,   wtdQ.params),
     queryable.query(mtdQ.sql,   mtdQ.params),
   ]);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
 
   const r = mainRes.rows[0];
   const closed  = parseInt(r.closed)  || 0;
@@ -117,8 +123,10 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
   const fmt2 = v => parseFloat(parseFloat(v || 0).toFixed(2));
   const fmt4 = v => v != null ? parseFloat(parseFloat(v).toFixed(4)) : null;
 
+  const money = value => currencyMeta.monetaryTotalsAvailable ? value : null;
   return {
     timezone,
+    ...currencyResponse(currencyMeta),
     period: { from: from || null, to: to || null },
     totals: {
       tradesTotal:        parseInt(r.total) || 0,
@@ -127,19 +135,19 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
       winners,
       losers,
       winRate:            fmt4(winRate),
-      pnlNet:             fmt2(r.pnl_net_sum),
-      pnlGross:           fmt2(r.pnl_gross_sum),
-      totalFees:          fmt2(r.fees_sum),
-      avgWin:             fmt2(avgWin),
-      avgLoss:            fmt2(avgLoss),
-      expectancy:         expectancy != null ? fmt2(expectancy) : null,
+      pnlNet:             money(fmt2(r.pnl_net_sum)),
+      pnlGross:           money(fmt2(r.pnl_gross_sum)),
+      totalFees:          money(fmt2(r.fees_sum)),
+      avgWin:             money(fmt2(avgWin)),
+      avgLoss:            money(fmt2(avgLoss)),
+      expectancy:         money(expectancy != null ? fmt2(expectancy) : null),
       profitFactor:       profitFactor != null ? fmt4(profitFactor) : null,
       avgRMultiple:       fmt4(r.avg_r),
       avgDurationMinutes: r.avg_duration ? Math.round(parseFloat(r.avg_duration)) : null,
     },
-    today: { pnlNet: fmt2(todayRes.rows[0].pnl), tradesCount: parseInt(todayRes.rows[0].cnt) },
-    wtd:   { pnlNet: fmt2(wtdRes.rows[0].pnl),   tradesCount: parseInt(wtdRes.rows[0].cnt) },
-    mtd:   { pnlNet: fmt2(mtdRes.rows[0].pnl),   tradesCount: parseInt(mtdRes.rows[0].cnt) },
+    today: { pnlNet: money(fmt2(todayRes.rows[0].pnl)), tradesCount: parseInt(todayRes.rows[0].cnt) },
+    wtd:   { pnlNet: money(fmt2(wtdRes.rows[0].pnl)),   tradesCount: parseInt(wtdRes.rows[0].cnt) },
+    mtd:   { pnlNet: money(fmt2(mtdRes.rows[0].pnl)),   tradesCount: parseInt(mtdRes.rows[0].cnt) },
   };
 }
 
@@ -177,6 +185,7 @@ export async function getDaySummary(userId, date, timezone = DEFAULT_TIMEZONE, q
        FROM day_trades WHERE status = 'closed'
        ORDER BY pnl_net ASC, id ASC LIMIT 1) AS worst_trade
     FROM day_trades`, params);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, {}, queryable);
   const row = result.rows[0];
   const closedTrades = Number(row.closed_trades ?? 0);
   const winners = Number(row.winners ?? 0);
@@ -184,42 +193,45 @@ export async function getDaySummary(userId, date, timezone = DEFAULT_TIMEZONE, q
   return {
     date,
     timezone,
+    ...currencyResponse(currencyMeta),
     closedTrades,
     openTrades: Number(row.open_trades ?? 0),
     winners,
     losers: Number(row.losers ?? 0),
     breakeven: Number(row.breakeven ?? 0),
-    pnlNet: closedTrades ? Number(row.pnl_net) : null,
-    totalFees: Number(row.total_fees ?? 0),
+    pnlNet: closedTrades && currencyMeta.monetaryTotalsAvailable ? Number(row.pnl_net) : null,
+    totalFees: currencyMeta.monetaryTotalsAvailable ? Number(row.total_fees ?? 0) : null,
     winRate: closedTrades ? Number(((winners / closedTrades) * 100).toFixed(2)) : null,
-    bestTrade: mapIdentity(row.best_trade),
-    worstTrade: mapIdentity(row.worst_trade),
+    bestTrade: currencyMeta.monetaryTotalsAvailable ? mapIdentity(row.best_trade) : null,
+    worstTrade: currencyMeta.monetaryTotalsAvailable ? mapIdentity(row.worst_trade) : null,
   };
 }
 
 // ---- Equity curve -----------------------------------------------------------
 
-export async function getEquityCurve(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+export async function getEquityCurve(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
   const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
   const timezonePlaceholder = ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder);
   const dateExpression = localDateSql('t.entry_datetime', timezonePlaceholder);
   const { params, where, join } = parts;
 
-  const result = await pool.query(`
+  const result = await queryable.query(`
     SELECT ${dateExpression} AS date, SUM(t.pnl_net) AS daily_pnl
     FROM trades t${join}
     WHERE ${where} AND t.status = 'closed'
     GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
 
   let cumulative = 0;
   return {
-    data: result.rows.map(row => {
+    ...currencyResponse(currencyMeta),
+    data: currencyMeta.monetaryTotalsAvailable ? result.rows.map(row => {
       const daily = parseFloat(parseFloat(row.daily_pnl).toFixed(2));
       cumulative = parseFloat((cumulative + daily).toFixed(2));
       return { date: mapPostgresDate(row.date), dailyPnl: daily, cumulativePnl: cumulative };
-    }),
+    }) : [],
   };
 }
 
@@ -241,11 +253,13 @@ export async function getCalendar(userId, { from, to, accountId, company }, time
     GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
 
   return {
+    ...currencyResponse(currencyMeta),
     days: result.rows.map(row => ({
       date: mapPostgresDate(row.date),
-      pnlNet: parseFloat(parseFloat(row.pnl_net).toFixed(2)),
+      pnlNet: currencyMeta.monetaryTotalsAvailable ? parseFloat(parseFloat(row.pnl_net).toFixed(2)) : null,
       tradesCount: Number(row.trades_count),
     })),
   };
@@ -261,9 +275,10 @@ export async function getDistribution(userId, { from, to, accountId, company }, 
     WHERE ${where} AND t.status = 'closed' AND t.pnl_net IS NOT NULL
     ORDER BY t.pnl_net
   `, params);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
 
   const values = result.rows.map(r => parseFloat(r.pnl_net));
-  return { buckets: bucketPnlValues(values) };
+  return { ...currencyResponse(currencyMeta), buckets: currencyMeta.monetaryTotalsAvailable ? bucketPnlValues(values) : [] };
 }
 
 export function bucketPnlValues(rawValues) {
@@ -372,7 +387,7 @@ export const BREAKDOWN_DIMENSIONS = Object.freeze({
   weekday:   { expression: null, needsJoin: false, ordered: true },
 });
 
-export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
   // account: group by account_id (UUID) — frontend maps to display name.
   // company: group by ta.company — requires JOIN.
   const dim = BREAKDOWN_DIMENSIONS[by];
@@ -391,7 +406,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
     ? ' JOIN trading_accounts ta ON ta.id = t.account_id'
     : filterJoin;
 
-  const result = await pool.query(`
+  const result = await queryable.query(`
     SELECT
       ${col}                                                     AS dimension_key,
       COUNT(*)                                                   AS trades_count,
@@ -404,9 +419,11 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
     GROUP BY ${col}
     ORDER BY ${dim.ordered ? `${col} ASC` : 'pnl_net DESC'}
   `, params);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
 
   return {
     by,
+    ...currencyResponse(currencyMeta),
     data: result.rows.map(r => {
       const count   = parseInt(r.trades_count) || 0;
       const winners = parseInt(r.winners)      || 0;
@@ -419,7 +436,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
         winners,
         losers:       parseInt(r.losers) || 0,
         winRate:      count > 0 ? parseFloat((winners / count).toFixed(4)) : 0,
-        pnlNet:       parseFloat(parseFloat(r.pnl_net || 0).toFixed(2)),
+        pnlNet:       currencyMeta.monetaryTotalsAvailable ? parseFloat(parseFloat(r.pnl_net || 0).toFixed(2)) : null,
         avgRMultiple: r.avg_r != null ? parseFloat(parseFloat(r.avg_r).toFixed(4)) : null,
       };
     }),

@@ -96,6 +96,7 @@ export default function Analytics() {
   const noClosedTrades = summaryQuery.isSuccess && !summaryQuery.isPlaceholderData && (summaryQuery.data?.totals?.tradesClosed ?? 0) === 0;
   const closedTrades = summaryQuery.data?.totals?.tradesClosed ?? 0;
   const scopeLabel = selectedAccount ? accountLabel(selectedAccount) : scope.type === 'company' ? scope.name : t('common.allAccounts');
+  const mixedCurrencies = summaryQuery.data?.isMixedCurrency === true;
 
   function applyPeriod(nextPeriod) {
     setPeriod(nextPeriod);
@@ -199,11 +200,13 @@ export default function Analytics() {
             onRetry={summaryQuery.refetch}
           />
 
+          {mixedCurrencies && <div role="status" className="rounded-lg border border-information bg-information-soft p-3 text-sm text-secondary"><p className="font-semibold text-primary">{t('analytics.mixedCurrencies')}</p><p className="mt-1">{t('analytics.mixedCurrenciesDetail')}</p></div>}
+
           {noClosedTrades ? (
             <EmptyState title={t('analytics.noClosedScope')} detail={t('analytics.noClosedScopeDetail')} />
           ) : (
             <>
-              <AnalyticsBreakdown
+              {!mixedCurrencies && <AnalyticsBreakdown
                 data={breakdownQuery.data?.data}
                 accounts={accounts}
                 by={dimension}
@@ -212,7 +215,7 @@ export default function Analytics() {
                 isFetching={breakdownQuery.isFetching}
                 error={breakdownQuery.error}
                 onRetry={breakdownQuery.refetch}
-              />
+              />}
               <RDistribution
                 data={rDistributionQuery.data}
                 isLoading={rDistributionQuery.isLoading}

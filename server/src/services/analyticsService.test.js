@@ -65,12 +65,13 @@ describe('analytics validation and safe dimensions', () => {
   });
 
   test('keeps the existing breakdown response fields and ownership query', async () => {
-    let captured;
+    const calls = [];
     pool.query = async (sql, params) => {
-      captured = { sql, params };
+      calls.push({ sql, params });
       return { rows: [{ dimension_key: 'momentum', trades_count: '2', winners: '1', losers: '1', pnl_net: '25.50', avg_r: '0.75' }] };
     };
     const result = await getBreakdown(userId, { by: 'strategy', from: '2026-08-01' });
+    const captured = calls.find(call => /FROM trades t/.test(call.sql));
     assert.match(captured.sql, /WHERE t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
     assert.deepEqual(captured.params, [userId, '2026-08-01', 'Asia/Jerusalem']);
@@ -81,14 +82,15 @@ describe('analytics validation and safe dimensions', () => {
   });
 
   test('maps weekdays Monday through Sunday and orders them by ISO weekday', async () => {
-    let sql;
+    const calls = [];
     pool.query = async (query) => {
-      sql = query;
+      calls.push(query);
       return { rows: Array.from({ length: 7 }, (_, index) => ({
         dimension_key: index + 1, trades_count: '1', winners: '0', losers: '0', pnl_net: '0', avg_r: null,
       })) };
     };
     const result = await getBreakdown(userId, { by: 'weekday' });
+    const sql = calls.find(query => /FROM trades t/.test(query));
     assert.match(sql, /AT TIME ZONE \$2/);
     assert.match(sql, /ORDER BY EXTRACT\(ISODOW FROM \(t\.entry_datetime AT TIME ZONE \$2\)\)::int ASC/);
     assert.deepEqual(result.data.map(({ key, label }) => ({ key, label })), [
@@ -195,6 +197,35 @@ describe('expectancy', () => {
   });
 });
 
+describe('currency-correct Analytics', () => {
+  function summaryRows(sql) {
+    if (/AS total/.test(sql)) return { rows: [{ total: '3', closed: '3', open: '0', winners: '2', losers: '1', pnl_net_sum: '300', pnl_gross_sum: '320', fees_sum: '20', avg_win: '200', avg_loss: '-100', avg_r: '1', avg_duration: '30', gross_profit: '400', gross_loss: '100' }] };
+    return { rows: [{ cnt: '1', pnl: '100' }] };
+  }
+
+  test('preserves single-currency monetary values and reports the real currency', async () => {
+    pool.query = async (sql) => /ARRAY_AGG/.test(sql) ? { rows: [{ currencies: ['USD'] }] } : summaryRows(sql);
+    const result = await getSummary(userId, {});
+    assert.equal(result.currency, 'USD');
+    assert.equal(result.monetaryTotalsAvailable, true);
+    assert.equal(result.totals.pnlNet, 300);
+    assert.equal(result.totals.tradesClosed, 3);
+  });
+
+  test('does not combine mixed-currency money while retaining counts and R metrics', async () => {
+    pool.query = async (sql) => /ARRAY_AGG/.test(sql) ? { rows: [{ currencies: ['ILS', 'USD'] }] } : summaryRows(sql);
+    const result = await getSummary(userId, {});
+    assert.equal(result.isMixedCurrency, true);
+    assert.equal(result.monetaryTotalsAvailable, false);
+    assert.equal(result.totals.pnlNet, null);
+    assert.equal(result.totals.totalFees, null);
+    assert.equal(result.totals.expectancy, null);
+    assert.equal(result.totals.tradesClosed, 3);
+    assert.equal(result.totals.winRate, 0.6667);
+    assert.equal(result.totals.avgRMultiple, 1);
+  });
+});
+
 describe('dollar-PnL distribution', () => {
   test('returns the established empty response for no qualifying data', async () => {
     pool.query = async () => ({ rows: [] });
@@ -223,12 +254,13 @@ describe('dollar-PnL distribution', () => {
   });
 
   test('preserves response shape, filters, and user ownership', async () => {
-    let captured;
+    const calls = [];
     pool.query = async (sql, params) => {
-      captured = { sql, params };
+      calls.push({ sql, params });
       return { rows: [{ pnl_net: '-50' }, { pnl_net: '50' }] };
     };
     const result = await getDistribution(userId, { from: '2026-08-01', accountId });
+    const captured = calls.find(call => /FROM trades t/.test(call.sql));
     assert.match(captured.sql, /t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
     assert.match(captured.sql, /t\.pnl_net IS NOT NULL/);
@@ -261,8 +293,9 @@ describe('user-local Analytics dates', () => {
     assert.match(calls[0].sql, /\(t\.entry_datetime AT TIME ZONE \$2\)::date AS date/);
     assert.match(calls[0].sql, /GROUP BY \(t\.entry_datetime AT TIME ZONE \$2\)::date/);
     assert.deepEqual(calls[0].params, [userId, 'America/New_York']);
-    assert.match(calls[1].sql, /\(t\.entry_datetime AT TIME ZONE \$2\)::date AS date/);
-    assert.deepEqual(calls[1].params, [userId, 'Asia/Jerusalem']);
+    const tradeCalls = calls.filter(call => /FROM trades t/.test(call.sql));
+    assert.match(tradeCalls[1].sql, /\(t\.entry_datetime AT TIME ZONE \$2\)::date AS date/);
+    assert.deepEqual(tradeCalls[1].params, [userId, 'Asia/Jerusalem']);
   });
 
   test('summary exposes timezone metadata without changing existing metric fields', async () => {
