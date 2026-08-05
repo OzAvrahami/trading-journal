@@ -100,11 +100,11 @@ describe('Dashboard', () => {
     expect(screen.getByText('Distribution ready')).toBeInTheDocument();
     expect(screen.getByText('Breakdown ready')).toBeInTheDocument();
     expect(screen.getByText('Calendar widget')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add Trade' }).closest('header')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quick Add' }).closest('header')).toBeInTheDocument();
     expect(screen.queryByText(/balance/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/included accounts/i)).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Add Trade' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Quick Add' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Add trade flow');
   });
 
@@ -125,9 +125,9 @@ describe('Dashboard', () => {
     expect(screen.queryByText('Distribution ready')).not.toBeInTheDocument();
     expect(screen.queryByText('Breakdown ready')).not.toBeInTheDocument();
     expect(screen.queryByText('Calendar widget')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Add Trade' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Quick Add' })).toHaveLength(1);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Add Trade' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Quick Add' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Add trade flow');
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveRouteMetadata } from './routeMetadata.js';
+import { localizeRouteMetadata, resolveRouteMetadata } from './routeMetadata.js';
 
 describe('route metadata', () => {
   it('resolves static routes from one registry', () => {
@@ -14,6 +14,21 @@ describe('route metadata', () => {
       title: 'Trade details',
       nav: '/trades',
     });
+  });
+
+  it('resolves New and Edit Trade before the dynamic detail route', () => {
+    expect(resolveRouteMetadata('/trades/new')).toMatchObject({ title: 'New Trade', routeKey: 'tradeNew', nav: '/trades' });
+    expect(resolveRouteMetadata('/trades/550e8400-e29b-41d4-a716-446655440000/edit')).toMatchObject({ title: 'Edit Trade', routeKey: 'tradeEdit', nav: '/trades' });
+  });
+
+  it('localizes the two editor route identities independently', () => {
+    const t = (key) => ({
+      'routes.tradeNew.title': 'עסקה חדשה', 'routes.tradeNew.description': 'תיאור חדש',
+      'routes.tradeEdit.title': 'עריכת עסקה', 'routes.tradeEdit.description': 'תיאור עריכה',
+      'navigation.journal': 'יומן', 'navigation.trades': 'עסקאות',
+    }[key] || key);
+    expect(localizeRouteMetadata(resolveRouteMetadata('/trades/new'), t).title).toBe('עסקה חדשה');
+    expect(localizeRouteMetadata(resolveRouteMetadata('/trades/550e8400-e29b-41d4-a716-446655440000/edit'), t).title).toBe('עריכת עסקה');
   });
 
   it('resolves the real Analytics route and header scope slot', () => {

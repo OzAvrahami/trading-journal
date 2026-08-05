@@ -47,6 +47,14 @@ export function Header({ metadata }) {
       action: () => navigate(to),
     })),
     {
+      id: 'newTrade',
+      label: t('trades.newTrade'),
+      description: t('trades.newTradeDescription'),
+      keywords: 'create trade full form',
+      Icon: Plus,
+      action: () => navigate('/trades/new'),
+    },
+    {
       id: 'newJournalEntry',
       label: t('shell.newJournal'),
       description: t('shell.newJournalDescription'),

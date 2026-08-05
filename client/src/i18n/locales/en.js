@@ -119,5 +119,31 @@ Object.assign(en.auth, { namePlaceholder: 'Alex' });
 Object.assign(en.validation, { numberRange: 'Enter a value from {{min}} to {{max}}.' });
 Object.assign(en.goals, { targetWithUnit: 'Target ({{unit}})', countUnit: 'count', nameRequired: 'Enter a goal name.', endDateOrder: 'End date must not precede start date.' });
 Object.assign(en.rules, { nameRequired: 'Enter a rule name.' });
+Object.assign(en.routes, {
+  tradeNew: { title: 'New Trade', description: 'Record a new trade with the context needed for an accurate review.' },
+  tradeEdit: { title: 'Edit Trade', description: 'Update the recorded outcome and review context for this trade.' },
+});
+Object.assign(en.trades, {
+  newTrade: 'New Trade', newTradeDescription: 'Open the complete Trade Editor', quickAdd: 'Quick Add', quickAddDescription: 'Record the essential trade details quickly',
+  tradeCreated: 'Trade created.', saveTrade: 'Save Trade', saveChanges: 'Save changes', saveAndAddAnother: 'Save and add another', openFullForm: 'Open full form',
+  openFullFormConfirm: 'Open the full form and discard the values entered in Quick Add?', discardQuickAddConfirm: 'Discard the values entered in Quick Add?',
+  discardConfirm: 'You have unsaved changes. Discard them?', presentationMode: 'Form detail', presentationModeHelp: 'Simple and Advanced use the same trade record.',
+  simple: 'Simple', advanced: 'Advanced', selectAccount: 'Select an active account…', symbolPlaceholder: 'AAPL', strategyPlaceholder: 'Opening Range Breakout', setupPlaceholder: 'Breakout',
+  statusHelp: 'Open trades have no exit. Closed trades require both exit fields.', closedTradeHelp: 'The server calculates realized results from the saved trade.',
+  timezoneHelp: 'Times use {{timezone}}.', entryDatetime: 'Entry date and time', exitDatetime: 'Exit date and time', identityLockedHelp: 'Trade identity and entry fields are preserved by the current API; outcome and review fields remain editable.',
+  emotionPre: 'Emotion before entry', emotionDuring: 'Emotion during trade', emotionPost: 'Emotion after exit', editorLoading: 'Loading Trade Editor', loadingAccounts: 'Loading accounts…', refreshingEditor: 'Refreshing Trade Editor data…',
+  accountsLoadFailed: 'Accounts could not be loaded', accountsLoadFailedDetail: 'A real owned account is required before a trade can be saved.', openAccounts: 'Open Accounts',
+  invalidTrade: 'Invalid trade address', invalidTradeDetail: 'The edit address does not contain a valid trade identifier.', backToTrade: 'Back to trade', backToTrades: 'Back to trades',
+  sections: {
+    identity: 'Trade details', identityHelp: 'Choose the owned account and identify the trade.', entry: 'Entry details', exit: 'Exit details', risk: 'Risk management',
+    riskHelp: 'These inputs support the server’s existing risk and R calculations.', context: 'Strategy and context', notes: 'Notes and emotions',
+  },
+  validation: {
+    accountRequired: 'Select an account.', symbolRequired: 'Enter a symbol.', marketRequired: 'Select a market.', directionRequired: 'Select a direction.',
+    entryRequired: 'Enter a valid entry date and time.', positiveNumber: 'Enter a number greater than zero.', nonnegativeNumber: 'Enter zero or a positive number.',
+    closedExitRequired: 'A closed trade requires a valid exit date and time.', closedExitPriceRequired: 'A closed trade requires an exit price greater than zero.',
+    exitBeforeEntry: 'Exit cannot be before entry.', screenshotLimit: 'Add no more than 10 screenshot links.', screenshotUrl: 'Use a valid HTTP or HTTPS URL on each line.',
+  },
+});
 
 export default en;

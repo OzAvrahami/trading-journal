@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../ui/Toast.jsx';
 
@@ -58,5 +58,22 @@ describe('route-specific header actions', () => {
     expect(screen.getByText('Bring broker trade files into an existing account.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /New import/i })).not.toBeInTheDocument();
     expect(await screen.findByText('Select & Upload')).toBeInTheDocument();
+  });
+
+  it('exposes the canonical full-page New Trade command globally', async () => {
+    function Location() { return <output>{useLocation().pathname}</output>; }
+    const metadata = resolveRouteMetadata('/accounts');
+    render(
+      <MemoryRouter initialEntries={['/accounts']}>
+        <HeaderControlsProvider metadata={metadata}>
+          <Header metadata={metadata} />
+          <Location />
+        </HeaderControlsProvider>
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Search or run a command' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Search commands' }), 'New Trade');
+    await userEvent.click(screen.getByRole('option', { name: /New Trade/ }));
+    expect(screen.getByText('/trades/new')).toBeInTheDocument();
   });
 });

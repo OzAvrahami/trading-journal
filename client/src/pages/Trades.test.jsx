@@ -88,14 +88,15 @@ describe('Trades page', () => {
     expect(screen.getByText('Showing 1–1 of 1 trades')).toBeInTheDocument();
   });
 
-  it('preserves paging, export scope, and the existing Add Trade flow', async () => {
+  it('preserves paging and export scope while separating New Trade from Quick Add', async () => {
     apiMocks.list.mockImplementation((filters) => Promise.resolve(response([trade], { page: filters.page, total: 75, totalPages: 2 })));
     renderTrades();
     await screen.findByText('Showing 1–1 of 75 trades');
     expect(screen.getByRole('button', { name: 'Export CSV' }).closest('header')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add trade' }).closest('header')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New Trade' }).closest('header')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quick Add' }).closest('header')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Export CSV' })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Add trade' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'New Trade' })).toHaveLength(1);
 
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() => expect(apiMocks.list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, limit: 50 })));
@@ -104,7 +105,7 @@ describe('Trades page', () => {
     await waitFor(() => expect(apiMocks.exportCsv).toHaveBeenCalledWith(expect.objectContaining({ page: 2, limit: 50, sort: 'entry_datetime', order: 'desc' })));
     expect(apiMocks.download).toHaveBeenCalledWith(expect.any(Blob), expect.stringMatching(/^trades-\d{4}-\d{2}-\d{2}\.csv$/));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Add trade' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Quick Add' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Existing Add Trade flow');
   });
 });

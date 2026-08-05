@@ -134,5 +134,31 @@ Object.assign(he.auth, { namePlaceholder: 'דנה' });
 Object.assign(he.validation, { numberRange: 'יש להזין ערך בין {{min}} ל־{{max}}.' });
 Object.assign(he.goals, { targetWithUnit: 'יעד ({{unit}})', countUnit: 'כמות', nameRequired: 'יש להזין שם ליעד.', endDateOrder: 'תאריך הסיום אינו יכול להיות לפני תאריך ההתחלה.' });
 Object.assign(he.rules, { nameRequired: 'יש להזין שם לכלל.' });
+Object.assign(he.routes, {
+  tradeNew: { title: 'עסקה חדשה', description: 'תיעוד עסקה חדשה עם ההקשר הדרוש לסקירה מדויקת.' },
+  tradeEdit: { title: 'עריכת עסקה', description: 'עדכון תוצאת העסקה וההקשר המתועד לסקירה.' },
+});
+Object.assign(he.trades, {
+  newTrade: 'עסקה חדשה', newTradeDescription: 'פתיחת עורך העסקה המלא', quickAdd: 'הוספה מהירה', quickAddDescription: 'תיעוד מהיר של פרטי העסקה החיוניים',
+  tradeCreated: 'העסקה נוצרה.', saveTrade: 'שמירת העסקה', saveChanges: 'שמירת שינויים', saveAndAddAnother: 'שמירה והוספת עסקה נוספת', openFullForm: 'פתיחת הטופס המלא',
+  openFullFormConfirm: 'לפתוח את הטופס המלא ולבטל את הערכים שהוזנו בהוספה המהירה?', discardQuickAddConfirm: 'לבטל את הערכים שהוזנו בהוספה המהירה?',
+  discardConfirm: 'יש שינויים שלא נשמרו. לבטל אותם?', presentationMode: 'רמת פירוט', presentationModeHelp: 'המצבים הבסיסי והמתקדם משתמשים באותה רשומת עסקה.',
+  simple: 'בסיסי', advanced: 'מתקדם', selectAccount: 'בחירת חשבון פעיל…', symbolPlaceholder: 'AAPL', strategyPlaceholder: 'פריצת טווח פתיחה', setupPlaceholder: 'פריצה',
+  statusHelp: 'לעסקה פתוחה אין פרטי יציאה. עסקה סגורה דורשת את שני שדות היציאה.', closedTradeHelp: 'השרת מחשב את התוצאה הממומשת מתוך העסקה שנשמרה.',
+  timezoneHelp: 'השעות מוצגות לפי {{timezone}}.', entryDatetime: 'תאריך ושעת כניסה', exitDatetime: 'תאריך ושעת יציאה', identityLockedHelp: 'זהות העסקה ופרטי הכניסה נשמרים לפי החוזה הקיים; אפשר לערוך את התוצאה ואת פרטי הסקירה.',
+  emotionPre: 'רגש לפני הכניסה', emotionDuring: 'רגש במהלך העסקה', emotionPost: 'רגש לאחר היציאה', editorLoading: 'טוען את עורך העסקה', loadingAccounts: 'טוען חשבונות…', refreshingEditor: 'מרענן את נתוני עורך העסקה…',
+  accountsLoadFailed: 'לא ניתן לטעון את החשבונות', accountsLoadFailedDetail: 'נדרש חשבון אמיתי בבעלות המשתמש כדי לשמור עסקה.', openAccounts: 'פתיחת חשבונות',
+  invalidTrade: 'כתובת עסקה לא תקינה', invalidTradeDetail: 'כתובת העריכה אינה מכילה מזהה עסקה תקין.', backToTrade: 'חזרה לעסקה', backToTrades: 'חזרה לעסקאות',
+  sections: {
+    identity: 'פרטי העסקה', identityHelp: 'בחרו חשבון בבעלותכם וזהו את העסקה.', entry: 'פרטי כניסה', exit: 'פרטי יציאה', risk: 'ניהול סיכון',
+    riskHelp: 'השדות האלה תומכים בחישובי הסיכון ו־R הקיימים בשרת.', context: 'אסטרטגיה והקשר', notes: 'הערות ורגשות',
+  },
+  validation: {
+    accountRequired: 'יש לבחור חשבון.', symbolRequired: 'יש להזין סימול.', marketRequired: 'יש לבחור שוק.', directionRequired: 'יש לבחור כיוון.',
+    entryRequired: 'יש להזין תאריך ושעת כניסה תקינים.', positiveNumber: 'יש להזין מספר גדול מאפס.', nonnegativeNumber: 'יש להזין אפס או מספר חיובי.',
+    closedExitRequired: 'עסקה סגורה דורשת תאריך ושעת יציאה תקינים.', closedExitPriceRequired: 'עסקה סגורה דורשת מחיר יציאה גדול מאפס.',
+    exitBeforeEntry: 'היציאה לא יכולה להיות לפני הכניסה.', screenshotLimit: 'אפשר להוסיף עד 10 קישורים לצילומי מסך.', screenshotUrl: 'יש להזין כתובת HTTP או HTTPS תקינה בכל שורה.',
+  },
+});
 
 export default he;
