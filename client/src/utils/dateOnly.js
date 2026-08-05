@@ -1,3 +1,5 @@
+import { activeLocale } from '../i18n/index.js';
+
 const DATE_KEY = /^(\d{4})-(\d{2})-(\d{2})/;
 export const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
 
@@ -48,11 +50,11 @@ export function weekdayForDateKey(value) {
   return new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay();
 }
 
-export function formatDateKey(value, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
+export function formatDateKey(value, options = { month: 'short', day: 'numeric', year: 'numeric' }, locale = activeLocale()) {
   const parts = dateKeyParts(value);
   if (!parts) return '—';
   const safeLocalDate = new Date(parts.year, parts.month - 1, parts.day, 12);
-  return new Intl.DateTimeFormat('en-US', options).format(safeLocalDate);
+  return new Intl.DateTimeFormat(locale === 'he' ? 'he-IL' : 'en-US', options).format(safeLocalDate);
 }
 
 export function isValidTimezone(timezone) {

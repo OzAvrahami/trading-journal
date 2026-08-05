@@ -6,6 +6,7 @@ import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Field, Input, Select } from '../ui/FormControls.jsx';
 import { DEFAULT_TIMEZONE, addDaysToDateKey, currentDateKey, mondayForDateKey, periodRange } from '../../utils/dateOnly.js';
+import { useTranslation } from 'react-i18next';
 
 export const DEFAULT_TRADE_FILTERS = {
   page: 1,
@@ -52,6 +53,7 @@ function accountLabel(account) {
 }
 
 export function FilterBar({ filters, onChange, timezone = DEFAULT_TIMEZONE }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const activeKeys = getActiveTradeFilterKeys(filters);
 
@@ -74,17 +76,17 @@ export function FilterBar({ filters, onChange, timezone = DEFAULT_TIMEZONE }) {
   }
 
   return (
-    <section className="rounded-lg border border-default bg-surface p-3 shadow-flat" aria-label="Trade filters">
+    <section className="rounded-lg border border-default bg-surface p-3 shadow-flat" aria-label={t('trades.filters')}>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-h-9 items-center gap-2 pe-1 text-sm font-medium text-primary">
           <FunnelSimple size={17} aria-hidden="true" />
-          Filters
-          {activeKeys.length > 0 && <Badge variant="action">{activeKeys.length} active</Badge>}
+          {t('common.filters')}
+          {activeKeys.length > 0 && <Badge variant="action">{t('common.activeCount', { count: activeKeys.length })}</Badge>}
         </div>
 
         {DATE_PRESETS.map((preset) => (
           <Button key={preset.label} type="button" size="sm" variant="tertiary" onClick={() => applyPreset(preset)}>
-            {preset.label}
+            {t(`common.${({ Today: 'today', Yesterday: 'yesterday', 'This Week': 'thisWeek', 'Last Week': 'lastWeek', 'This Month': 'thisMonth', 'All Time': 'allTime' })[preset.label]}`)}
           </Button>
         ))}
 
@@ -97,87 +99,87 @@ export function FilterBar({ filters, onChange, timezone = DEFAULT_TIMEZONE }) {
           trailingIcon={expanded ? <CaretUp size={14} aria-hidden="true" /> : <CaretDown size={14} aria-hidden="true" />}
           onClick={() => setExpanded((current) => !current)}
         >
-          {expanded ? 'Fewer filters' : 'More filters'}
+          {expanded ? t('common.fewerFilters') : t('common.moreFilters')}
         </Button>
       </div>
 
       {activeKeys.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-default pt-3" aria-label="Active filters">
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-default pt-3" aria-label={t('trades.activeFilters')}>
           {activeKeys.map((key) => (
             <Badge key={key} variant="neutral" className="capitalize">
-              {key === 'accountId' ? 'Account' : key}
+              {t(`trades.filter.${key}`)}
             </Badge>
           ))}
           <Button type="button" size="sm" variant="tertiary" leadingIcon={<X size={14} aria-hidden="true" />} onClick={clearFilters}>
-            Clear all
+            {t('common.clearAll')}
           </Button>
         </div>
       )}
 
       {expanded && (
         <div id="advanced-trade-filters" className="mt-3 grid grid-cols-1 gap-3 border-t border-default pt-3 sm:grid-cols-2 compact:grid-cols-4">
-          <Field label="From" id="trade-filter-from">
+          <Field label={t('common.from')} id="trade-filter-from">
             {(props) => <Input type="date" value={filters.from || ''} onChange={(event) => set('from', event.target.value)} {...props} />}
           </Field>
-          <Field label="To" id="trade-filter-to">
+          <Field label={t('common.to')} id="trade-filter-to">
             {(props) => <Input type="date" value={filters.to || ''} onChange={(event) => set('to', event.target.value)} {...props} />}
           </Field>
-          <Field label="Account" id="trade-filter-account">
+          <Field label={t('common.account')} id="trade-filter-account">
             {(props) => (
               <Select value={filters.accountId || ''} onChange={(event) => set('accountId', event.target.value)} {...props}>
-                <option value="">All accounts</option>
+                <option value="">{t('common.allAccounts')}</option>
                 {accounts.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}
               </Select>
             )}
           </Field>
-          <Field label="Symbol" id="trade-filter-symbol">
+          <Field label={t('common.symbol')} id="trade-filter-symbol">
             {(props) => <Input dir="ltr" placeholder="AAPL" value={filters.symbol || ''} onChange={(event) => set('symbol', event.target.value)} {...props} />}
           </Field>
-          <Field label="Market" id="trade-filter-market">
+          <Field label={t('common.market')} id="trade-filter-market">
             {(props) => (
               <Select value={filters.market || ''} onChange={(event) => set('market', event.target.value)} {...props}>
-                <option value="">All markets</option>
-                {MARKETS.map((market) => <option key={market} value={market}>{market}</option>)}
+                <option value="">{t('common.all')}</option>
+                {MARKETS.map((market) => <option key={market} value={market}>{t(`status.${market}`, { defaultValue: market })}</option>)}
               </Select>
             )}
           </Field>
-          <Field label="Direction" id="trade-filter-direction">
+          <Field label={t('common.direction')} id="trade-filter-direction">
             {(props) => (
               <Select value={filters.direction || ''} onChange={(event) => set('direction', event.target.value)} {...props}>
-                <option value="">All directions</option>
-                {DIRECTIONS.map((direction) => <option key={direction} value={direction}>{direction}</option>)}
+                <option value="">{t('common.all')}</option>
+                {DIRECTIONS.map((direction) => <option key={direction} value={direction}>{t(`status.${direction}`)}</option>)}
               </Select>
             )}
           </Field>
-          <Field label="Status" id="trade-filter-status">
+          <Field label={t('common.status')} id="trade-filter-status">
             {(props) => (
               <Select value={filters.status || ''} onChange={(event) => set('status', event.target.value)} {...props}>
-                <option value="">All statuses</option>
-                {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+                <option value="">{t('common.all')}</option>
+                {STATUSES.map((status) => <option key={status} value={status}>{t(`status.${status}`)}</option>)}
               </Select>
             )}
           </Field>
-          <Field label="Outcome" id="trade-filter-outcome">
+          <Field label={t('common.outcome')} id="trade-filter-outcome">
             {(props) => (
               <Select value={filters.outcome || ''} onChange={(event) => set('outcome', event.target.value)} {...props}>
-                <option value="">All outcomes</option>
-                {OUTCOMES.map((outcome) => <option key={outcome} value={outcome}>{outcome}</option>)}
+                <option value="">{t('common.all')}</option>
+                {OUTCOMES.map((outcome) => <option key={outcome} value={outcome}>{t(`status.${outcome}`)}</option>)}
               </Select>
             )}
           </Field>
-          <Field label="Strategy" id="trade-filter-strategy">
+          <Field label={t('common.strategy')} id="trade-filter-strategy">
             {(props) => <Input placeholder="Breakout" value={filters.strategy || ''} onChange={(event) => set('strategy', event.target.value)} {...props} />}
           </Field>
-          <Field label="Timeframe" id="trade-filter-timeframe">
+          <Field label={t('common.timeframe')} id="trade-filter-timeframe">
             {(props) => (
               <Select value={filters.timeframe || ''} onChange={(event) => set('timeframe', event.target.value)} {...props}>
-                <option value="">All timeframes</option>
+                <option value="">{t('common.all')}</option>
                 {TIMEFRAMES.map((timeframe) => <option key={timeframe} value={timeframe}>{timeframe}</option>)}
               </Select>
             )}
           </Field>
           <div className="flex items-end sm:col-span-2 compact:col-span-2 compact:justify-end">
-            <Button type="button" onClick={clearFilters} disabled={activeKeys.length === 0}>Clear filters</Button>
+            <Button type="button" onClick={clearFilters} disabled={activeKeys.length === 0}>{t('common.clearFilters')}</Button>
           </div>
         </div>
       )}

@@ -2,27 +2,27 @@ import { CalendarCheck, ChartBar, ChartLineUp, ListBullets, Bank, Notebook, Uplo
 
 export const navigationGroups = [
   {
-    label: 'Trading',
+    label: 'Trading', labelKey: 'navigation.trading',
     items: [
-      { to: '/dashboard', label: 'Dashboard', Icon: ChartLineUp },
-      { to: '/trades', label: 'Trades', Icon: ListBullets },
-      { to: '/daily-review', label: 'Daily Review', Icon: CalendarCheck },
+      { to: '/dashboard', label: 'Dashboard', labelKey: 'navigation.dashboard', Icon: ChartLineUp },
+      { to: '/trades', label: 'Trades', labelKey: 'navigation.trades', Icon: ListBullets },
+      { to: '/daily-review', label: 'Daily Review', labelKey: 'navigation.dailyReview', Icon: CalendarCheck },
     ],
   },
   {
-    label: 'Manage',
+    label: 'Manage', labelKey: 'navigation.manage',
     items: [
-      { to: '/accounts', label: 'Accounts', Icon: Bank },
-      { to: '/import', label: 'Import', Icon: UploadSimple },
+      { to: '/accounts', label: 'Accounts', labelKey: 'navigation.accounts', Icon: Bank },
+      { to: '/import', label: 'Import', labelKey: 'navigation.import', Icon: UploadSimple },
     ],
   },
   {
-    label: 'Insights',
+    label: 'Insights', labelKey: 'navigation.insights',
     items: [
-      { to: '/insights/analytics', label: 'Analytics', Icon: ChartBar },
-      { to: '/insights/journal', label: 'Journal & Reviews', Icon: Notebook },
-      { to: '/insights/rules', label: 'Rules & Adherence', Icon: ListChecks },
-      { to: '/insights/goals', label: 'Goals', Icon: Target },
+      { to: '/insights/analytics', label: 'Analytics', labelKey: 'navigation.analytics', Icon: ChartBar },
+      { to: '/insights/journal', label: 'Journal & Reviews', labelKey: 'navigation.journal', Icon: Notebook },
+      { to: '/insights/rules', label: 'Rules & Adherence', labelKey: 'navigation.rules', Icon: ListChecks },
+      { to: '/insights/goals', label: 'Goals', labelKey: 'navigation.goals', Icon: Target },
     ],
   },
 ];

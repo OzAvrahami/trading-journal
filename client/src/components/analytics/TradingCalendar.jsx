@@ -16,6 +16,7 @@ import {
   normalizeDateKey,
   weekdayForDateKey,
 } from '../../utils/dateOnly.js';
+import { useTranslation } from 'react-i18next';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -45,6 +46,7 @@ function dayTone(day) {
 }
 
 export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOnly = false }) {
+  const { t } = useTranslation();
   const monthRange = getMonthRange(qParams?.from);
   const calendarParams = useMemo(() => (
     monthRange ? { ...qParams, from: monthRange.monthStart, to: monthRange.monthEnd } : null
@@ -58,11 +60,11 @@ export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOn
 
   if (!calendarParams || query.isLoading) {
     if (errorsOnly) return null;
-    return <Skeleton className="h-[25rem] w-full" label="Loading trading calendar" />;
+    return <Skeleton className="h-[25rem] w-full" label={t('analytics.loadingCalendar')} />;
   }
 
   if (query.error) {
-    return <ErrorState title="Trading calendar could not be loaded" detail="Daily realized PnL is unavailable for this month." available="Dashboard controls and any other successful widgets" onRetry={query.refetch} />;
+    return <ErrorState title={t('analytics.calendarFailed')} detail={t('analytics.calendarFailedDetail')} available={t('analytics.dashboardAvailable')} onRetry={query.refetch} />;
   }
 
   if (errorsOnly) return null;
@@ -82,18 +84,18 @@ export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOn
       <div className="flex flex-wrap items-baseline gap-2">
         <div>
           <h2 className="text-sm font-semibold text-primary">Daily realized PnL · {monthLabel}</h2>
-          <p className="mt-1 text-xs text-muted">Closed-trade net PnL by entry date; weeks begin on Sunday.</p>
+          <p className="mt-1 text-xs text-muted">{t('analytics.calendarDescription')}</p>
         </div>
         <ValueIndicator value={total} className="ms-auto text-sm font-semibold">{formatSignedCurrency(total)}</ValueIndicator>
       </div>
 
-      {query.isFetching && !query.isLoading && <p className="mt-2 text-xs text-muted" role="status">Refreshing calendar…</p>}
-      {tradingDays === 0 && <p className="mt-3 rounded-md border border-dashed border-strong bg-surface-raised p-3 text-sm text-secondary">No closed trades were recorded in this calendar month.</p>}
+      {query.isFetching && !query.isLoading && <p className="mt-2 text-xs text-muted" role="status">{t('analytics.refreshingCalendar')}</p>}
+      {tradingDays === 0 && <p className="mt-3 rounded-md border border-dashed border-strong bg-surface-raised p-3 text-sm text-secondary">{t('analytics.noCalendarTrades')}</p>}
 
       <div className="mt-4" role="grid" aria-label={`Daily realized PnL for ${monthLabel}`}>
         <div className="grid grid-cols-7 gap-1 adaptive:gap-1.5" role="row">
           {WEEKDAYS.map(dayName => (
-            <div key={dayName} className="pb-1 text-center text-[0.65625rem] font-semibold uppercase tracking-wide text-muted" role="columnheader">{dayName}</div>
+            <div key={dayName} className="pb-1 text-center text-[0.65625rem] font-semibold uppercase tracking-wide text-muted" role="columnheader">{t(`analytics.weekdays.${dayName.toLowerCase()}`)}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-1 adaptive:gap-1.5">
@@ -115,13 +117,13 @@ export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOn
                 <span className="mt-2 block overflow-hidden text-ellipsis font-mono text-[0.625rem] font-semibold tabular-nums adaptive:text-xs" dir="ltr">
                   {hasTrades ? formatSignedCurrency(day.pnlNet, { maximumFractionDigits: 0, minimumFractionDigits: 0 }) : '—'}
                 </span>
-                {hasTrades && <span className="mt-1 hidden text-[0.625rem] text-muted adaptive:block">{day.tradesCount} {day.tradesCount === 1 ? 'trade' : 'trades'}</span>}
+                {hasTrades && <span className="mt-1 hidden text-[0.625rem] text-muted adaptive:block">{t('analytics.tradeCount', { count: day.tradesCount })}</span>}
               </div>
             );
           })}
         </div>
       </div>
-      <p className="mt-3 text-xs text-muted">{tradingDays} {tradingDays === 1 ? 'trading day' : 'trading days'} in {monthParts?.year}.</p>
+      <p className="mt-3 text-xs text-muted">{t('analytics.tradingDays', { count: tradingDays, year: monthParts?.year })}</p>
     </Card>
   );
 }

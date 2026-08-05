@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../ui/Toast.jsx';
-import { resolveRouteMetadata } from '../../routeMetadata.js';
+import { localizeRouteMetadata, resolveRouteMetadata } from '../../routeMetadata.js';
 import { Sidebar } from './Sidebar.jsx';
 import { Header } from './Header.jsx';
 import { MobileNav } from './MobileNav.jsx';
@@ -23,8 +24,9 @@ export function AppShell({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(readCollapsedState);
-  const metadata = resolveRouteMetadata(location.pathname);
+  const metadata = localizeRouteMetadata(resolveRouteMetadata(location.pathname), t);
 
   useEffect(() => {
     document.title = `${metadata.title} · TradingLog`;
@@ -45,7 +47,7 @@ export function AppShell({ children }) {
   async function handleLogout() {
     await logout();
     navigate('/login');
-    toast.info('Logged out.');
+    toast.info(t('auth.loggedOut'));
   }
 
   return (

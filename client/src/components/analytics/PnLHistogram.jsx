@@ -2,6 +2,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { Card } from '../ui/Card.jsx';
 import { EmptyState, ErrorState } from '../ui/States.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
+import { useTranslation } from 'react-i18next';
 
 function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -15,17 +16,18 @@ function ChartTooltip({ active, payload }) {
 }
 
 export function PnLHistogram({ data, isLoading = false, error, onRetry }) {
-  if (isLoading) return <Skeleton className="h-[19rem] w-full" label="Loading PnL distribution" />;
-  if (error) return <ErrorState title="PnL distribution could not be loaded" detail="Dollar-PnL buckets are unavailable." available="Other successful Dashboard widgets" onRetry={onRetry} />;
-  if (!data?.length) return <EmptyState title="No PnL distribution yet" detail="Closed trades are needed to populate dollar-PnL buckets." />;
+  const { t } = useTranslation();
+  if (isLoading) return <Skeleton className="h-[19rem] w-full" label={t('analytics.loadingDistribution')} />;
+  if (error) return <ErrorState title={t('analytics.distributionFailed')} detail={t('analytics.distributionFailedDetail')} available={t('analytics.dashboardAvailable')} onRetry={onRetry} />;
+  if (!data?.length) return <EmptyState title={t('analytics.noDistribution')} detail={t('analytics.noDistributionDetail')} />;
 
   const totalTrades = data.reduce((sum, bucket) => sum + (bucket.count ?? 0), 0);
   const chartLabel = `Dollar PnL distribution with ${data.length} buckets across ${totalTrades} closed ${totalTrades === 1 ? 'trade' : 'trades'}.`;
 
   return (
     <Card className="min-w-0">
-      <h2 className="text-sm font-semibold text-primary">Dollar PnL distribution</h2>
-      <p className="mt-1 text-xs text-muted">Closed trades grouped by their net profit or loss in US dollars.</p>
+      <h2 className="text-sm font-semibold text-primary">{t('analytics.dollarDistribution')}</h2>
+      <p className="mt-1 text-xs text-muted">{t('analytics.distributionDescription')}</p>
       <div className="mt-4 h-56 min-w-0" dir="ltr" role="img" aria-label={chartLabel} tabIndex="0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 8, bottom: 24, left: 0 }}>

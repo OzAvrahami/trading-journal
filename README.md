@@ -140,6 +140,14 @@ Optional deterministic anchor date:
 $env:DEMO_ANCHOR_DATE="2026-08-04"
 ```
 
+Optional demo-content locale (defaults to English):
+
+```powershell
+$env:DEMO_LOCALE="he" # supported: en, he
+```
+
+`DEMO_LOCALE` changes only human-readable fixture content such as account names, trade notes, Journal entries, Daily Review details, Rules, and Goals. IDs, relationships, symbols, company names, enum keys, dates, timestamps, numeric values, and Analytics/Goals KPI contracts remain identical. Unsupported or blank locale values fail before backup, transaction start, deletion, or insertion.
+
 Without `DEMO_ANCHOR_DATE`, the command uses the current calendar date in the target user's IANA timezone. For a given user and anchor date, rerunning recreates the same logical fixtures.
 
 The command backs up and resets only owned rows in `goals`, `rule_checks`, `trading_rules`, `journal_entry_trades`, `daily_review_details`, `journal_entries`, `trades`, and `trading_accounts`. It preserves `users`, `refresh_tokens`, `schema_migrations`, login credentials, profile fields, timezone, and sessions. The resulting fixture contains 8 accounts, 53 closed trades, 4 open trades across 22 dates, 14 Journal entries with 4 structured Daily Reviews, 8 rules with 44 checks, and 7 Goals. Production Analytics is validated before commit against 31 winners, 20 losers, 2 breakevens, $7,486 net PnL, $346 fees, approximately $141.25 expectancy, and approximately 1.70 profit factor.

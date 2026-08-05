@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { CheckCircle, Info, WarningCircle, X } from '@phosphor-icons/react';
 import { IconButton } from './IconButton.jsx';
+import { useTranslation } from 'react-i18next';
 
 const ToastContext = createContext(null);
 
@@ -11,6 +12,7 @@ const presentation = {
 };
 
 export function ToastProvider({ children }) {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState([]);
   const nextId = useRef(0);
 
@@ -37,7 +39,7 @@ export function ToastProvider({ children }) {
         className="pointer-events-none fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[100] flex flex-col items-end gap-2 adaptive:bottom-4 adaptive:start-auto adaptive:end-4"
         aria-live="polite"
         aria-atomic="false"
-        aria-label="Notifications"
+        aria-label={t('shell.notifications')}
       >
         {toasts.map(({ id, message, type }) => {
           const { Icon, className } = presentation[type];
@@ -45,7 +47,7 @@ export function ToastProvider({ children }) {
             <div key={id} role="status" className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-md border px-3 py-2.5 text-sm shadow-overlay ${className}`}>
               <Icon size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
               <span className="min-w-0 flex-1 text-primary">{message}</span>
-              <IconButton label="Dismiss notification" variant="tertiary" size="sm" className="-me-1 -mt-1" onClick={() => dismiss(id)}>
+              <IconButton label={t('shell.dismissNotification')} variant="tertiary" size="sm" className="-me-1 -mt-1" onClick={() => dismiss(id)}>
                 <X size={15} aria-hidden="true" />
               </IconButton>
             </div>

@@ -1,4 +1,5 @@
 import { Spinner } from './Spinner.jsx';
+import { useTranslation } from 'react-i18next';
 
 const variants = {
   primary: 'border-action bg-action text-white hover:bg-action-hover',
@@ -24,6 +25,7 @@ export function Button({
   children,
   ...props
 }) {
+  const { t } = useTranslation();
   return (
     <button
       className={`inline-flex items-center justify-center gap-2 rounded-md border font-medium transition-colors disabled:cursor-not-allowed disabled:border-default disabled:bg-surface-sunken disabled:text-muted ${variants[variant]} ${sizes[size]} ${className}`}
@@ -31,7 +33,7 @@ export function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? <Spinner className="h-4 w-4" label="Working" /> : leadingIcon}
+      {loading ? <Spinner className="h-4 w-4" label={t('common.working')} /> : leadingIcon}
       {children}
       {!loading && trailingIcon}
     </button>

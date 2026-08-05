@@ -2,6 +2,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { Card } from '../ui/Card.jsx';
 import { EmptyState, ErrorState } from '../ui/States.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
+import { useTranslation } from 'react-i18next';
 
 export const R_BUCKET_ORDER = [
   'lte_neg_2', 'neg_2_to_neg_1_5', 'neg_1_5_to_neg_1', 'neg_1_to_neg_0_5', 'neg_0_5_to_0',
@@ -20,24 +21,26 @@ function bucketColor(bucket) {
 }
 
 function RTooltip({ active, payload }) {
+  const { t } = useTranslation();
   if (!active || !payload?.length) return null;
   const bucket = payload[0].payload;
   return (
     <div className="rounded-md border border-strong bg-surface-raised p-3 text-xs shadow-overlay">
       <p className="font-mono text-primary" dir="ltr">{bucket.label}</p>
-      <p className="mt-1 text-secondary">{bucket.count} {bucket.count === 1 ? 'trade' : 'trades'}</p>
+      <p className="mt-1 text-secondary">{t('analytics.tradeCount', { count: bucket.count })}</p>
     </div>
   );
 }
 
 export function RDistribution({ data, isLoading, isFetching, error, onRetry }) {
-  if (isLoading) return <Skeleton className="h-[23rem] w-full" label="Loading R-multiple distribution" />;
-  if (error) return <ErrorState title="R-multiple distribution could not be loaded" detail="Stored R-multiple buckets are unavailable for this scope." available="Scope controls and dimension analysis" onRetry={onRetry} />;
+  const { t } = useTranslation();
+  if (isLoading) return <Skeleton className="h-[23rem] w-full" label={t('analytics.loadingR')} />;
+  if (error) return <ErrorState title={t('analytics.rFailed')} detail={t('analytics.rFailedDetail')} available={t('analytics.rAvailable')} onRetry={onRetry} />;
 
   const buckets = orderRBuckets(data?.buckets);
   const totalTrades = data?.totalTrades ?? buckets.reduce((sum, bucket) => sum + (bucket.count ?? 0), 0);
   if (!totalTrades || !buckets.length) {
-    return <EmptyState title="R-multiple data is unavailable" detail="Closed trades exist in this scope, but none has a stored R multiple. Missing risk data is not treated as 0R." />;
+    return <EmptyState title={t('analytics.rUnavailable')} detail={t('analytics.rUnavailableDetail')} />;
   }
 
   const populated = buckets.filter((bucket) => bucket.count > 0).length;
@@ -45,10 +48,10 @@ export function RDistribution({ data, isLoading, isFetching, error, onRetry }) {
     <Card className="min-w-0">
       <div className="flex flex-wrap items-start gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-primary">R-multiple distribution</h2>
-          <p className="mt-1 text-xs text-muted">Stored results for {totalTrades} closed {totalTrades === 1 ? 'trade' : 'trades'}, measured against planned risk.</p>
+          <h2 className="text-sm font-semibold text-primary">{t('analytics.rDistribution')}</h2>
+          <p className="mt-1 text-xs text-muted">{t('analytics.rDescription', { count: totalTrades })}</p>
         </div>
-        {isFetching && <span className="ms-auto text-xs text-muted" role="status">Refreshing R distribution…</span>}
+        {isFetching && <span className="ms-auto text-xs text-muted" role="status">{t('analytics.refreshingR')}</span>}
       </div>
 
       <div className="mt-4 h-64 min-w-0" dir="ltr" role="img" aria-label={`R-multiple distribution for ${totalTrades} closed ${totalTrades === 1 ? 'trade' : 'trades'} across ${populated} populated buckets, ordered from negative to positive.`} tabIndex="0">
@@ -65,7 +68,7 @@ export function RDistribution({ data, isLoading, isFetching, error, onRetry }) {
         </ResponsiveContainer>
       </div>
 
-      <ol className="mt-3 grid grid-cols-2 gap-2 border-t border-default pt-3 adaptive:grid-cols-5" dir="ltr" aria-label="R-multiple bucket counts">
+      <ol className="mt-3 grid grid-cols-2 gap-2 border-t border-default pt-3 adaptive:grid-cols-5" dir="ltr" aria-label={t('analytics.rBucketCounts')}>
         {buckets.map((bucket) => (
           <li key={bucket.key} data-r-bucket={bucket.key} className="flex min-w-0 items-center justify-between gap-2 rounded-sm bg-surface-raised px-2 py-1.5">
             <span className="truncate font-mono text-[10px] text-muted" dir="ltr">{bucket.label}</span>

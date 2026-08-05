@@ -1,13 +1,15 @@
+import i18n from '../../i18n/index.js';
+
 export const RULE_SCOPES = [
-  { value: 'trade', label: 'Trade' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'general', label: 'General' },
+  { value: 'trade', get label() { return i18n.t('status.trade'); } },
+  { value: 'daily', get label() { return i18n.t('status.daily'); } },
+  { value: 'general', get label() { return i18n.t('status.general'); } },
 ];
 
 export const RULE_OUTCOMES = [
-  { value: 'followed', label: 'Followed', variant: 'positive' },
-  { value: 'broken', label: 'Broken', variant: 'negative' },
-  { value: 'not_applicable', label: 'Not applicable', variant: 'neutral' },
+  { value: 'followed', get label() { return i18n.t('status.followed'); }, variant: 'positive' },
+  { value: 'broken', get label() { return i18n.t('status.broken'); }, variant: 'negative' },
+  { value: 'not_applicable', get label() { return i18n.t('status.not_applicable'); }, variant: 'neutral' },
 ];
 
 export const scopeLabel = (scope) => RULE_SCOPES.find((item) => item.value === scope)?.label ?? scope;

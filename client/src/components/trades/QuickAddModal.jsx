@@ -3,8 +3,10 @@ import { tradesApi } from '../../api/trades.js';
 import { Modal } from '../ui/Modal.jsx';
 import { TradeForm } from './TradeForm.jsx';
 import { useToast } from '../ui/Toast.jsx';
+import { useTranslation } from 'react-i18next';
 
 export function QuickAddModal({ open, onClose }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const toast = useToast();
 
@@ -13,17 +15,18 @@ export function QuickAddModal({ open, onClose }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['trades'] });
       qc.invalidateQueries({ queryKey: ['analytics'] });
-      toast.success('Trade added successfully!');
+      toast.success(t('trades.tradeAdded', { defaultValue: 'Trade added successfully!' }));
       onClose();
     },
     onError: (err) => {
-      const msg = err.response?.data?.error?.message || 'Failed to add trade.';
+      const code = err.response?.data?.error?.code;
+      const msg = code ? t(`errors.${code}`, { defaultValue: err.response?.data?.error?.message }) : t('trades.createFailed');
       toast.error(msg);
     },
   });
 
   return (
-    <Modal open={open} onClose={onClose} title="Quick Add Trade" size="lg">
+    <Modal open={open} onClose={onClose} title={t('trades.addTrade')} size="lg">
       <TradeForm
         onSubmit={mutation.mutate}
         loading={mutation.isPending}

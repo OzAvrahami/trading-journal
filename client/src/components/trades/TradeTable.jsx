@@ -8,14 +8,17 @@ import { Card } from '../ui/Card.jsx';
 import { IconButton } from '../ui/IconButton.jsx';
 import { ValueIndicator } from '../ui/ValueIndicator.jsx';
 import { useToast } from '../ui/Toast.jsx';
+import { useTranslation } from 'react-i18next';
 
 export function DirectionBadge({ direction }) {
+  const { t } = useTranslation();
   const isLong = direction === 'long';
-  return <Badge variant={isLong ? 'action' : 'comparison'}>{isLong ? 'Long' : 'Short'}</Badge>;
+  return <Badge variant={isLong ? 'action' : 'comparison'}>{t(`status.${isLong ? 'long' : 'short'}`)}</Badge>;
 }
 
 export function StatusBadge({ status }) {
-  return <Badge variant={status === 'open' ? 'information' : 'neutral'} className="capitalize">{status || 'Unavailable'}</Badge>;
+  const { t } = useTranslation();
+  return <Badge variant={status === 'open' ? 'information' : 'neutral'}>{status ? t(`status.${status}`) : t('common.unavailable')}</Badge>;
 }
 
 function accountLabel(accountId, accounts) {
@@ -30,6 +33,7 @@ function FinancialValue({ value, formatter, className = '' }) {
 }
 
 function SortHeader({ label, field, sort, order, onSort, className = '' }) {
+  const { t } = useTranslation();
   const active = sort === field;
   const ariaSort = active ? (order === 'asc' ? 'ascending' : 'descending') : 'none';
   const Icon = !active ? CaretUpDown : order === 'asc' ? CaretUp : CaretDown;
@@ -38,7 +42,7 @@ function SortHeader({ label, field, sort, order, onSort, className = '' }) {
       <button
         type="button"
         className="inline-flex min-h-8 items-center gap-1 rounded-sm hover:text-primary"
-        aria-label={`Sort by ${label}${active ? `, currently ${ariaSort}` : ''}`}
+        aria-label={t('trades.sortBy', { label, status: active ? t('trades.currently', { order: t(`trades.${ariaSort}`) }) : '' })}
         onClick={() => onSort(field)}
       >
         {label}
@@ -49,9 +53,10 @@ function SortHeader({ label, field, sort, order, onSort, className = '' }) {
 }
 
 function TradeDeleteButton({ tradeId, pending, onDelete, mobile = false }) {
+  const { t } = useTranslation();
   return (
     <IconButton
-      label="Delete trade"
+      label={t('trades.deleteTrade')}
       variant="destructive"
       size={mobile ? 'mobile' : 'sm'}
       disabled={pending}
@@ -64,6 +69,7 @@ function TradeDeleteButton({ tradeId, pending, onDelete, mobile = false }) {
 }
 
 export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const toast = useToast();
   const navigate = useNavigate();
@@ -73,15 +79,15 @@ export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trades'] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      toast.success('Trade deleted.');
+      toast.success(t('trades.tradeDeleted'));
     },
-    onError: () => toast.error('Failed to delete trade.'),
+    onError: () => toast.error(t('trades.deleteFailed')),
   });
 
   function handleDelete(event, id) {
     event.preventDefault();
     event.stopPropagation();
-    if (!window.confirm('Delete this trade?')) return;
+    if (!window.confirm(t('trades.deleteConfirmShort'))) return;
     deleteMutation.mutate(id);
   }
 
@@ -99,23 +105,23 @@ export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
     <>
       <div className="hidden overflow-x-auto rounded-lg border border-default bg-surface shadow-flat adaptive:block">
         <table className="w-full min-w-[920px] border-collapse text-sm">
-          <caption className="sr-only">Recorded trades with account, entry, result, status, and actions</caption>
+          <caption className="sr-only">{t('trades.recordedCaption')}</caption>
           <thead>
             <tr className="border-b border-default">
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary">Account</th>
-              <SortHeader label="Symbol" field="symbol" sort={sort} order={order} onSort={onSort} />
-              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary compact:table-cell">Market</th>
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary">Direction</th>
-              <SortHeader label="Entry" field="entry_datetime" sort={sort} order={order} onSort={onSort} />
-              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary compact:table-cell">Exit</th>
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary">Entry price</th>
-              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary compact:table-cell">Exit price</th>
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary">Quantity</th>
-              <SortHeader label="Net PnL" field="pnl_net" sort={sort} order={order} onSort={onSort} className="text-end" />
+              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary">{t('common.account')}</th>
+              <SortHeader label={t('common.symbol')} field="symbol" sort={sort} order={order} onSort={onSort} />
+              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary compact:table-cell">{t('common.market')}</th>
+              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary">{t('common.direction')}</th>
+              <SortHeader label={t('common.entry')} field="entry_datetime" sort={sort} order={order} onSort={onSort} />
+              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary compact:table-cell">{t('common.exit')}</th>
+              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary">{t('common.entryPrice')}</th>
+              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary compact:table-cell">{t('common.exitPrice')}</th>
+              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary">{t('common.quantity')}</th>
+              <SortHeader label={t('common.netPnl')} field="pnl_net" sort={sort} order={order} onSort={onSort} className="text-end" />
               <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary compact:table-cell">R</th>
-              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary wide:table-cell">Duration</th>
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary">Status</th>
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-2 py-2.5"><span className="sr-only">Actions</span></th>
+              <th scope="col" className="sticky top-0 z-10 hidden bg-surface px-3 py-2.5 text-end text-xs font-medium text-secondary wide:table-cell">{t('common.duration')}</th>
+              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2.5 text-start text-xs font-medium text-secondary">{t('common.status')}</th>
+              <th scope="col" className="sticky top-0 z-10 bg-surface px-2 py-2.5"><span className="sr-only">{t('common.actions')}</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-default">
@@ -125,7 +131,7 @@ export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
                 <tr
                   key={trade.id}
                   tabIndex={0}
-                  aria-label={`Open ${trade.symbol} trade details`}
+                  aria-label={t('trades.openDetails', { symbol: trade.symbol })}
                   onClick={() => openTrade(trade.id)}
                   onKeyDown={(event) => handleRowKeyDown(event, trade.id)}
                   className="cursor-pointer bg-surface transition-colors hover:bg-surface-raised focus-visible:bg-action-soft"
@@ -151,7 +157,7 @@ export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
         </table>
       </div>
 
-      <div className="grid gap-3 adaptive:hidden" aria-label="Recorded trades">
+      <div className="grid gap-3 adaptive:hidden" aria-label={t('trades.recordedCaption')}>
         {trades.map((trade) => {
           const pending = deleteMutation.isPending && deleteMutation.variables === trade.id;
           return (
@@ -169,10 +175,10 @@ export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
                   <FinancialValue value={trade.pnlNet} formatter={formatSignedCurrency} className="text-sm font-semibold" />
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                  <div><dt className="text-muted">Entry</dt><dd className="mt-1 text-secondary" dir="ltr">{formatDatetime(trade.entryDatetime)}</dd></div>
-                  <div><dt className="text-muted">Quantity</dt><dd className="mt-1 font-mono text-secondary" dir="ltr">{trade.quantity ?? '—'}</dd></div>
-                  <div><dt className="text-muted">Entry / exit</dt><dd className="mt-1 font-mono text-primary" dir="ltr">{formatCurrency(trade.entryPrice)} / {formatCurrency(trade.exitPrice)}</dd></div>
-                  <div><dt className="text-muted">R multiple</dt><dd className="mt-1"><FinancialValue value={trade.rMultiple} formatter={formatR} /></dd></div>
+                  <div><dt className="text-muted">{t('common.entry')}</dt><dd className="mt-1 text-secondary" dir="ltr">{formatDatetime(trade.entryDatetime)}</dd></div>
+                  <div><dt className="text-muted">{t('common.quantity')}</dt><dd className="mt-1 font-mono text-secondary" dir="ltr">{trade.quantity ?? '—'}</dd></div>
+                  <div><dt className="text-muted">{t('common.entry')} / {t('common.exit')}</dt><dd className="mt-1 font-mono text-primary" dir="ltr">{formatCurrency(trade.entryPrice)} / {formatCurrency(trade.exitPrice)}</dd></div>
+                  <div><dt className="text-muted">{t('common.rMultiple')}</dt><dd className="mt-1"><FinancialValue value={trade.rMultiple} formatter={formatR} /></dd></div>
                 </dl>
                 {(trade.strategy || trade.setup) && <p className="mt-3 truncate border-t border-default pt-3 text-xs text-secondary">{[trade.strategy, trade.setup].filter(Boolean).join(' · ')}</p>}
               </Link>
