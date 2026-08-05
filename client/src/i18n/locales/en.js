@@ -146,4 +146,22 @@ Object.assign(en.trades, {
   },
 });
 
+Object.assign(en.navigation, { strategies: 'Strategies & Setups' });
+Object.assign(en.routes, { strategies: { title: 'Strategies & Setups', description: 'Manage reusable trade classifications and review their real performance.' } });
+Object.assign(en.strategies = {}, {
+  summary: 'Strategies and Setups summary', activeStrategies: 'Active Strategies', activeSetups: 'Active Setups', managedClosedTrades: 'Managed closed Trades', unlinkedClosedTrades: 'Unlinked closed Trades',
+  strategyList: 'Managed Strategies', setups: 'Managed Setups', managedStrategy: 'Managed Strategy', managedSetup: 'Managed Setup', classification: 'Strategy classification',
+  createStrategy: 'Create Strategy', editStrategy: 'Edit Strategy', saveStrategy: 'Save Strategy', createSetup: 'Create Setup', editSetup: 'Edit Setup', saveSetup: 'Save Setup',
+  strategyName: 'Strategy name', setupName: 'Setup name', selectStrategy: 'Select a Strategy', parentRequired: 'Select a parent Strategy.', parentImmutable: 'A Setup cannot be moved to another Strategy after creation.',
+  nameRequired: 'Enter a name.', archive: 'Archive', restore: 'Restore', strategySaved: 'Strategy saved.', setupSaved: 'Setup saved.', saveFailed: 'The managed classification could not be saved.',
+  duplicateStrategy: 'A Strategy with this name already exists.', duplicateSetup: 'A Setup with this name already exists in this Strategy.',
+  noStrategies: 'No managed Strategies yet', noStrategiesDetail: 'Create a Strategy to begin managing reusable trade classifications.', noSetups: 'No managed Setups yet', noSetupsDetail: 'Create a Setup within this Strategy when its execution pattern is reusable.',
+  closedTrades: 'Closed Trades', openTrades: 'Open Trades', outcomes: 'Outcomes', outcomeRecord: '{{winners}} W / {{losers}} L / {{breakeven}} BE', setupCount: '{{count}} Setup', setupCount_other: '{{count}} Setups', closedCount: '{{count}} closed', tradeCount: '{{count}} Trade', tradeCount_other: '{{count}} Trades',
+  legacyValues: 'Historical unlinked values', legacyDetail: 'These are preserved Trade text snapshots without managed IDs. They are read-only and are never matched automatically.', legacyStrategies: 'Legacy Strategy values', legacySetups: 'Legacy Setup values', noLegacyValues: 'No historical unlinked values.', unclassified: 'Unclassified',
+  customLegacyValue: 'Custom or legacy text', hybridHelp: 'Managed selections keep a text snapshot; custom text remains supported.', quickAddBoundary: 'Quick Add keeps Setup selection in the full editor.',
+  loading: 'Loading Strategies and Setups', loadFailed: 'Strategies and Setups could not be loaded', loadFailedDetail: 'Managed classifications and their performance are unavailable right now.', refreshFailed: 'Strategies could not be refreshed', staleVisible: 'The last available managed classifications remain visible.', setupsLoadFailed: 'Setups could not be loaded', legacyLoadFailed: 'Historical unlinked values could not be loaded', selectorLoadFailed: 'Managed classifications could not be loaded', customStillAvailable: 'Custom Strategy and Setup text remains available.',
+});
+Object.assign(en.trades.validation, { setupRequiresStrategy: 'A managed Setup requires a managed Strategy.' });
+Object.assign(en.errors, { STRATEGY_NOT_FOUND: 'The Strategy was not found.', SETUP_NOT_FOUND: 'The Setup was not found.', STRATEGY_NAME_EXISTS: 'A Strategy with this name already exists.', SETUP_NAME_EXISTS: 'A Setup with this name already exists in this Strategy.', STRATEGY_ARCHIVED: 'Choose an active Strategy.', SETUP_ARCHIVED: 'Choose an active Setup.', SETUP_REQUIRES_STRATEGY: 'A managed Setup requires a managed Strategy.', SETUP_STRATEGY_MISMATCH: 'The Setup does not belong to the selected Strategy.' });
+
 export default en;

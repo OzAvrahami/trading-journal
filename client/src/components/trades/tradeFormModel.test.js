@@ -51,4 +51,39 @@ describe('canonical trade form model', () => {
     expect(mapped.emotionPre).toBe('Focused');
     expect(mapped.screenshotLinks).toBe('https://example.com/a.png');
   });
+
+  it('round-trips managed IDs without replacing the text snapshots', () => {
+    const payload = normalizeTradePayload({
+      ...base,
+      strategyId: 'strategy-1',
+      setupId: 'setup-1',
+      strategy: 'Opening Range Breakout',
+      setup: 'Confirmed breakout',
+    }, { timezone: 'Asia/Jerusalem' });
+    expect(payload).toMatchObject({
+      strategyId: 'strategy-1',
+      setupId: 'setup-1',
+      strategy: 'Opening Range Breakout',
+      setup: 'Confirmed breakout',
+    });
+
+    const mapped = mapTradeToFormValues({
+      ...base,
+      strategyId: 'strategy-1',
+      setupId: 'setup-1',
+      strategy: 'Historical snapshot',
+      setup: 'Historical setup snapshot',
+    }, 'Asia/Jerusalem');
+    expect(mapped).toMatchObject({
+      strategyId: 'strategy-1',
+      setupId: 'setup-1',
+      strategy: 'Historical snapshot',
+      setup: 'Historical setup snapshot',
+    });
+  });
+
+  it('keeps legacy text-only classification valid and rejects a managed Setup without a Strategy', () => {
+    expect(validateTradeForm({ ...base, strategyId: '', setupId: '' }, { timezone: 'Asia/Jerusalem' })).toEqual({});
+    expect(validateTradeForm({ ...base, strategyId: '', setupId: 'setup-1' }, { timezone: 'Asia/Jerusalem' })).toHaveProperty('setupId');
+  });
 });

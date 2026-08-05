@@ -30,7 +30,7 @@ describe('QuickAddModal', () => {
     expect(await screen.findByText('quick')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(api.create).toHaveBeenCalledTimes(1));
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
   it('stays open and preserves the form after failure', async () => {

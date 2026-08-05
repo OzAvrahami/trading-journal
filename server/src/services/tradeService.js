@@ -2,6 +2,7 @@ import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
 import { validateAccountOwnership } from './accountService.js';
 import { DEFAULT_TIMEZONE, addTimestampDateRange } from '../utils/dateTime.js';
+import { resolveTradeClassification } from './strategiesService.js';
 
 // ---- Computation helpers ----------------------------------------------------
 
@@ -82,6 +83,8 @@ function mapTrade(row) {
     fees:            parseFloat(row.fees),
     strategy:        row.strategy,
     setup:           row.setup,
+    strategyId:      row.strategy_id ?? null,
+    setupId:         row.setup_id ?? null,
     timeframe:       row.timeframe,
     riskAmount:      row.risk_amount != null ? parseFloat(row.risk_amount) : null,
     stopLoss:        row.stop_loss != null ? parseFloat(row.stop_loss) : null,
@@ -162,6 +165,10 @@ export async function getTrade(userId, tradeId) {
 export async function createTrade(userId, data) {
   const exitState = validateTradeState(data);
   await validateAccountOwnership(userId, data.accountId);
+  const classification = await resolveTradeClassification(userId, {
+    strategyId: data.strategyId ?? null,
+    setupId: data.setupId ?? null,
+  });
   const normalized = { ...data, ...exitState };
   const computed = computeFields(normalized);
 
@@ -169,12 +176,12 @@ export async function createTrade(userId, data) {
     `INSERT INTO trades (
       user_id, account_id, symbol, market, direction,
       entry_datetime, exit_datetime, entry_price, exit_price,
-      quantity, fees, strategy, setup, timeframe,
+      quantity, fees, strategy, setup, strategy_id, setup_id, timeframe,
       risk_amount, stop_loss, take_profit,
       notes, emotions, screenshot_links,
       status, pnl_gross, pnl_net, r_multiple, duration_minutes
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27
     ) RETURNING *`,
     [
       userId,
@@ -186,8 +193,10 @@ export async function createTrade(userId, data) {
       normalized.exitPrice,
       data.quantity,
       data.fees ?? 0,
-      data.strategy ?? null,
-      data.setup ?? null,
+      classification.strategy?.name ?? data.strategy ?? null,
+      classification.setup?.name ?? data.setup ?? null,
+      classification.strategy?.id ?? null,
+      classification.setup?.id ?? null,
       data.timeframe ?? null,
       data.riskAmount ?? null,
       data.stopLoss ?? null,
@@ -209,6 +218,27 @@ export async function updateTrade(userId, tradeId, data) {
   // Fetch existing trade to merge with patch data
   const existing = await getTrade(userId, tradeId);
   await validateAccountOwnership(userId, existing.accountId);
+
+  const strategyIdChanged = data.strategyId !== undefined;
+  const setupIdChanged = data.setupId !== undefined;
+  const finalStrategyId = strategyIdChanged ? data.strategyId : existing.strategyId;
+  let finalSetupId = setupIdChanged ? data.setupId : existing.setupId;
+  if (!finalStrategyId || (strategyIdChanged && finalStrategyId !== existing.strategyId && !setupIdChanged)) {
+    finalSetupId = null;
+  }
+  const classification = await resolveTradeClassification(
+    userId,
+    { strategyId: finalStrategyId ?? null, setupId: finalSetupId ?? null },
+    { currentStrategyId: existing.strategyId, currentSetupId: existing.setupId },
+  );
+  const strategyLinkChanged = (finalStrategyId ?? null) !== (existing.strategyId ?? null);
+  const setupLinkChanged = (finalSetupId ?? null) !== (existing.setupId ?? null);
+  const strategySnapshot = classification.strategy && strategyLinkChanged
+    ? classification.strategy.name
+    : data.strategy !== undefined ? data.strategy : existing.strategy;
+  const setupSnapshot = classification.setup && setupLinkChanged
+    ? classification.setup.name
+    : data.setup !== undefined ? data.setup : existing.setup;
 
   const merged = {
     direction:    existing.direction,
@@ -232,18 +262,20 @@ export async function updateTrade(userId, tradeId, data) {
       fees             = $6,
       strategy         = $7,
       setup            = $8,
-      timeframe        = $9,
-      risk_amount      = $10,
-      stop_loss        = $11,
-      take_profit      = $12,
-      notes            = $13,
-      emotions         = $14,
-      screenshot_links = $15,
-      status           = $16,
-      pnl_gross        = $17,
-      pnl_net          = $18,
-      r_multiple       = $19,
-      duration_minutes = $20
+      strategy_id      = $9,
+      setup_id         = $10,
+      timeframe        = $11,
+      risk_amount      = $12,
+      stop_loss        = $13,
+      take_profit      = $14,
+      notes            = $15,
+      emotions         = $16,
+      screenshot_links = $17,
+      status           = $18,
+      pnl_gross        = $19,
+      pnl_net          = $20,
+      r_multiple       = $21,
+      duration_minutes = $22
     WHERE id = $1 AND user_id = $2
     RETURNING *`,
     [
@@ -252,8 +284,10 @@ export async function updateTrade(userId, tradeId, data) {
       merged.exitPrice ?? null,
       merged.quantity,
       merged.fees,
-      data.strategy   !== undefined ? data.strategy   : existing.strategy,
-      data.setup      !== undefined ? data.setup      : existing.setup,
+      strategySnapshot,
+      setupSnapshot,
+      finalStrategyId ?? null,
+      finalSetupId ?? null,
       data.timeframe  !== undefined ? data.timeframe  : existing.timeframe,
       merged.riskAmount ?? null,
       data.stopLoss   !== undefined ? data.stopLoss   : existing.stopLoss,

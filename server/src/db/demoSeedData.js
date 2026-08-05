@@ -40,8 +40,29 @@ const STRATEGIES = Object.freeze([
 ]);
 const SETUPS = Object.freeze(['Breakout', 'Pullback', 'Reversal', 'Range Fade', 'Continuation']);
 const TIMEFRAMES = Object.freeze(['1m', '5m', '15m', '30m', '1h']);
+const MANAGED_STRATEGY_DEFINITIONS = Object.freeze([
+  ['Opening Range Breakout', 'Trades the opening range only after confirmation.'],
+  ['Mean Reversion', 'Looks for controlled returns toward a defined mean.'],
+  ['Trend Continuation', 'Joins established directional structure after a pullback.'],
+  ['Breakout Retest', 'Requires a breakout followed by a successful level retest.'],
+  ['VWAP Trading', 'Uses VWAP location and reclaim behavior as context.'],
+]);
+const MANAGED_SETUP_DEFINITIONS = Object.freeze([
+  ['Confirmed breakout', 'Breakout supported by structure and confirmation.'],
+  ['Level retest', 'The broken level holds on a controlled retest.'],
+  ['Failed breakout', 'A breakout failure returns through the prior range.'],
+  ['VWAP reclaim', 'Price reclaims VWAP and confirms above it.'],
+  ['Higher low', 'A higher low forms within an established uptrend.'],
+  ['Lower high', 'A lower high forms within an established downtrend.'],
+  ['Opening drive', 'Early directional drive with controlled risk.'],
+  ['Range fade', 'Fades a tested range boundary after rejection.'],
+  ['Pullback continuation', 'A pullback resolves with the prevailing trend.'],
+  ['Momentum hold', 'Momentum consolidates without losing its invalidation.'],
+]);
 
 const HEBREW_TEXT = Object.freeze({
+  managedStrategies: ['פריצת טווח פתיחה', 'חזרה לממוצע', 'המשך מגמה', 'פריצה וחזרה לרמה', 'מסחר סביב VWAP'],
+  managedSetups: ['פריצה עם אישור', 'בדיקה חוזרת של הרמה', 'כשל פריצה', 'חזרה ל־VWAP', 'שפל גבוה במגמה עולה', 'שיא נמוך במגמה יורדת', 'מהלך פתיחה', 'דעיכת טווח', 'המשך לאחר פולבק', 'שמירת מומנטום'],
   accountNames: ['חשבון מסחר אישי', 'חשבון רוט IRA', 'חשבון אירופה', 'חשבון מסחר IBKR', 'חשבון מסחר חי', 'חשבון ממומן 150K', 'חשבון הערכה 50K', 'חשבון תרגול'],
   strategies: ['פריצת טווח הפתיחה', 'חזרה ל־VWAP', 'המשך מגמה', 'חזרה לממוצע', 'תמיכה והתנגדות', 'מומנטום'],
   setups: ['פריצה', 'פולבק', 'היפוך', 'דעיכת טווח', 'המשך'],
@@ -112,14 +133,20 @@ export function normalizeDemoLocale(locale) {
 
 function localizeDatasetText(dataset, locale) {
   if (locale === 'en') return { ...dataset, locale };
+  const managedStrategies = dataset.managedStrategies.map((row, index) => ({ ...row, name: HEBREW_TEXT.managedStrategies[index], description: `אסטרטגיה מנוהלת להדגמת ${HEBREW_TEXT.managedStrategies[index]}.` }));
+  const managedSetups = dataset.managedSetups.map((row, index) => ({ ...row, name: HEBREW_TEXT.managedSetups[index], description: `סטאפ מנוהל: ${HEBREW_TEXT.managedSetups[index]}.` }));
+  const strategyNames = new Map(managedStrategies.map((row) => [row.id, row.name]));
+  const setupNames = new Map(managedSetups.map((row) => [row.id, row.name]));
   return {
     ...dataset,
     locale,
     accounts: dataset.accounts.map((row, index) => ({ ...row, accountName: HEBREW_TEXT.accountNames[index] })),
+    managedStrategies,
+    managedSetups,
     trades: dataset.trades.map((row, index) => ({
       ...row,
-      strategy: HEBREW_TEXT.strategies[index % HEBREW_TEXT.strategies.length],
-      setup: HEBREW_TEXT.setups[index % HEBREW_TEXT.setups.length],
+      strategy: row.strategyId ? strategyNames.get(row.strategyId) : HEBREW_TEXT.strategies[index % HEBREW_TEXT.strategies.length],
+      setup: row.setupId ? setupNames.get(row.setupId) : HEBREW_TEXT.setups[index % HEBREW_TEXT.setups.length],
       notes: row.status === 'open' ? HEBREW_TEXT.openTradeNote : HEBREW_TEXT.tradeNotes[index % HEBREW_TEXT.tradeNotes.length],
       emotions: HEBREW_TEXT.emotions[index % HEBREW_TEXT.emotions.length],
     })),
@@ -193,6 +220,20 @@ function splitAmount(total, count) {
     remainder -= remainder > 0 ? 1 : 0;
     return value / 100;
   });
+}
+
+function buildManagedClassifications(userId, anchorDate, timezone) {
+  const createdAt = localDateTimeToInstant(addDaysToDateKey(anchorDate, -45), '12:00:00', timezone).toISOString();
+  const strategies = MANAGED_STRATEGY_DEFINITIONS.map(([name, description], index) => ({
+    id: stableUuid('managed-strategy', userId, anchorDate, index), userId, name, description,
+    isActive: index !== MANAGED_STRATEGY_DEFINITIONS.length - 1, createdAt, updatedAt: createdAt,
+  }));
+  const setups = MANAGED_SETUP_DEFINITIONS.map(([name, description], index) => ({
+    id: stableUuid('managed-setup', userId, anchorDate, index), userId,
+    strategyId: strategies[Math.floor(index / 2)].id, name, description,
+    isActive: index !== MANAGED_SETUP_DEFINITIONS.length - 1, createdAt, updatedAt: createdAt,
+  }));
+  return { strategies, setups };
 }
 
 function buildTrade({ userId, anchorDate, timezone, accounts, date, pnlNet, index, slot, open = false }) {
@@ -438,6 +479,10 @@ export function summarizeDemoDataset(dataset) {
     rules: dataset.rules.length,
     ruleChecks: dataset.ruleChecks.length,
     goals: dataset.goals.length,
+    managedStrategies: dataset.managedStrategies.length,
+    managedSetups: dataset.managedSetups.length,
+    managedTrades: dataset.trades.filter((trade) => trade.strategyId != null).length,
+    unlinkedTrades: dataset.trades.filter((trade) => trade.strategyId == null).length,
   };
 }
 
@@ -447,6 +492,7 @@ export function validateDemoDataset(dataset) {
     accounts: 8, trades: 57, closed: 53, open: 4, winners: 31, losers: 20,
     breakeven: 2, tradingDates: 22, pnlNet: 7486, totalFees: 346,
     journalEntries: 14, dailyReviewDetails: 4, rules: 8, goals: 7,
+    managedStrategies: 5, managedSetups: 10,
   };
   Object.entries(expected).forEach(([key, value]) => {
     if (summary[key] !== value) throw new Error(`Demo dataset ${key} expected ${value}, received ${summary[key]}.`);
@@ -454,7 +500,7 @@ export function validateDemoDataset(dataset) {
   if (Math.abs(summary.expectancy - 141.25) > 0.01 || Math.abs(summary.profitFactor - 1.699) > 0.001) {
     throw new Error('Demo headline calculations are inconsistent.');
   }
-  const ownedCollections = [dataset.accounts, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails, dataset.rules, dataset.ruleChecks, dataset.goals];
+  const ownedCollections = [dataset.accounts, dataset.managedStrategies, dataset.managedSetups, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails, dataset.rules, dataset.ruleChecks, dataset.goals];
   if (ownedCollections.some((rows) => rows.some((row) => row.userId !== dataset.userId))) {
     throw new Error('Demo dataset contains a foreign user row.');
   }
@@ -462,6 +508,8 @@ export function validateDemoDataset(dataset) {
     throw new Error('Demo account enum is invalid.');
   }
   const accountIds = new Set(dataset.accounts.map((account) => account.id));
+  const strategiesById = new Map(dataset.managedStrategies.map((strategy) => [strategy.id, strategy]));
+  const setupsById = new Map(dataset.managedSetups.map((setup) => [setup.id, setup]));
   dataset.trades.forEach((trade) => {
     if (!accountIds.has(trade.accountId)) throw new Error('Demo trade references a foreign account.');
     const computed = computeFields(trade);
@@ -469,7 +517,15 @@ export function validateDemoDataset(dataset) {
       if (computed[key] !== trade[key]) throw new Error(`Demo trade ${trade.id} has inconsistent ${key}.`);
     }
     if (trade.durationMinutes != null && trade.durationMinutes < 0) throw new Error('Demo trade has negative duration.');
+    if (trade.strategyId && !strategiesById.has(trade.strategyId)) throw new Error('Demo trade references a foreign Strategy.');
+    if (trade.setupId) {
+      const setup = setupsById.get(trade.setupId);
+      if (!setup || setup.strategyId !== trade.strategyId) throw new Error('Demo trade has an inconsistent managed Setup.');
+    }
   });
+  if (!dataset.trades.some((trade) => trade.strategyId == null) || !dataset.trades.some((trade) => trade.strategyId != null)) {
+    throw new Error('Demo Trades must include managed and intentionally unlinked classifications.');
+  }
   const tradeIds = new Set(dataset.trades.map((trade) => trade.id));
   const journalIds = new Set(dataset.journalEntries.map((entry) => entry.id));
   if (dataset.journalEntryTrades.some((link) => !journalIds.has(link.journalEntryId) || !tradeIds.has(link.tradeId))) {
@@ -505,12 +561,19 @@ export function generateDemoDataset({ userId, timezone, anchorDate, locale = 'en
       ...definition, createdAt, updatedAt: createdAt,
     };
   });
-  const trades = buildTrades(userId, anchorDate, timezone, accounts, tradingDates);
+  const managed = buildManagedClassifications(userId, anchorDate, timezone);
+  const trades = buildTrades(userId, anchorDate, timezone, accounts, tradingDates).map((trade, index) => {
+    if (index % 5 === 0) return { ...trade, strategyId: null, setupId: null };
+    const strategy = managed.strategies[index % managed.strategies.length];
+    const candidates = managed.setups.filter((setup) => setup.strategyId === strategy.id);
+    const setup = candidates[index % candidates.length];
+    return { ...trade, strategyId: strategy.id, setupId: setup.id, strategy: strategy.name, setup: setup.name };
+  });
   const journal = buildJournal(userId, anchorDate, timezone, trades);
   const ruleData = buildRules(userId, anchorDate, timezone, trades, journal.entries, tradingDates);
   const goals = buildGoals(userId, anchorDate, timezone, tradingDates);
   const dataset = {
-    userId, timezone, anchorDate, tradingDates, accounts, trades,
+    userId, timezone, anchorDate, tradingDates, accounts, managedStrategies: managed.strategies, managedSetups: managed.setups, trades,
     journalEntries: journal.entries, journalEntryTrades: journal.links, dailyReviewDetails: journal.details,
     rules: ruleData.rules, ruleChecks: ruleData.checks, goals,
   };

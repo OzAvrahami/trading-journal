@@ -85,4 +85,24 @@ describe('route metadata', () => {
     });
     expect(resolveRouteMetadata('/daily-review').commandActions).toEqual([]);
   });
+
+  it('resolves and localizes the managed Strategies route', () => {
+    const metadata = resolveRouteMetadata('/strategies');
+    expect(metadata).toMatchObject({
+      title: 'Strategies & Setups',
+      description: 'Manage reusable trade classifications and review their real performance.',
+      breadcrumbs: ['Trading', 'Strategies & Setups'],
+      nav: '/strategies',
+    });
+    const t = (key) => ({
+      'routes.strategies.title': 'אסטרטגיות וסטאפים',
+      'routes.strategies.description': 'ניהול סיווגים חוזרים לעסקאות ובחינת הביצועים האמיתיים שלהם.',
+      'navigation.trading': 'מסחר',
+      'navigation.strategies': 'אסטרטגיות וסטאפים',
+    }[key] || key);
+    expect(localizeRouteMetadata(metadata, t)).toMatchObject({
+      title: 'אסטרטגיות וסטאפים',
+      nav: '/strategies',
+    });
+  });
 });

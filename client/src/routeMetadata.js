@@ -1,5 +1,14 @@
 const ROUTES = [
   {
+    match: (pathname) => pathname === '/strategies',
+    title: 'Strategies & Setups',
+    description: 'Manage reusable trade classifications and review their real performance.',
+    breadcrumbs: ['Trading', 'Strategies & Setups'],
+    nav: '/strategies',
+    headerControls: [],
+    commandActions: [],
+  },
+  {
     match: (pathname) => pathname === '/dashboard',
     title: 'Dashboard',
     description: 'Review trading performance across your current scope.',
@@ -125,7 +134,7 @@ export function resolveRouteMetadata(pathname) {
 }
 
 const ROUTE_KEYS = new Map([
-  ['/dashboard', 'dashboard'], ['/trades', 'trades'], ['/daily-review', 'dailyReview'],
+  ['/dashboard', 'dashboard'], ['/trades', 'trades'], ['/strategies', 'strategies'], ['/daily-review', 'dailyReview'],
   ['/accounts', 'accounts'], ['/import', 'import'], ['/insights/analytics', 'analytics'],
   ['/insights/journal', 'journal'], ['/insights/rules', 'rules'], ['/insights/goals', 'goals'],
 ]);
@@ -138,6 +147,7 @@ export function localizeRouteMetadata(metadata, t) {
   const breadcrumbMap = {
     Journal: 'navigation.journal', Trading: 'navigation.trading', Manage: 'navigation.manage',
     Insights: 'navigation.insights', Dashboard: 'navigation.dashboard', Trades: 'navigation.trades',
+    'Strategies & Setups': 'navigation.strategies',
     'Daily Review': 'navigation.dailyReview', 'Trade details': 'routes.tradeDetail.title',
     'New Trade': 'routes.tradeNew.title', 'Edit Trade': 'routes.tradeEdit.title',
     Accounts: 'navigation.accounts', Import: 'navigation.import', Analytics: 'navigation.analytics',

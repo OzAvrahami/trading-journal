@@ -161,4 +161,22 @@ Object.assign(he.trades, {
   },
 });
 
+Object.assign(he.navigation, { strategies: 'אסטרטגיות וסטאפים' });
+Object.assign(he.routes, { strategies: { title: 'אסטרטגיות וסטאפים', description: 'ניהול סיווגים חוזרים לעסקאות ובחינת הביצועים האמיתיים שלהם.' } });
+Object.assign(he.strategies = {}, {
+  summary: 'סיכום אסטרטגיות וסטאפים', activeStrategies: 'אסטרטגיות פעילות', activeSetups: 'סטאפים פעילים', managedClosedTrades: 'עסקאות סגורות משויכות', unlinkedClosedTrades: 'עסקאות סגורות שלא שויכו',
+  strategyList: 'אסטרטגיות מנוהלות', setups: 'סטאפים מנוהלים', managedStrategy: 'אסטרטגיה מנוהלת', managedSetup: 'סטאפ מנוהל', classification: 'סיווג אסטרטגיה',
+  createStrategy: 'יצירת אסטרטגיה', editStrategy: 'עריכת אסטרטגיה', saveStrategy: 'שמירת אסטרטגיה', createSetup: 'יצירת סטאפ', editSetup: 'עריכת סטאפ', saveSetup: 'שמירת סטאפ',
+  strategyName: 'שם האסטרטגיה', setupName: 'שם הסטאפ', selectStrategy: 'בחירת אסטרטגיה', parentRequired: 'יש לבחור אסטרטגיית אב.', parentImmutable: 'לא ניתן להעביר סטאפ לאסטרטגיה אחרת לאחר היצירה.',
+  nameRequired: 'יש להזין שם.', archive: 'העברה לארכיון', restore: 'שחזור', strategySaved: 'האסטרטגיה נשמרה.', setupSaved: 'הסטאפ נשמר.', saveFailed: 'לא ניתן לשמור את הסיווג המנוהל.',
+  duplicateStrategy: 'כבר קיימת אסטרטגיה בשם הזה.', duplicateSetup: 'כבר קיים סטאפ בשם הזה באסטרטגיה.',
+  noStrategies: 'עדיין אין אסטרטגיות מנוהלות', noStrategiesDetail: 'אפשר ליצור אסטרטגיה כדי להתחיל לנהל סיווגים חוזרים לעסקאות.', noSetups: 'עדיין אין סטאפים מנוהלים', noSetupsDetail: 'אפשר ליצור סטאפ בתוך האסטרטגיה כאשר דפוס הביצוע חוזר על עצמו.',
+  closedTrades: 'עסקאות סגורות', openTrades: 'עסקאות פתוחות', outcomes: 'תוצאות', outcomeRecord: '{{winners}} ניצחונות / {{losers}} הפסדים / {{breakeven}} איזון', setupCount: 'סטאפ אחד', setupCount_other: '{{count}} סטאפים', closedCount: '{{count}} סגורות', tradeCount: 'עסקה אחת', tradeCount_other: '{{count}} עסקאות',
+  legacyValues: 'ערכים היסטוריים שלא שויכו', legacyDetail: 'אלה ערכי טקסט שנשמרו בעסקאות ללא מזהה מנוהל. הם לקריאה בלבד ולעולם אינם משויכים אוטומטית.', legacyStrategies: 'ערכי אסטרטגיה היסטוריים', legacySetups: 'ערכי סטאפ היסטוריים', noLegacyValues: 'אין ערכים היסטוריים שלא שויכו.', unclassified: 'ללא סיווג',
+  customLegacyValue: 'טקסט מותאם או היסטורי', hybridHelp: 'בחירה מנוהלת שומרת תמונת טקסט; עדיין אפשר להזין טקסט מותאם.', quickAddBoundary: 'בהוספה מהירה בחירת הסטאפ נשארת בטופס המלא.',
+  loading: 'טוען אסטרטגיות וסטאפים', loadFailed: 'לא ניתן לטעון אסטרטגיות וסטאפים', loadFailedDetail: 'הסיווגים המנוהלים והביצועים שלהם אינם זמינים כרגע.', refreshFailed: 'לא ניתן לרענן את האסטרטגיות', staleVisible: 'הסיווגים האחרונים הזמינים נשארו מוצגים.', setupsLoadFailed: 'לא ניתן לטעון את הסטאפים', legacyLoadFailed: 'לא ניתן לטעון את הערכים ההיסטוריים', selectorLoadFailed: 'לא ניתן לטעון את הסיווגים המנוהלים', customStillAvailable: 'עדיין אפשר להשתמש בטקסט מותאם לאסטרטגיה ולסטאפ.',
+});
+Object.assign(he.trades.validation, { setupRequiresStrategy: 'סטאפ מנוהל דורש אסטרטגיה מנוהלת.' });
+Object.assign(he.errors, { STRATEGY_NOT_FOUND: 'האסטרטגיה לא נמצאה.', SETUP_NOT_FOUND: 'הסטאפ לא נמצא.', STRATEGY_NAME_EXISTS: 'כבר קיימת אסטרטגיה בשם הזה.', SETUP_NAME_EXISTS: 'כבר קיים סטאפ בשם הזה באסטרטגיה.', STRATEGY_ARCHIVED: 'יש לבחור אסטרטגיה פעילה.', SETUP_ARCHIVED: 'יש לבחור סטאפ פעיל.', SETUP_REQUIRES_STRATEGY: 'סטאפ מנוהל דורש אסטרטגיה מנוהלת.', SETUP_STRATEGY_MISMATCH: 'הסטאפ אינו שייך לאסטרטגיה שנבחרה.' });
+
 export default he;

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, Wallet } from '@phosphor-icons/react';
 import { accountsApi } from '../api/accounts.js';
 import { tradesApi } from '../api/trades.js';
+import { strategiesApi } from '../api/strategies.js';
 import { TradeForm } from '../components/trades/TradeForm.jsx';
 import { invalidateTradeQueries } from '../components/trades/tradeQueryInvalidation.js';
 import { mapTradeToFormValues } from '../components/trades/tradeFormModel.js';
@@ -52,6 +53,14 @@ export default function TradeEditor() {
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
   const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: accountsApi.list });
+  const strategiesQuery = useQuery({
+    queryKey: ['strategies', { includeArchived: isEdit }],
+    queryFn: () => strategiesApi.list({ includeArchived: String(isEdit) }),
+  });
+  const setupsQuery = useQuery({
+    queryKey: ['setups', { includeArchived: isEdit }],
+    queryFn: () => strategiesApi.listSetups({ includeArchived: String(isEdit) }),
+  });
   const tradeQuery = useQuery({
     queryKey: ['trade', tradeId],
     queryFn: () => tradesApi.get(tradeId),
@@ -112,7 +121,7 @@ export default function TradeEditor() {
   }
   if (tradeQuery.isError) return <ErrorState title={t('trades.loadError')} detail={t('trades.unavailableRecord')} onRetry={tradeQuery.refetch} />;
   if (accountsQuery.isError) return <ErrorState title={t('trades.accountsLoadFailed')} detail={t('trades.accountsLoadFailedDetail')} onRetry={accountsQuery.refetch} />;
-  if (accountsQuery.isLoading || (isEdit && tradeQuery.isLoading)) return <EditorSkeleton />;
+  if (accountsQuery.isLoading || strategiesQuery.isLoading || setupsQuery.isLoading || (isEdit && tradeQuery.isLoading)) return <EditorSkeleton />;
   if (!isEdit && (accountsQuery.data?.length ?? 0) === 0) {
     return <EmptyState title={t('accounts.noAccounts')} detail={t('accounts.noAccountsDetail')} action={<Button variant="primary" leadingIcon={<Wallet size={17} aria-hidden="true" />} onClick={() => navigate('/accounts')}>{t('trades.openAccounts')}</Button>} />;
   }
@@ -129,10 +138,15 @@ export default function TradeEditor() {
         <p role="status" className="text-xs text-muted">{t('trades.refreshingEditor')}</p>
       )}
       {serverError && <div role="alert" className="rounded-lg border border-negative bg-negative-soft p-4 text-sm text-primary">{serverError}</div>}
+      {(strategiesQuery.isError || setupsQuery.isError) && (
+        <ErrorState title={t('strategies.selectorLoadFailed')} detail={t('strategies.customStillAvailable')} onRetry={() => Promise.all([strategiesQuery.refetch(), setupsQuery.refetch()])} />
+      )}
       <TradeForm
         key={isEdit ? tradeId : 'new-trade'}
         defaultValues={defaults}
         accounts={accountsQuery.data || []}
+        managedStrategies={strategiesQuery.data?.strategies || []}
+        managedSetups={setupsQuery.data?.setups || []}
         timezone={timezone}
         isEdit={isEdit}
         loading={mutation.isPending}
