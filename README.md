@@ -111,3 +111,47 @@ Server calculates these automatically on every create/update:
 | `rMultiple` | `pnlNet / riskAmount` |
 | `durationMinutes` | `(exitTime - entryTime) / 60` |
 | `status` | `'open'` if no exit, `'closed'` otherwise |
+
+## Date and Time Convention
+
+- Each user has one IANA timezone. Existing and new users default to `Asia/Jerusalem`.
+- A product calendar day runs from 00:00 in that timezone to the start of the next local day. Inclusive `from`/`to` date filters are implemented as a half-open timestamp interval: `>=` local midnight on `from` and `<` local midnight on the day after `to`.
+- Week-to-date starts on Monday. Calendar grids may remain Sunday-first.
+- Trade analytics, trade lists, exports, and trade-backed Goals continue to attribute timestamps by `entry_datetime` for backward compatibility. They do not claim exchange-local or New York-session semantics.
+- `journal_entries.entry_date`, `rule_checks.check_date`, Goal start/end dates, and other PostgreSQL `DATE` values remain date-only calendar values; they are not converted through UTC timestamps.
+- Per-account timezones, exchange timezones, market-session dates, and exit-date attribution are deferred.
+
+Stored timestamps and historical records are not rewritten. Timezone-aware filtering and grouping can move previously displayed results near midnight to a different calendar day while leaving the source record unchanged.
+
+## Demo data reset and seed
+
+`npm run seed:demo` is a development-only, destructive reset for one explicitly selected user's domain data. It is forbidden when `NODE_ENV=production`, never runs automatically, and creates a local JSON backup before opening the reset transaction.
+
+Required environment variables:
+
+```powershell
+$env:DEMO_USER_EMAIL="user@example.com"
+$env:DEMO_RESET_CONFIRM="RESET_MY_DEMO_DATA"
+```
+
+Optional deterministic anchor date:
+
+```powershell
+$env:DEMO_ANCHOR_DATE="2026-08-04"
+```
+
+Optional demo-content locale (defaults to English):
+
+```powershell
+$env:DEMO_LOCALE="he" # supported: en, he
+```
+
+`DEMO_LOCALE` changes only human-readable fixture content such as account names, trade notes, Journal entries, Daily Review details, Rules, and Goals. IDs, relationships, symbols, company names, enum keys, dates, timestamps, numeric values, and Analytics/Goals KPI contracts remain identical. Unsupported or blank locale values fail before backup, transaction start, deletion, or insertion.
+
+Without `DEMO_ANCHOR_DATE`, the command uses the current calendar date in the target user's IANA timezone. For a given user and anchor date, rerunning recreates the same logical fixtures.
+
+The command backs up and resets only owned rows in `goals`, `rule_checks`, `trading_rules`, `journal_entry_trades`, `daily_review_details`, `journal_entries`, `trades`, and `trading_accounts`. It preserves `users`, `refresh_tokens`, `schema_migrations`, login credentials, profile fields, timezone, and sessions. The resulting fixture contains 8 accounts, 53 closed trades, 4 open trades across 22 dates, 14 Journal entries with 4 structured Daily Reviews, 8 rules with 44 checks, and 7 Goals. Production Analytics is validated before commit against 31 winners, 20 losers, 2 breakevens, $7,486 net PnL, $346 fees, approximately $141.25 expectancy, and approximately 1.70 profit factor.
+
+Backups are written beneath ignored `server/.local/demo-seed-backups/`. To restore, review the JSON, map its sections back to the same tables, and restore in foreign-key order inside a manually reviewed transaction. No automatic restore or general database-wipe command is provided.
+
+The design's positions, executions, portfolio transactions, holdings, lots, dividends, allocation, price/FX caches, notifications, import history, saved views, and portfolio-performance data are not seeded because those production domains do not exist.

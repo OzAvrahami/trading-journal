@@ -1,0 +1,96 @@
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0a0e13;
+  --bg-2: #0e141b;
+  --surface: #121a22;
+  --surface-2: #17212b;
+  --surface-3: #1d2935;
+  --border: #212e3c;
+  --border-2: #2c3e4f;
+  --text: #e7eef5;
+  --text-2: #a2b2c2;
+  --text-3: #6d8095;
+  --action: #3b8eea;
+  --action-2: #5ba3f2;
+  --action-soft: rgba(59, 142, 234, 0.14);
+  --pos: #37c08c;
+  --pos-soft: rgba(55, 192, 140, 0.13);
+  --neg: #e56a61;
+  --neg-soft: rgba(229, 106, 97, 0.13);
+  --warn: #dfa33f;
+  --warn-soft: rgba(223, 163, 63, 0.13);
+  --info: #6ba5d8;
+  --info-soft: rgba(107, 165, 216, 0.14);
+  --cmp: #a98be0;
+  --cmp-soft: rgba(169, 139, 224, 0.15);
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-overlay: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px -16px rgba(0, 0, 0, 0.8);
+  --overlay: rgba(4, 8, 12, 0.72);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f3f4f1;
+  --bg-2: #eceeea;
+  --surface: #ffffff;
+  --surface-2: #fafaf8;
+  --surface-3: #f1f2ee;
+  --border: #e1e4df;
+  --border-2: #c9cdc6;
+  --text: #141819;
+  --text-2: #4e5a62;
+  --text-3: #79858e;
+  --action: #1b6fd0;
+  --action-2: #155cb0;
+  --action-soft: rgba(27, 111, 208, 0.1);
+  --pos: #0f7a56;
+  --pos-soft: rgba(15, 122, 86, 0.1);
+  --neg: #bc3b31;
+  --neg-soft: rgba(188, 59, 49, 0.1);
+  --warn: #8e6410;
+  --warn-soft: rgba(142, 100, 16, 0.12);
+  --info: #1b6fd0;
+  --info-soft: rgba(27, 111, 208, 0.1);
+  --cmp: #63499f;
+  --cmp-soft: rgba(99, 73, 159, 0.12);
+  --shadow-raised: 0 1px 2px rgba(20, 24, 25, 0.06);
+  --shadow-overlay: 0 1px 2px rgba(20, 24, 25, 0.06), 0 12px 28px -18px rgba(20, 24, 25, 0.28);
+  --overlay: rgba(20, 24, 25, 0.38);
+}
+
+:root {
+  --font-ui: 'IBM Plex Sans', 'Arial Hebrew', Arial, system-ui, -apple-system, sans-serif;
+  --font-numeric: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  --type-page-title: 1.1875rem;
+  --type-section-title: 0.875rem;
+  --type-card-title: 0.84375rem;
+  --type-primary-metric: 1.625rem;
+  --type-secondary-metric: 1.1875rem;
+  --type-body: 0.8125rem;
+  --type-table: 0.78125rem;
+  --type-label: 0.75rem;
+  --type-metadata: 0.71875rem;
+  --type-overline: 0.65625rem;
+
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 16px;
+  --space-10: 20px;
+  --space-12: 24px;
+  --space-16: 32px;
+  --space-22: 44px;
+
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 9px;
+  --radius-pill: 16px;
+
+  --shadow-flat: none;
+}

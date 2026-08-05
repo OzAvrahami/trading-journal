@@ -1,12 +1,67 @@
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
+import { X } from '@phosphor-icons/react';
+import { IconButton } from './IconButton.jsx';
+import { useTranslation } from 'react-i18next';
+
+const FOCUSABLE = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
 
 export function Modal({ open, onClose, title, children, size = 'md' }) {
-  // Close on Escape key
+  const { t } = useTranslation();
+  const panelRef = useRef(null);
+  const restoreFocusRef = useRef(null);
+  const titleId = useId();
+
   useEffect(() => {
-    if (!open) return;
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    if (!open) return undefined;
+
+    restoreFocusRef.current = document.activeElement;
+    const panel = panelRef.current;
+    const focusables = () => [...(panel?.querySelectorAll(FOCUSABLE) || [])];
+    const initialTarget = panel?.querySelector('[data-autofocus]') || focusables()[0] || panel;
+    initialTarget?.focus();
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const items = focusables();
+      if (!items.length) {
+        event.preventDefault();
+        panel?.focus();
+        return;
+      }
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      restoreFocusRef.current?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -19,27 +74,28 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      data-testid="modal-backdrop"
+    >
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      {/* Panel */}
-      <div className={`relative w-full ${sizes[size]} bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]`}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h2 className="text-lg font-semibold text-gray-100">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-300 transition text-xl leading-none"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className={`relative flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-lg border border-strong bg-surface shadow-overlay ${sizes[size]}`}
+      >
+        <div className="flex min-h-14 items-center justify-between gap-4 border-b border-default px-5 py-3">
+          <h2 id={titleId} className="text-base font-semibold text-primary">{title}</h2>
+          <IconButton label={t('shell.closeDialog')} variant="tertiary" size="sm" onClick={onClose}>
+            <X size={18} aria-hidden="true" />
+          </IconButton>
         </div>
-        {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           {children}
         </div>
       </div>

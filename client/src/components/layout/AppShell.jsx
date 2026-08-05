@@ -1,91 +1,67 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../ui/Toast.jsx';
+import { localizeRouteMetadata, resolveRouteMetadata } from '../../routeMetadata.js';
+import { Sidebar } from './Sidebar.jsx';
+import { Header } from './Header.jsx';
+import { MobileNav } from './MobileNav.jsx';
+import { HeaderControlsProvider } from './HeaderControls.jsx';
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { to: '/trades',    label: 'Trades',    icon: '📋' },
-  { to: '/accounts',  label: 'Accounts',  icon: '🏦' },
-  { to: '/import',    label: 'Import',    icon: '📥' },
-];
+const SIDEBAR_STORAGE_KEY = 'tradinglog-sidebar-collapsed';
+
+function readCollapsedState() {
+  try {
+    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
 
 export function AppShell({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { t } = useTranslation();
+  const [collapsed, setCollapsed] = useState(readCollapsedState);
+  const metadata = localizeRouteMetadata(resolveRouteMetadata(location.pathname), t);
+
+  useEffect(() => {
+    document.title = `${metadata.title} · TradingLog`;
+  }, [metadata.title]);
+
+  function toggleCollapsed() {
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+      } catch {
+        // Persistence is optional; the control still works for this session.
+      }
+      return next;
+    });
+  }
 
   async function handleLogout() {
     await logout();
     navigate('/login');
-    toast.info('Logged out.');
+    toast.info(t('auth.loggedOut'));
   }
 
-  const navLinkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-      isActive
-        ? 'bg-blue-600 text-white'
-        : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800'
-    }`;
-
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-950">
-      {/* Sidebar */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-40 w-56 bg-gray-900 border-r border-gray-800
-        flex flex-col transform transition-transform duration-200
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:relative lg:translate-x-0 lg:flex
-      `}>
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-4 py-5 border-b border-gray-800">
-          <span className="text-2xl">📈</span>
-          <span className="font-bold text-gray-100 text-lg">TradingLog</span>
+    <HeaderControlsProvider metadata={metadata}>
+      <div className="flex h-dvh min-h-0 overflow-hidden bg-canvas-secondary text-primary">
+        <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} user={user} onLogout={handleLogout} />
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
+          <Header metadata={metadata} />
+          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 adaptive:p-5 compact:p-6">
+            {children}
+          </main>
+          <MobileNav />
         </div>
-
-        {/* Nav links */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map(item => (
-            <NavLink key={item.to} to={item.to} className={navLinkClass} onClick={() => setSidebarOpen(false)}>
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* User info */}
-        <div className="px-3 py-4 border-t border-gray-800">
-          <div className="text-xs text-gray-500 mb-2 truncate px-1">{user?.email}</div>
-          <button onClick={handleLogout} className="btn-secondary w-full text-xs">
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-gray-900 border-b border-gray-800">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-400 hover:text-gray-100 transition"
-          >
-            ☰
-          </button>
-          <span className="font-bold text-gray-100">TradingLog</span>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
       </div>
-    </div>
+    </HeaderControlsProvider>
   );
 }

@@ -1,27 +1,14 @@
-import { date } from 'zod';
 import pool from '../db/client.js';
-
-// ---- Date helpers -----------------------------------------------------------
-
-function startOfDay(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-}
-
-function endOfDay(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
-}
-
-function startOfWeek(d = new Date()) {
-  const day = d.getDay(); // 0=Sun
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString();
-}
-
-function startOfMonth(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
-}
+import {
+  DEFAULT_TIMEZONE,
+  addTimestampDateRange,
+  dateKeyInTimezone,
+  ensureTimezoneParameter,
+  localDateSql,
+  mapPostgresDate,
+  mondayOfDateKey,
+  monthStartDateKey,
+} from '../utils/dateTime.js';
 
 // ---- Query builder helpers --------------------------------------------------
 
@@ -32,13 +19,14 @@ function startOfMonth(d = new Date()) {
  * accountId filter → direct column condition, no JOIN needed.
  * company filter   → JOIN trading_accounts ta needed.
  */
-function buildQueryParts(userId, { from, to, accountId, company }) {
+export function buildQueryParts(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
   const params = [userId];
   const conds  = ['t.user_id = $1'];
   let join     = '';
 
-  if (from) { params.push(from);                    conds.push(`t.entry_datetime >= $${params.length}`); }
-  if (to)   { params.push(`${to}T23:59:59.999Z`);   conds.push(`t.entry_datetime <= $${params.length}`); }
+  const timezonePlaceholder = addTimestampDateRange({
+    conditions: conds, params, column: 't.entry_datetime', from, to, timezone,
+  });
 
   if (accountId) {
     params.push(accountId);
@@ -49,14 +37,14 @@ function buildQueryParts(userId, { from, to, accountId, company }) {
     conds.push(`ta.company = $${params.length}`);
   }
 
-  return { params, where: conds.join(' AND '), join };
+  return { params, where: conds.join(' AND '), join, timezonePlaceholder };
 }
 
 /**
  * Builds a simple COUNT+SUM query for a fixed date period (today/WTD/MTD).
  * Uses the same account/company filter as the main query but independent params.
  */
-function buildPeriodQuery(userId, { accountId, company }, startDate, endDate) {
+function buildPeriodQuery(userId, { accountId, company }, from, to, timezone) {
   const params = [userId];
   const conds  = ["t.user_id = $1", "t.status = 'closed'"];
   let join     = '';
@@ -70,13 +58,7 @@ function buildPeriodQuery(userId, { accountId, company }, startDate, endDate) {
     conds.push(`ta.company = $${params.length}`);
   }
 
-  params.push(startDate);
-  conds.push(`t.entry_datetime >= $${params.length}`);
-
-  if (endDate) {
-    params.push(endDate);
-    conds.push(`t.entry_datetime <= $${params.length}`);
-  }
+  addTimestampDateRange({ conditions: conds, params, column: 't.entry_datetime', from, to, timezone });
 
   return {
     sql: `SELECT COUNT(*) AS cnt, COALESCE(SUM(t.pnl_net), 0) AS pnl
@@ -87,17 +69,16 @@ function buildPeriodQuery(userId, { accountId, company }, startDate, endDate) {
 
 // ---- Summary ----------------------------------------------------------------
 
-export async function getSummary(userId, { from, to, accountId, company }) {
-  const now = new Date();
+export async function getSummary(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, now = new Date(), queryable = pool) {
+  const today = dateKeyInTimezone(timezone, now);
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
 
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
-
-  const todayQ = buildPeriodQuery(userId, { accountId, company }, startOfDay(now), endOfDay(now));
-  const wtdQ   = buildPeriodQuery(userId, { accountId, company }, startOfWeek(now));
-  const mtdQ   = buildPeriodQuery(userId, { accountId, company }, startOfMonth(now));
+  const todayQ = buildPeriodQuery(userId, { accountId, company }, today, today, timezone);
+  const wtdQ   = buildPeriodQuery(userId, { accountId, company }, mondayOfDateKey(today), today, timezone);
+  const mtdQ   = buildPeriodQuery(userId, { accountId, company }, monthStartDateKey(today), today, timezone);
 
   const [mainRes, todayRes, wtdRes, mtdRes] = await Promise.all([
-    pool.query(`
+    queryable.query(`
       SELECT
         COUNT(*)                                                          AS total,
         COUNT(*) FILTER (WHERE t.status = 'closed')                      AS closed,
@@ -116,9 +97,9 @@ export async function getSummary(userId, { from, to, accountId, company }) {
       FROM trades t${join}
       WHERE ${where}
     `, params),
-    pool.query(todayQ.sql, todayQ.params),
-    pool.query(wtdQ.sql,   wtdQ.params),
-    pool.query(mtdQ.sql,   mtdQ.params),
+    queryable.query(todayQ.sql, todayQ.params),
+    queryable.query(wtdQ.sql,   wtdQ.params),
+    queryable.query(mtdQ.sql,   mtdQ.params),
   ]);
 
   const r = mainRes.rows[0];
@@ -130,13 +111,14 @@ export async function getSummary(userId, { from, to, accountId, company }) {
   const grossProfit = parseFloat(r.gross_profit) || 0;
   const grossLoss   = parseFloat(r.gross_loss)   || 0;
   const winRate     = closed > 0 ? winners / closed : 0;
-  const expectancy  = winRate * avgWin + (1 - winRate) * avgLoss;
+  const expectancy  = calculateExpectancy(r.pnl_net_sum, closed);
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? null : 0);
 
   const fmt2 = v => parseFloat(parseFloat(v || 0).toFixed(2));
   const fmt4 = v => v != null ? parseFloat(parseFloat(v).toFixed(4)) : null;
 
   return {
+    timezone,
     period: { from: from || null, to: to || null },
     totals: {
       tradesTotal:        parseInt(r.total) || 0,
@@ -150,7 +132,7 @@ export async function getSummary(userId, { from, to, accountId, company }) {
       totalFees:          fmt2(r.fees_sum),
       avgWin:             fmt2(avgWin),
       avgLoss:            fmt2(avgLoss),
-      expectancy:         fmt2(expectancy),
+      expectancy:         expectancy != null ? fmt2(expectancy) : null,
       profitFactor:       profitFactor != null ? fmt4(profitFactor) : null,
       avgRMultiple:       fmt4(r.avg_r),
       avgDurationMinutes: r.avg_duration ? Math.round(parseFloat(r.avg_duration)) : null,
@@ -161,16 +143,73 @@ export async function getSummary(userId, { from, to, accountId, company }) {
   };
 }
 
+export function calculateExpectancy(totalNetPnl, closedTrades) {
+  const count = Number(closedTrades);
+  if (!Number.isFinite(count) || count <= 0) return null;
+  return Number(totalNetPnl || 0) / count;
+}
+
+export async function getDaySummary(userId, date, timezone = DEFAULT_TIMEZONE, queryable = pool) {
+  const { params, where } = buildQueryParts(userId, { from: date, to: date }, timezone);
+  const result = await queryable.query(`
+    WITH day_trades AS (
+      SELECT t.id, t.symbol, t.direction, t.account_id, t.entry_datetime,
+             t.exit_datetime, t.status, t.pnl_net, t.fees
+      FROM trades t
+      WHERE ${where}
+    )
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'closed')::int AS closed_trades,
+      COUNT(*) FILTER (WHERE status = 'open')::int AS open_trades,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net > 0)::int AS winners,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net < 0)::int AS losers,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net = 0)::int AS breakeven,
+      SUM(pnl_net) FILTER (WHERE status = 'closed') AS pnl_net,
+      COALESCE(SUM(fees), 0) AS total_fees,
+      (SELECT jsonb_build_object(
+         'id', id, 'symbol', symbol, 'pnlNet', pnl_net, 'direction', direction,
+         'accountId', account_id, 'entryDatetime', entry_datetime, 'exitDatetime', exit_datetime)
+       FROM day_trades WHERE status = 'closed'
+       ORDER BY pnl_net DESC, id ASC LIMIT 1) AS best_trade,
+      (SELECT jsonb_build_object(
+         'id', id, 'symbol', symbol, 'pnlNet', pnl_net, 'direction', direction,
+         'accountId', account_id, 'entryDatetime', entry_datetime, 'exitDatetime', exit_datetime)
+       FROM day_trades WHERE status = 'closed'
+       ORDER BY pnl_net ASC, id ASC LIMIT 1) AS worst_trade
+    FROM day_trades`, params);
+  const row = result.rows[0];
+  const closedTrades = Number(row.closed_trades ?? 0);
+  const winners = Number(row.winners ?? 0);
+  const mapIdentity = (trade) => trade ? { ...trade, pnlNet: Number(trade.pnlNet) } : null;
+  return {
+    date,
+    timezone,
+    closedTrades,
+    openTrades: Number(row.open_trades ?? 0),
+    winners,
+    losers: Number(row.losers ?? 0),
+    breakeven: Number(row.breakeven ?? 0),
+    pnlNet: closedTrades ? Number(row.pnl_net) : null,
+    totalFees: Number(row.total_fees ?? 0),
+    winRate: closedTrades ? Number(((winners / closedTrades) * 100).toFixed(2)) : null,
+    bestTrade: mapIdentity(row.best_trade),
+    worstTrade: mapIdentity(row.worst_trade),
+  };
+}
+
 // ---- Equity curve -----------------------------------------------------------
 
-export async function getEquityCurve(userId, { from, to, accountId, company }) {
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+export async function getEquityCurve(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+  const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
+  const timezonePlaceholder = ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder);
+  const dateExpression = localDateSql('t.entry_datetime', timezonePlaceholder);
+  const { params, where, join } = parts;
 
   const result = await pool.query(`
-    SELECT DATE(t.entry_datetime) AS date, SUM(t.pnl_net) AS daily_pnl
+    SELECT ${dateExpression} AS date, SUM(t.pnl_net) AS daily_pnl
     FROM trades t${join}
     WHERE ${where} AND t.status = 'closed'
-    GROUP BY DATE(t.entry_datetime)
+    GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
 
@@ -179,30 +218,33 @@ export async function getEquityCurve(userId, { from, to, accountId, company }) {
     data: result.rows.map(row => {
       const daily = parseFloat(parseFloat(row.daily_pnl).toFixed(2));
       cumulative = parseFloat((cumulative + daily).toFixed(2));
-      return { date: row.date, dailyPnl: daily, cumulativePnl: cumulative };
+      return { date: mapPostgresDate(row.date), dailyPnl: daily, cumulativePnl: cumulative };
     }),
   };
 }
 
 // ---- Calendar  --------------------------------------------------------------
 
-export async function getCalendar(userId, { from, to, accountId, company }) {
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+export async function getCalendar(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
+  const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
+  const timezonePlaceholder = ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder);
+  const dateExpression = localDateSql('t.entry_datetime', timezonePlaceholder);
+  const { params, where, join } = parts;
 
-  const result = await pool.query(`
+  const result = await queryable.query(`
     SELECT
-      DATE(t.entry_datetime) AS date,
+      ${dateExpression} AS date,
       SUM(t.pnl_net) AS pnl_net,
       COUNT(*) AS trades_count
     FROM trades t${join}
     WHERE ${where} AND t.status = 'closed'
-    GROUP BY DATE(t.entry_datetime)
+    GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
 
   return {
     days: result.rows.map(row => ({
-      date: row.date,
+      date: mapPostgresDate(row.date),
       pnlNet: parseFloat(parseFloat(row.pnl_net).toFixed(2)),
       tradesCount: Number(row.trades_count),
     })),
@@ -211,28 +253,42 @@ export async function getCalendar(userId, { from, to, accountId, company }) {
 
 // ---- PnL distribution -------------------------------------------------------
 
-export async function getDistribution(userId, { from, to, accountId, company }) {
-  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company });
+export async function getDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
 
-  const result = await pool.query(`
+  const result = await queryable.query(`
     SELECT t.pnl_net FROM trades t${join}
     WHERE ${where} AND t.status = 'closed' AND t.pnl_net IS NOT NULL
     ORDER BY t.pnl_net
   `, params);
 
-  if (result.rows.length === 0) return { buckets: [] };
-
   const values = result.rows.map(r => parseFloat(r.pnl_net));
+  return { buckets: bucketPnlValues(values) };
+}
+
+export function bucketPnlValues(rawValues) {
+  const values = rawValues.map(Number).filter(Number.isFinite);
+  if (values.length === 0) return [];
+
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
 
-  const range = maxVal - minVal || 1;
+  if (minVal === maxVal) {
+    return [{
+      range: `${minVal >= 0 ? '+' : ''}${minVal.toFixed(0)}`,
+      min: minVal,
+      max: maxVal,
+      count: values.length,
+    }];
+  }
+
+  const range = maxVal - minVal;
   const rawSize = range / 15;
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawSize)));
   const bucketSize = Math.max(Math.ceil(rawSize / magnitude) * magnitude, 1);
 
   const bucketStart = Math.floor(minVal / bucketSize) * bucketSize;
-  const bucketEnd   = Math.ceil(maxVal  / bucketSize) * bucketSize;
+  const bucketEnd   = (Math.floor(maxVal / bucketSize) + 1) * bucketSize;
   const buckets = [];
 
   for (let start = bucketStart; start < bucketEnd; start += bucketSize) {
@@ -246,27 +302,89 @@ export async function getDistribution(userId, { from, to, accountId, company }) 
     });
   }
 
-  return { buckets };
+  return buckets;
+}
+
+// ---- R-multiple distribution -----------------------------------------------
+
+export const R_BUCKETS = Object.freeze([
+  { key: 'lte_neg_2', label: '≤ -2R', min: null, max: -2, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_2_to_neg_1_5', label: '-2R to -1.5R', min: -2, max: -1.5, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_1_5_to_neg_1', label: '-1.5R to -1R', min: -1.5, max: -1, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_1_to_neg_0_5', label: '-1R to -0.5R', min: -1, max: -0.5, lowerInclusive: false, upperInclusive: true },
+  { key: 'neg_0_5_to_0', label: '-0.5R to 0R', min: -0.5, max: 0, lowerInclusive: false, upperInclusive: false },
+  { key: '0_to_0_5', label: '0R to 0.5R', min: 0, max: 0.5, lowerInclusive: true, upperInclusive: false },
+  { key: '0_5_to_1', label: '0.5R to 1R', min: 0.5, max: 1, lowerInclusive: true, upperInclusive: false },
+  { key: '1_to_2', label: '1R to 2R', min: 1, max: 2, lowerInclusive: true, upperInclusive: false },
+  { key: '2_to_3', label: '2R to 3R', min: 2, max: 3, lowerInclusive: true, upperInclusive: false },
+  { key: 'gte_3', label: '≥ 3R', min: 3, max: null, lowerInclusive: true, upperInclusive: false },
+]);
+
+function includesRValue(bucket, value) {
+  const aboveMin = bucket.min == null || (bucket.lowerInclusive ? value >= bucket.min : value > bucket.min);
+  const belowMax = bucket.max == null || (bucket.upperInclusive ? value <= bucket.max : value < bucket.max);
+  return aboveMin && belowMax;
+}
+
+export function bucketRValues(values) {
+  if (!values.length) return [];
+  return R_BUCKETS.map((bucket) => ({
+    ...bucket,
+    count: values.filter((value) => includesRValue(bucket, value)).length,
+  }));
+}
+
+export async function getRDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
+  const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
+  const result = await queryable.query(`
+    SELECT t.r_multiple FROM trades t${join}
+    WHERE ${where} AND t.status = 'closed' AND t.r_multiple IS NOT NULL
+    ORDER BY t.r_multiple ASC
+  `, params);
+
+  const values = result.rows
+    .filter((row) => row.r_multiple != null)
+    .map((row) => Number(row.r_multiple))
+    .filter(Number.isFinite);
+  return { totalTrades: values.length, buckets: bucketRValues(values) };
 }
 
 // ---- Breakdown by dimension -------------------------------------------------
 
-export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }) {
+const WEEKDAYS = Object.freeze([
+  { key: 'monday', label: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday' },
+  { key: 'friday', label: 'Friday' },
+  { key: 'saturday', label: 'Saturday' },
+  { key: 'sunday', label: 'Sunday' },
+]);
+
+export const BREAKDOWN_DIMENSIONS = Object.freeze({
+  symbol:    { expression: 't.symbol', needsJoin: false },
+  strategy:  { expression: 't.strategy', needsJoin: false },
+  timeframe: { expression: 't.timeframe', needsJoin: false },
+  direction: { expression: 't.direction', needsJoin: false },
+  account:   { expression: 't.account_id', needsJoin: false },
+  company:   { expression: 'ta.company', needsJoin: true },
+  market:    { expression: 't.market', needsJoin: false },
+  weekday:   { expression: null, needsJoin: false, ordered: true },
+});
+
+export async function getBreakdown(userId, { by = 'strategy', from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
   // account: group by account_id (UUID) — frontend maps to display name.
   // company: group by ta.company — requires JOIN.
-  const dimensionMap = {
-    symbol:    { col: 't.symbol',     needsJoin: false },
-    strategy:  { col: 't.strategy',   needsJoin: false },
-    timeframe: { col: 't.timeframe',  needsJoin: false },
-    direction: { col: 't.direction',  needsJoin: false },
-    account:   { col: 't.account_id', needsJoin: false },
-    company:   { col: 'ta.company',   needsJoin: true  },
-  };
-
-  const dim = dimensionMap[by] ?? dimensionMap.strategy;
-  const col = dim.col;
-
-  const { params, where, join: filterJoin } = buildQueryParts(userId, { from, to, accountId, company });
+  const dim = BREAKDOWN_DIMENSIONS[by];
+  if (!dim) throw new RangeError(`Unsupported analytics breakdown dimension: ${by}`);
+  const parts = buildQueryParts(userId, { from, to, accountId, company }, timezone);
+  const timezonePlaceholder = by === 'weekday'
+    ? ensureTimezoneParameter(parts.params, timezone, parts.timezonePlaceholder)
+    : parts.timezonePlaceholder;
+  const col = by === 'weekday'
+    ? `EXTRACT(ISODOW FROM (t.entry_datetime AT TIME ZONE ${timezonePlaceholder}))::int`
+    : dim.expression;
+  const { params, where, join: filterJoin } = parts;
 
   // If grouping by company we always need the JOIN, even if the filter doesn't require it.
   const groupJoin = dim.needsJoin && !filterJoin
@@ -275,7 +393,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
 
   const result = await pool.query(`
     SELECT
-      ${col}                                                     AS label,
+      ${col}                                                     AS dimension_key,
       COUNT(*)                                                   AS trades_count,
       COUNT(*) FILTER (WHERE t.pnl_net > 0)                     AS winners,
       COUNT(*) FILTER (WHERE t.pnl_net < 0)                     AS losers,
@@ -284,7 +402,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
     FROM trades t${groupJoin}
     WHERE ${where} AND t.status = 'closed'
     GROUP BY ${col}
-    ORDER BY pnl_net DESC
+    ORDER BY ${dim.ordered ? `${col} ASC` : 'pnl_net DESC'}
   `, params);
 
   return {
@@ -292,8 +410,11 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
     data: result.rows.map(r => {
       const count   = parseInt(r.trades_count) || 0;
       const winners = parseInt(r.winners)      || 0;
+      const weekday = by === 'weekday' ? WEEKDAYS[Number(r.dimension_key) - 1] : null;
+      const rawKey = r.dimension_key == null || r.dimension_key === '' ? 'unknown' : String(r.dimension_key);
       return {
-        label:        r.label || 'Unknown',
+        key:          weekday?.key || rawKey,
+        label:        weekday?.label || (rawKey === 'unknown' ? 'Unknown' : rawKey),
         tradesCount:  count,
         winners,
         losers:       parseInt(r.losers) || 0,

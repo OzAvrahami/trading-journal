@@ -1,39 +1,55 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format, startOfMonth } from 'date-fns';
+import { Bank, Plus } from '@phosphor-icons/react';
 import { analyticsApi } from '../api/analytics.js';
 import { accountsApi } from '../api/accounts.js';
 import { SummaryCards } from '../components/analytics/SummaryCards.jsx';
 import { EquityCurve } from '../components/analytics/EquityCurve.jsx';
 import { PnLHistogram } from '../components/analytics/PnLHistogram.jsx';
 import { BreakdownChart } from '../components/analytics/BreakdownChart.jsx';
-import { Spinner } from '../components/ui/Spinner.jsx';
-import { QuickAddModal } from '../components/trades/QuickAddModal.jsx';
 import { TradingCalendar } from '../components/analytics/TradingCalendar.jsx';
+import { QuickAddModal } from '../components/trades/QuickAddModal.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { EmptyState, ErrorState } from '../components/ui/States.jsx';
+import { Skeleton } from '../components/ui/Skeleton.jsx';
+import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
+import { periodRange } from '../utils/dateOnly.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
+import { useTranslation } from 'react-i18next';
+const PERIODS = [
+  { id: 'today', label: 'Today' },
+  { id: 'wtd', label: 'WTD' },
+  { id: 'mtd', label: 'MTD' },
+  { id: 'custom', label: 'Custom' },
+];
 
-const DEFAULT_FROM = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-const DEFAULT_TO   = format(new Date(), 'yyyy-MM-dd');
+function MetricsSkeleton() {
+  const { t } = useTranslation();
+  return (
+    <section className="space-y-3" aria-label={t('dashboard.loadingMetrics')}>
+      <div className="grid grid-cols-2 gap-3 compact:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-24" label={`Loading primary metric ${index + 1}`} />)}
+      </div>
+      <div className="grid grid-cols-2 gap-3 adaptive:grid-cols-3 wide:grid-cols-6">
+        {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-20" label={`Loading performance metric ${index + 1}`} />)}
+      </div>
+    </section>
+  );
+}
 
 export default function Dashboard() {
-  const [dateRange, setDateRange]   = useState({ from: DEFAULT_FROM, to: DEFAULT_TO });
+  const { t } = useTranslation();
+  const timezone = useUserTimezone();
+  const [dateRange, setDateRange] = useState(() => periodRange('mtd', timezone));
   const [breakdownBy, setBreakdownBy] = useState('strategy');
-  const [addOpen, setAddOpen]       = useState(false);
-
-  // Account scope: { type: 'all' } | { type: 'account', id } | { type: 'company', name }
+  const [addOpen, setAddOpen] = useState(false);
   const [scope, setScope] = useState({ type: 'all' });
+  const [period, setPeriod] = useState('mtd');
 
-  const { data: accounts = [] } = useQuery({
-    queryKey: ['accounts'],
-    queryFn:  accountsApi.list,
-  });
+  const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: accountsApi.list });
+  const accounts = accountsQuery.data ?? [];
+  const companies = useMemo(() => [...new Set(accounts.map(account => account.company).filter(Boolean))].sort(), [accounts]);
 
-  // Unique company names from the user's accounts
-  const companies = useMemo(() => {
-    const names = [...new Set(accounts.map(a => a.company))].sort();
-    return names;
-  }, [accounts]);
-
-  // Build query params from scope + date range
   const qParams = useMemo(() => {
     const base = { from: dateRange.from, to: dateRange.to };
     if (scope.type === 'account') return { ...base, accountId: scope.id };
@@ -41,119 +57,174 @@ export default function Dashboard() {
     return base;
   }, [dateRange, scope]);
 
-  const { data: summary, isLoading: sumLoading } = useQuery({
+  const summaryQuery = useQuery({
     queryKey: ['analytics', 'summary', qParams],
     queryFn: () => analyticsApi.summary(qParams),
   });
-
-  const { data: equityData } = useQuery({
+  const equityQuery = useQuery({
     queryKey: ['analytics', 'equity-curve', qParams],
     queryFn: () => analyticsApi.equityCurve(qParams),
   });
-
-  const { data: distData } = useQuery({
+  const distributionQuery = useQuery({
     queryKey: ['analytics', 'distribution', qParams],
     queryFn: () => analyticsApi.distribution(qParams),
   });
-
-  const { data: breakdownData } = useQuery({
+  const breakdownQuery = useQuery({
     queryKey: ['analytics', 'breakdown', qParams, breakdownBy],
     queryFn: () => analyticsApi.breakdown({ ...qParams, by: breakdownBy }),
   });
 
-  function handleAccountChange(e) {
-    const val = e.target.value;
-    if (!val) { setScope({ type: 'all' }); return; }
-    setScope({ type: 'account', id: val });
+  const analyticsQueries = [summaryQuery, equityQuery, distributionQuery, breakdownQuery];
+  const fullFailure = analyticsQueries.every(query => query.isError);
+  const refreshing = analyticsQueries.some(query => query.isFetching && !query.isLoading);
+  const noClosedTrades = summaryQuery.isSuccess && (summaryQuery.data?.totals?.tradesClosed ?? 0) === 0;
+
+  function retryAnalytics() {
+    return Promise.all(analyticsQueries.map(query => query.refetch()));
   }
 
-  function handleCompanyChange(e) {
-    const val = e.target.value;
-    if (!val) { setScope({ type: 'all' }); return; }
-    setScope({ type: 'company', name: val });
+  function handleAccountChange(event) {
+    const value = event.target.value;
+    setScope(value ? { type: 'account', id: value } : { type: 'all' });
   }
 
-  function accountLabel(a) {
-    const base = `${a.company} — ${a.accountNumber}`;
-    return a.accountName ? `${base} (${a.accountName})` : base;
+  function handleCompanyChange(event) {
+    const value = event.target.value;
+    setScope(value ? { type: 'company', name: value } : { type: 'all' });
+  }
+
+  function applyPeriod(nextPeriod) {
+    setPeriod(nextPeriod);
+    if (nextPeriod !== 'custom') setDateRange(periodRange(nextPeriod, timezone));
+  }
+
+  function updateCustomDate(key, value) {
+    setPeriod('custom');
+    setDateRange((range) => ({ ...range, [key]: value }));
+  }
+
+  function accountLabel(account) {
+    const base = `${account.company} — ${account.accountNumber}`;
+    return account.accountName ? `${base} (${account.accountName})` : base;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-100">Dashboard</h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Account scope */}
-          <select
-            className="input text-sm py-1.5 w-44"
-            value={scope.type === 'account' ? scope.id : ''}
-            onChange={handleAccountChange}
-          >
-            <option value="">All Accounts</option>
-            {accounts.map(a => (
-              <option key={a.id} value={a.id}>{accountLabel(a)}</option>
-            ))}
-          </select>
-
-          {/* Company scope — only shown when no specific account is selected */}
-          {scope.type !== 'account' && companies.length > 1 && (
+    <div className="space-y-4 adaptive:space-y-5">
+      <RouteHeaderControls
+        slot="dashboardScope"
+        commands={[{ id: 'quickAddTrade', label: t('trades.quickAdd'), description: t('trades.quickAddDescription'), keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) }]}
+      >
+        <div className="flex w-full flex-wrap items-center gap-2 compact:w-auto compact:justify-end">
+          <label className="relative flex w-full items-center adaptive:w-56">
+            <Bank size={15} className="pointer-events-none absolute start-2.5 text-muted" aria-hidden="true" />
+            <span className="sr-only">{t('common.account')}</span>
             <select
-              className="input text-sm py-1.5 w-36"
-              value={scope.type === 'company' ? scope.name : ''}
-              onChange={handleCompanyChange}
+              aria-label={t('common.account')}
+              value={scope.type === 'account' ? scope.id : ''}
+              onChange={handleAccountChange}
+              disabled={accountsQuery.isLoading}
+              className="input min-h-11 ps-8 adaptive:min-h-9"
+              dir="ltr"
             >
-              <option value="">All Companies</option>
-              {companies.map(c => (
-                <option key={c} value={c} className="capitalize">{c}</option>
-              ))}
+              <option value="">{t('common.allAccounts')}</option>
+              {accounts.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}
             </select>
+          </label>
+
+          {scope.type !== 'account' && companies.length > 1 && (
+            <label className="w-full adaptive:w-40">
+              <span className="sr-only">{t('common.company')}</span>
+              <select aria-label={t('common.company')} value={scope.type === 'company' ? scope.name : ''} onChange={handleCompanyChange} className="input min-h-11 adaptive:min-h-9" dir="ltr">
+                <option value="">{t('common.all')}</option>
+                {companies.map((company) => <option key={company} value={company}>{company}</option>)}
+              </select>
+            </label>
           )}
 
-          {/* Date range */}
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              className="input text-sm py-1.5 w-36"
-              value={dateRange.from}
-              onChange={e => setDateRange(r => ({ ...r, from: e.target.value }))}
-            />
-            <span className="text-gray-600 text-sm">—</span>
-            <input
-              type="date"
-              className="input text-sm py-1.5 w-36"
-              value={dateRange.to}
-              onChange={e => setDateRange(r => ({ ...r, to: e.target.value }))}
-            />
+          <div role="group" aria-label={t('dashboard.period')} className="flex min-h-11 flex-1 gap-0.5 rounded-md border border-default bg-surface-sunken p-0.5 adaptive:min-h-9 adaptive:flex-none">
+            {PERIODS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={period === item.id}
+                onClick={() => applyPeriod(item.id)}
+                className={`min-w-12 flex-1 rounded-sm px-2 font-mono text-xs transition-colors adaptive:flex-none ${period === item.id ? 'bg-surface font-semibold text-primary shadow-flat' : 'text-muted hover:text-primary'}`}
+              >
+                {t(`dashboard.${item.id}`)}
+              </button>
+            ))}
           </div>
 
-          <button onClick={() => setAddOpen(true)} className="btn-primary">
-            + Add Trade
-          </button>
-        </div>
-      </div>
+          {period === 'custom' && (
+            <div className="flex w-full gap-2 adaptive:w-auto" aria-label={t('dashboard.customDates')}>
+              <label className="min-w-0 flex-1 adaptive:w-36 adaptive:flex-none">
+                <span className="sr-only">{t('goals.startDate')}</span>
+                <input aria-label={t('goals.startDate')} type="date" value={dateRange.from} onChange={(event) => updateCustomDate('from', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
+              </label>
+              <label className="min-w-0 flex-1 adaptive:w-36 adaptive:flex-none">
+                <span className="sr-only">{t('goals.endDate')}</span>
+                <input aria-label={t('goals.endDate')} type="date" value={dateRange.to} onChange={(event) => updateCustomDate('to', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
+              </label>
+            </div>
+          )}
 
-      {sumLoading ? (
-        <div className="flex justify-center py-16"><Spinner className="w-8 h-8" /></div>
-      ) : (
-        <SummaryCards data={summary} />
+          <Button variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
+            {t('trades.quickAdd')}
+          </Button>
+        </div>
+      </RouteHeaderControls>
+
+      {accountsQuery.isError && (
+        <div className="text-xs text-negative" role="alert">
+          {t('accounts.loadFailed')}{' '}
+          <button type="button" className="font-medium underline" onClick={() => accountsQuery.refetch()}>{t('common.retry')}</button>
+        </div>
       )}
 
-      <TradingCalendar qParams={qParams} />
+      {refreshing && <p className="text-xs text-muted" role="status">{t('common.loading')}</p>}
 
-      {/* Charts */}
-      <EquityCurve data={equityData?.data} />
+      {summaryQuery.isLoading ? <MetricsSkeleton /> : summaryQuery.isError && !fullFailure ? (
+        <ErrorState title={t('errors.loadFailed')} detail={t('analytics.noData')} available={t('common.filters')} onRetry={summaryQuery.refetch} />
+      ) : <SummaryCards data={summaryQuery.data} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PnLHistogram data={distData?.buckets} />
-        <BreakdownChart
-          data={breakdownData?.data}
-          accounts={accounts}
-          by={breakdownBy}
-          onByChange={setBreakdownBy}
+      {noClosedTrades && (
+        <EmptyState
+          title={t('dashboard.noTrades')}
+          detail={t('dashboard.noTradesDetail')}
         />
-      </div>
+      )}
 
+      {noClosedTrades ? (
+        <>
+          {equityQuery.isError && <EquityCurve error={equityQuery.error} onRetry={equityQuery.refetch} />}
+          {distributionQuery.isError && <PnLHistogram error={distributionQuery.error} onRetry={distributionQuery.refetch} />}
+          {breakdownQuery.isError && (
+            <BreakdownChart accounts={accounts} by={breakdownBy} onByChange={setBreakdownBy} error={breakdownQuery.error} onRetry={breakdownQuery.refetch} />
+          )}
+          <TradingCalendar qParams={qParams} timezone={timezone} errorsOnly />
+        </>
+      ) : fullFailure ? (
+        <ErrorState title={t('dashboard.loadFailed')} detail={t('dashboard.loadFailedDetail')} available={t('common.filters')} onRetry={retryAnalytics} />
+      ) : (
+        <>
+          <EquityCurve data={equityQuery.data?.data} isLoading={equityQuery.isLoading} error={equityQuery.error} onRetry={equityQuery.refetch} />
+          <div className="grid grid-cols-1 gap-4 compact:grid-cols-2">
+            <TradingCalendar qParams={qParams} timezone={timezone} />
+            <PnLHistogram data={distributionQuery.data?.buckets} isLoading={distributionQuery.isLoading} error={distributionQuery.error} onRetry={distributionQuery.refetch} />
+          </div>
+          <BreakdownChart
+            data={breakdownQuery.data?.data}
+            accounts={accounts}
+            by={breakdownBy}
+            onByChange={setBreakdownBy}
+            isLoading={breakdownQuery.isLoading}
+            error={breakdownQuery.error}
+            onRetry={breakdownQuery.refetch}
+          />
+        </>
+      )}
+
+      {fullFailure && <TradingCalendar qParams={qParams} timezone={timezone} />}
       <QuickAddModal open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   );

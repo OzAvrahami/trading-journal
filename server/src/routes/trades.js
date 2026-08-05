@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import * as tradeService from '../services/tradeService.js';
+import { getUserTimezone, isValidDateKey } from '../utils/dateTime.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -13,7 +14,39 @@ const MARKETS    = ['stocks', 'crypto', 'futures', 'forex'];
 const DIRECTIONS = ['long', 'short'];
 const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'];
 
-const createSchema = z.object({
+const emptyStringToNull = value => value === '' ? null : value;
+const optionalExitDatetime = z.preprocess(
+  emptyStringToNull,
+  z.string().datetime({ offset: true }).optional().nullable()
+);
+const optionalExitPrice = z.preprocess(
+  emptyStringToNull,
+  z.number().positive().optional().nullable()
+);
+
+function validateCompleteExitState(data, ctx) {
+  const hasExitDatetime = data.exitDatetime != null;
+  const hasExitPrice = data.exitPrice != null;
+
+  if (hasExitDatetime !== hasExitPrice) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: hasExitDatetime ? ['exitPrice'] : ['exitDatetime'],
+      message: 'Exit datetime and exit price must be provided together.',
+    });
+    return;
+  }
+
+  if (hasExitDatetime && new Date(data.exitDatetime) < new Date(data.entryDatetime)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['exitDatetime'],
+      message: 'Exit datetime must be on or after entry datetime.',
+    });
+  }
+}
+
+export const createSchema = z.object({
   accountId:       z.string().uuid(),
   symbol:          z.string().min(1).max(20).transform(v => v.toUpperCase().trim()),
   market:          z.enum(MARKETS),
@@ -21,8 +54,8 @@ const createSchema = z.object({
   entryDatetime:   z.string().datetime({ offset: true }),
   entryPrice:      z.number().positive(),
   quantity:        z.number().positive(),
-  exitDatetime:    z.string().datetime({ offset: true }).optional().nullable(),
-  exitPrice:       z.number().positive().optional().nullable(),
+  exitDatetime:    optionalExitDatetime,
+  exitPrice:       optionalExitPrice,
   fees:            z.number().min(0).default(0),
   strategy:        z.string().max(100).optional().nullable(),
   setup:           z.string().max(100).optional().nullable(),
@@ -37,11 +70,11 @@ const createSchema = z.object({
     post:   z.string().optional(),
   }).optional().nullable(),
   screenshotLinks: z.array(z.string().url()).max(10).optional().nullable(),
-});
+}).superRefine(validateCompleteExitState);
 
-const updateSchema = z.object({
-  exitDatetime:    z.string().datetime({ offset: true }).optional().nullable(),
-  exitPrice:       z.number().positive().optional().nullable(),
+export const updateSchema = z.object({
+  exitDatetime:    optionalExitDatetime,
+  exitPrice:       optionalExitPrice,
   quantity:        z.number().positive().optional(),
   fees:            z.number().min(0).optional(),
   strategy:        z.string().max(100).optional().nullable(),
@@ -59,9 +92,11 @@ const updateSchema = z.object({
   screenshotLinks: z.array(z.string().url()).max(10).optional().nullable(),
 });
 
-const filtersSchema = z.object({
-  from:      z.string().optional(),
-  to:        z.string().optional(),
+const filterDate = z.string().refine(isValidDateKey, 'Expected a valid YYYY-MM-DD date.');
+
+export const filtersSchema = z.object({
+  from:      filterDate.optional(),
+  to:        filterDate.optional(),
   symbol:    z.string().optional(),
   market:    z.enum(MARKETS).optional(),
   direction: z.enum(DIRECTIONS).optional(),
@@ -74,6 +109,10 @@ const filtersSchema = z.object({
   limit:     z.coerce.number().int().min(1).max(200).default(50),
   sort:      z.enum(['entry_datetime', 'pnl_net', 'symbol', 'created_at']).default('entry_datetime'),
   order:     z.enum(['asc', 'desc']).default('desc'),
+}).superRefine((value, context) => {
+  if (value.from && value.to && value.from > value.to) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['to'], message: 'End date must not precede start date.' });
+  }
 });
 
 // ---- Routes -----------------------------------------------------------------
@@ -81,7 +120,8 @@ const filtersSchema = z.object({
 // GET /api/trades
 router.get('/', validateQuery(filtersSchema), async (req, res, next) => {
   try {
-    const result = await tradeService.listTrades(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const result = await tradeService.listTrades(req.user.id, req.query, timezone);
     res.json(result);
   } catch (err) { next(err); }
 });
@@ -89,7 +129,8 @@ router.get('/', validateQuery(filtersSchema), async (req, res, next) => {
 // GET /api/trades/export  — must come before /:id
 router.get('/export', validateQuery(filtersSchema), async (req, res, next) => {
   try {
-    const trades = await tradeService.exportTradesCsv(req.user.id, req.query);
+    const timezone = await getUserTimezone(req.user.id);
+    const trades = await tradeService.exportTradesCsv(req.user.id, req.query, timezone);
 
     const headers = [
       'id', 'accountId', 'symbol', 'market', 'direction',
