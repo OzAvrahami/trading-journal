@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowSquareOut, PencilSimple, Trash } from '@phosphor-icons/react';
 import { tradesApi } from '../api/trades.js';
 import { accountsApi } from '../api/accounts.js';
-import { TradeForm } from '../components/trades/TradeForm.jsx';
 import { DirectionBadge, StatusBadge } from '../components/trades/TradeTable.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -116,7 +114,6 @@ export default function TradeDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [editing, setEditing] = useState(false);
 
   const tradeQuery = useQuery({
     queryKey: ['trade', id],
@@ -126,18 +123,6 @@ export default function TradeDetail() {
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: accountsApi.list,
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (data) => tradesApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trade', id] });
-      queryClient.invalidateQueries({ queryKey: ['trades'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      setEditing(false);
-      toast.success(t('trades.tradeUpdated'));
-    },
-    onError: (error) => toast.error(error.response?.data?.error?.code ? t(`errors.${error.response.data.error.code}`, { defaultValue: error.response.data.error.message }) : t('trades.updateFailed')),
   });
 
   const deleteMutation = useMutation({
@@ -164,12 +149,6 @@ export default function TradeDetail() {
     deleteMutation.mutate();
   }
 
-  const toLocalInput = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : '';
-  const editDefaults = {
-    ...trade,
-    entryDatetime: toLocalInput(trade.entryDatetime),
-    exitDatetime: toLocalInput(trade.exitDatetime),
-  };
   const screenshots = safeScreenshotLinks(trade.screenshotLinks);
 
   return (
@@ -181,9 +160,9 @@ export default function TradeDetail() {
             type="button"
             size="mobile"
             leadingIcon={<PencilSimple size={17} aria-hidden="true" />}
-            onClick={() => setEditing((current) => !current)}
+            onClick={() => navigate(`/trades/${id}/edit`)}
           >
-            {editing ? t('trades.cancelEdit') : t('trades.editTrade')}
+            {t('trades.editTrade')}
           </Button>
           <Button
             type="button"
@@ -205,7 +184,7 @@ export default function TradeDetail() {
             <DirectionBadge direction={trade.direction} />
             <StatusBadge status={trade.status} />
           </div>
-          <p className="mt-2 text-sm capitalize text-secondary">{[trade.market, trade.timeframe].filter(Boolean).join(' · ') || 'Trade details'}</p>
+          <p className="mt-2 text-sm capitalize text-secondary">{[trade.market, trade.timeframe].filter(Boolean).join(' · ') || t('trades.details')}</p>
           <p className="mt-1 text-xs text-muted">{accountLabel(trade.accountId, accounts)}</p>
         </div>
         <div className="sm:text-end">
@@ -215,13 +194,6 @@ export default function TradeDetail() {
           </div>
         </div>
       </Card>
-
-      {editing && (
-        <Card aria-labelledby="edit-trade-heading">
-          <h2 id="edit-trade-heading" className="mb-4 text-sm font-semibold text-primary">{t('trades.editTrade')}</h2>
-          <TradeForm defaultValues={editDefaults} onSubmit={updateMutation.mutate} loading={updateMutation.isPending} />
-        </Card>
-      )}
 
       <Card aria-labelledby="financial-summary-heading">
         <h2 id="financial-summary-heading" className="mb-3 text-sm font-semibold text-primary">{t('trades.financialResult')}</h2>
@@ -298,7 +270,7 @@ export default function TradeDetail() {
                     aria-label={t('trades.openAttachment', { number: index + 1, host: link.host })}
                   >
                     <ArrowSquareOut size={17} aria-hidden="true" />
-                    <span className="truncate">Attachment {index + 1} · {link.host}</span>
+                    <span className="truncate">{t('trades.attachment', { number: index + 1, host: link.host })}</span>
                   </a>
                 </li>
               ))}

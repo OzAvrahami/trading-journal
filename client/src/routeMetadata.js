@@ -6,7 +6,7 @@ const ROUTES = [
     breadcrumbs: ['Journal', 'Dashboard'],
     nav: '/dashboard',
     headerControls: ['dashboardScope'],
-    commandActions: ['addTrade'],
+    commandActions: ['quickAddTrade'],
   },
   {
     match: (pathname) => pathname === '/trades',
@@ -15,7 +15,27 @@ const ROUTES = [
     breadcrumbs: ['Journal', 'Trades'],
     nav: '/trades',
     headerControls: ['tradesActions'],
-    commandActions: ['addTrade', 'exportTrades'],
+    commandActions: ['quickAddTrade', 'exportTrades'],
+  },
+  {
+    match: (pathname) => pathname === '/trades/new',
+    title: 'New Trade',
+    description: 'Record a new trade with the context needed for an accurate review.',
+    breadcrumbs: ['Journal', 'Trades', 'New Trade'],
+    nav: '/trades',
+    routeKey: 'tradeNew',
+    headerControls: [],
+    commandActions: [],
+  },
+  {
+    match: (pathname) => /^\/trades\/[^/]+\/edit$/.test(pathname),
+    title: 'Edit Trade',
+    description: 'Update the recorded outcome and review context for this trade.',
+    breadcrumbs: ['Journal', 'Trades', 'Edit Trade'],
+    nav: '/trades',
+    routeKey: 'tradeEdit',
+    headerControls: [],
+    commandActions: [],
   },
   {
     match: (pathname) => pathname === '/daily-review' || /^\/daily-review\/[^/]+$/.test(pathname),
@@ -111,14 +131,15 @@ const ROUTE_KEYS = new Map([
 ]);
 
 export function localizeRouteMetadata(metadata, t) {
-  const routeKey = metadata.nav === '/trades' && metadata.title === 'Trade details'
+  const routeKey = metadata.routeKey || (metadata.nav === '/trades' && metadata.title === 'Trade details'
     ? 'tradeDetail'
-    : ROUTE_KEYS.get(metadata.nav);
+    : ROUTE_KEYS.get(metadata.nav));
   if (!routeKey) return metadata;
   const breadcrumbMap = {
     Journal: 'navigation.journal', Trading: 'navigation.trading', Manage: 'navigation.manage',
     Insights: 'navigation.insights', Dashboard: 'navigation.dashboard', Trades: 'navigation.trades',
     'Daily Review': 'navigation.dailyReview', 'Trade details': 'routes.tradeDetail.title',
+    'New Trade': 'routes.tradeNew.title', 'Edit Trade': 'routes.tradeEdit.title',
     Accounts: 'navigation.accounts', Import: 'navigation.import', Analytics: 'navigation.analytics',
     'Journal & Reviews': 'navigation.journal', 'Rules & Adherence': 'navigation.rules', Goals: 'navigation.goals',
   };

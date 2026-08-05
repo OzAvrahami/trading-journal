@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DownloadSimple, Plus } from '@phosphor-icons/react';
 import { tradesApi } from '../api/trades.js';
@@ -48,6 +49,7 @@ export default function Trades() {
   const [addOpen, setAddOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const toast = useToast();
+  const navigate = useNavigate();
 
   const tradesQuery = useQuery({
     queryKey: ['trades', filters],
@@ -99,7 +101,7 @@ export default function Trades() {
         slot="tradesActions"
         commands={[
           { id: 'exportTrades', label: t('trades.exportCsv'), description: t('trades.exportCsv'), keywords: 'download csv', Icon: DownloadSimple, action: handleExport },
-          { id: 'addTrade', label: t('trades.addTrade'), description: t('trades.addTrade'), keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) },
+          { id: 'quickAddTrade', label: t('trades.quickAdd'), description: t('trades.quickAddDescription'), keywords: 'quick fast trade', Icon: Plus, action: () => setAddOpen(true) },
         ]}
       >
         <div className="flex flex-wrap items-center gap-2">
@@ -114,8 +116,11 @@ export default function Trades() {
           >
             {t('trades.exportCsv')}
           </Button>
-          <Button type="button" variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={17} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
-            {t('trades.addTrade')}
+          <Button type="button" size="mobile" className="adaptive:min-h-9" onClick={() => setAddOpen(true)}>
+            {t('trades.quickAdd')}
+          </Button>
+          <Button type="button" variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={17} aria-hidden="true" />} onClick={() => navigate('/trades/new')}>
+            {t('trades.newTrade')}
           </Button>
         </div>
       </RouteHeaderControls>

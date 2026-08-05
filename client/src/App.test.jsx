@@ -20,6 +20,7 @@ vi.mock('./pages/DailyReview.jsx', () => ({
   default: () => <span>Daily Review page</span>,
   DailyReviewTodayRedirect: () => <span>Daily Review today redirect</span>,
 }));
+vi.mock('./pages/TradeEditor.jsx', () => ({ default: () => <span>Trade Editor page</span> }));
 vi.mock('./pages/Login.jsx', () => ({ default: () => <span>Login page</span> }));
 
 import { AppRoutes, ProtectedRoute, PublicRoute } from './App.jsx';
@@ -117,5 +118,17 @@ describe('route guards', () => {
     render(<MemoryRouter initialEntries={['/daily-review']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Login page')).toBeInTheDocument();
     expect(screen.queryByText('Daily Review today redirect')).not.toBeInTheDocument();
+  });
+
+  it('protects both Trade Editor routes and does not treat new as a trade ID', () => {
+    const protectedView = render(<MemoryRouter initialEntries={['/trades/new']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByText('Login page')).toBeInTheDocument();
+    protectedView.unmount();
+    authState.current = { user: { id: 'user-1' }, loading: false };
+    const view = render(<MemoryRouter initialEntries={['/trades/new']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Trade Editor page');
+    view.unmount();
+    render(<MemoryRouter initialEntries={['/trades/550e8400-e29b-41d4-a716-446655440000/edit']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Trade Editor page');
   });
 });

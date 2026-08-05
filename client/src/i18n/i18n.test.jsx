@@ -94,4 +94,18 @@ describe('localized production labels and formatting', () => {
     expect(payload).toEqual({ direction: 'long', status: 'closed', metricKey: 'net_pnl', comparison: 'at_least' });
     expect(i18n.t(`status.${payload.direction}`)).toBe('לונג');
   });
+
+  it('provides matching bilingual Trade Editor labels', async () => {
+    const english = i18n.getResourceBundle('en', 'translation');
+    const hebrew = i18n.getResourceBundle('he', 'translation');
+    const paths = [
+      ['routes', 'tradeNew', 'title'], ['routes', 'tradeEdit', 'title'], ['trades', 'newTrade'],
+      ['trades', 'quickAdd'], ['trades', 'saveAndAddAnother'], ['trades', 'sections', 'risk'],
+      ['trades', 'validation', 'exitBeforeEntry'],
+    ];
+    paths.forEach((path) => {
+      expect(path.reduce((value, key) => value?.[key], english)).toBeTruthy();
+      expect(path.reduce((value, key) => value?.[key], hebrew)).toBeTruthy();
+    });
+  });
 });

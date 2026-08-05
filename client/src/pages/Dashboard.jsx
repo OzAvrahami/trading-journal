@@ -112,7 +112,7 @@ export default function Dashboard() {
     <div className="space-y-4 adaptive:space-y-5">
       <RouteHeaderControls
         slot="dashboardScope"
-        commands={[{ id: 'addTrade', label: t('dashboard.addTrade'), description: t('dashboard.addTrade'), keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) }]}
+        commands={[{ id: 'quickAddTrade', label: t('trades.quickAdd'), description: t('trades.quickAddDescription'), keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) }]}
       >
         <div className="flex w-full flex-wrap items-center gap-2 compact:w-auto compact:justify-end">
           <label className="relative flex w-full items-center adaptive:w-56">
@@ -169,7 +169,7 @@ export default function Dashboard() {
           )}
 
           <Button variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
-            {t('dashboard.addTrade')}
+            {t('trades.quickAdd')}
           </Button>
         </div>
       </RouteHeaderControls>

@@ -5,17 +5,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../components/ui/Toast.jsx';
 
-const apiMocks = vi.hoisted(() => ({ get: vi.fn(), update: vi.fn(), remove: vi.fn(), accounts: vi.fn() }));
-vi.mock('../api/trades.js', () => ({ tradesApi: { get: apiMocks.get, update: apiMocks.update, remove: apiMocks.remove } }));
+const apiMocks = vi.hoisted(() => ({ get: vi.fn(), remove: vi.fn(), accounts: vi.fn() }));
+vi.mock('../api/trades.js', () => ({ tradesApi: { get: apiMocks.get, remove: apiMocks.remove } }));
 vi.mock('../api/accounts.js', () => ({ accountsApi: { list: apiMocks.accounts } }));
-vi.mock('../components/trades/TradeForm.jsx', () => ({
-  TradeForm: ({ defaultValues, onSubmit }) => (
-    <div>
-      <span>Editing {defaultValues.symbol}</span>
-      <button type="button" onClick={() => onSubmit({ notes: 'Updated note' })}>Save mocked trade</button>
-    </div>
-  ),
-}));
 
 import TradeDetail from './TradeDetail.jsx';
 import { Header } from '../components/layout/Header.jsx';
@@ -43,6 +35,7 @@ function renderDetail() {
             <Header metadata={metadata} />
             <Routes>
               <Route path="/trades/:id" element={<TradeDetail />} />
+              <Route path="/trades/:id/edit" element={<p>Edit route</p>} />
               <Route path="/trades" element={<p>Trades route</p>} />
             </Routes>
           </HeaderControlsProvider>
@@ -56,7 +49,6 @@ describe('TradeDetail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMocks.accounts.mockResolvedValue([{ id: 'a1', company: 'Broker', accountNumber: '100', accountName: 'Main account' }]);
-    apiMocks.update.mockResolvedValue({});
     apiMocks.remove.mockResolvedValue({});
   });
 
@@ -105,16 +97,18 @@ describe('TradeDetail', () => {
     expect(screen.queryByRole('heading', { name: 'Screenshot links' })).not.toBeInTheDocument();
   });
 
-  it('keeps edit and delete mutations wired to the existing API behavior', async () => {
+  it('routes editing to the full editor and keeps delete wired to the existing API', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     apiMocks.get.mockResolvedValue(closedTrade);
     renderDetail();
     await screen.findByRole('heading', { name: 'AAPL' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit trade' }));
-    expect(screen.getByText('Editing AAPL')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Save mocked trade' }));
-    await waitFor(() => expect(apiMocks.update).toHaveBeenCalledWith('t1', { notes: 'Updated note' }));
+    expect(screen.getByText('Edit route')).toBeInTheDocument();
+
+    // Remount detail to exercise the independent destructive action.
+    renderDetail();
+    await screen.findByRole('heading', { name: 'AAPL' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(window.confirm).toHaveBeenCalledWith('Delete this trade permanently?');
