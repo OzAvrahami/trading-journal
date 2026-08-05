@@ -148,6 +148,20 @@ describe('serialized transaction query adapter', () => {
 });
 
 describe('demo seed safety configuration', () => {
+  test('defaults to English and accepts explicit English or Hebrew locale', () => {
+    assert.equal(readDemoSeedConfig(env).locale, 'en');
+    assert.equal(readDemoSeedConfig({ ...env, DEMO_LOCALE: 'en' }).locale, 'en');
+    assert.equal(readDemoSeedConfig({ ...env, DEMO_LOCALE: 'he' }).locale, 'he');
+  });
+
+  test('rejects an unsupported or blank demo locale before database, backup, or transaction work', async () => {
+    for (const locale of ['fr', '']) {
+      const harness = makeHarness();
+      await assert.rejects(execute(harness, { env: { ...env, DEMO_LOCALE: locale } }), /DEMO_LOCALE/);
+      assert.equal(harness.events.length, 0);
+    }
+  });
+
   test('rejects production before any database access', async () => {
     const harness = makeHarness();
     await assert.rejects(execute(harness, { env: { ...env, NODE_ENV: 'production' } }), /forbidden/);
@@ -212,6 +226,13 @@ describe('demo backup, ownership and transaction ordering', () => {
     assert.deepEqual(Object.keys(backup).sort(), ['dailyReviewDetails', 'goals', 'journalEntries', 'journalEntryTrades', 'metadata', 'ruleChecks', 'trades', 'tradingAccounts', 'tradingRules'].sort());
     const serialized = JSON.stringify(backup);
     assert.doesNotMatch(serialized, /password_hash|token_hash|JWT|DATABASE_URL/);
+  });
+
+  test('records the selected demo locale in backup metadata and the destructive warning', async () => {
+    const harness = makeHarness();
+    await execute(harness, { env: { ...env, DEMO_LOCALE: 'he' } });
+    assert.equal(harness.getBackup().metadata.demoLocale, 'he');
+    assert.ok(harness.messages.some((message) => message.includes('Demo locale: he')));
   });
 
   test('selects, counts, backs up and deletes only with the target user ID', async () => {

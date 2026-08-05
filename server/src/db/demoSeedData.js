@@ -10,6 +10,7 @@ import {
 
 export const DEMO_ACCOUNT_TYPES = Object.freeze(['funded', 'evaluation', 'demo', 'live']);
 export const DEMO_ACCOUNT_STATUSES = Object.freeze(['active', 'inactive', 'archived']);
+export const DEMO_LOCALES = Object.freeze(['en', 'he']);
 
 export const DEMO_DAILY_NET_PNL = Object.freeze([
   -420, 610, 1240, -180, 0, 880, -1310, 2140, 460, -640, 1520,
@@ -39,6 +40,99 @@ const STRATEGIES = Object.freeze([
 ]);
 const SETUPS = Object.freeze(['Breakout', 'Pullback', 'Reversal', 'Range Fade', 'Continuation']);
 const TIMEFRAMES = Object.freeze(['1m', '5m', '15m', '30m', '1h']);
+
+const HEBREW_TEXT = Object.freeze({
+  accountNames: ['חשבון מסחר אישי', 'חשבון רוט IRA', 'חשבון אירופה', 'חשבון מסחר IBKR', 'חשבון מסחר חי', 'חשבון ממומן 150K', 'חשבון הערכה 50K', 'חשבון תרגול'],
+  strategies: ['פריצת טווח הפתיחה', 'חזרה ל־VWAP', 'המשך מגמה', 'חזרה לממוצע', 'תמיכה והתנגדות', 'מומנטום'],
+  setups: ['פריצה', 'פולבק', 'היפוך', 'דעיכת טווח', 'המשך'],
+  tradeNotes: [
+    'המתנתי לחזרה לרמה לפני הכניסה ולא רדפתי אחרי המחיר.',
+    'הכניסה הייתה מוקדמת מדי וללא אישור מלא של הסטאפ.',
+    'ניהלתי את העסקה לפי התוכנית והשארתי את הסטופ במקום.',
+    'סגרתי מוקדם מתוך לחץ למרות שהתרחיש עדיין היה תקף.',
+    'העסקה נפתחה לאחר פריצה ואישור מחזור.',
+    'המתנתי לאישור ושמרתי על סכום הסיכון המתוכנן.',
+  ],
+  openTradeNote: 'עסקת דמו פתוחה ללא תוצאה לא ממומשת מומצאת.',
+  emotions: [
+    { pre: 'ממוקד', during: 'סבלני', post: 'רגוע' },
+    { pre: 'רגוע', during: 'בטוח', post: 'ממוקד' },
+    { pre: 'לחוץ', during: 'סבלני', post: 'מתוסכל' },
+    { pre: 'ממוקד', during: 'רגוע', post: 'בטוח' },
+  ],
+  journal: [
+    ['היום: ביצוע סבלני', 'פעלתי לפי תוכנית הבוקר, תיעדתי כל עסקה ועצרתי אחרי הסטאפ האחרון שתוכנן.', ['משמעת', 'סיכום-יומי']],
+    ['סקירת עסקה: אישור לפני הכניסה', 'הכניסה בוצעה לאחר אישור והיציאה כיבדה את רמת הביטול שתוכננה.', ['ביצוע', 'אישור']],
+    ['סיכום יומי: כניסה חוזרת מיותרת', 'שני הסטאפים הראשונים היו תקינים. הכניסה האחרונה הייתה מהירה מדי ותועדה לקראת הסשן הבא.', ['כללים', 'סבלנות']],
+    ['רשימת מיקוד לפני המסחר', 'לבצע רק סטאפים מתועדים ולהקטין גודל כאשר טווח הפתיחה אינו ברור.', ['תכנון', 'סיכון']],
+    ['סקירה: חזרה ל־VWAP', 'ההמתנה לבדיקה החוזרת שיפרה את הכניסה ושמרה על סיכון מוגדר מראש.', ['VWAP', 'סקירה']],
+    ['סיכום שבועי: יתרון בשעה הראשונה', 'התוצאות הטובות ביותר הגיעו מסטאפים מתועדים בשעה הראשונה. כניסות מאוחרות עדיין מהוות סיכון תהליכי.', ['סיכום-שבועי', 'תזמון']],
+    ['סיכום יומי: שמירה על מגבלת ההפסד', 'פתיחה קשה נשארה בשליטה בזכות כיבוד מגבלת ההפסד היומית.', ['סיכון', 'סיכום-יומי']],
+    ['סקירה: הפסד בדעיכת טווח', 'לעסקה חסר אישור. ההפסד נשמר מוגבל והסטאפ סומן לבחירה מחמירה יותר.', ['טווח', 'טעות']],
+    ['סיכום שבועי: עקביות בגודל', 'הסיכון נשאר עקבי בין החשבונות ואף סטופ לא הורחק.', ['סיכום-שבועי', 'גודל']],
+    ['סיכום יומי: יום תהליך חזק', 'נלקחו רק סטאפים מתועדים והסשן הסתיים לאחר מספר העסקאות שתוכנן.', ['תהליך', 'משמעת']],
+    ['תזכורת לכלל ניהול רווח', 'לעסקה מתמשכת צריך יעד מבני לפני הכניסה; אחרת היציאה המתוכננת נשארת סופית.', ['כללים', 'יציאות']],
+    ['סקירה: המשך מומנטום', 'כניסת ההמשך הייתה בכיוון המגמה והסטופ נשאר ברמת הביטול המקורית.', ['מומנטום', 'סקירה']],
+    ['סיכום שבועי: צמצום סטאפים גבוליים', 'ניסיונות חזרה לממוצע הניבו פחות. בשבוע הבא אתמקד בטווח הפתיחה ובהמשך מגמה.', ['סיכום-שבועי', 'סטאפים']],
+    ['הערות פתיחה לנתוני הדמו', 'הרשומה מעגנת היסטוריית סקירות דטרמיניסטית ללא מושגי פורטפוליו שאינם נתמכים.', ['דמו', 'יומן']],
+  ],
+  dailyDetails: [
+    ['המתנתי לאישור ושמרתי על הסיכון המתוכנן.', 'להימנע מבדיקת התוצאות בין סטאפים.', 'לבצע רק סטאפים מתועדים ולעצור לאחר הכמות שתוכננה.', ['ממוקד', 'סבלני'], []],
+    ['שני הסטאפים הראשונים תאמו לתוכנית.', 'לעצור לאחר עסקה מפסידה לפני ששוקלים כניסה חוזרת.', 'לבצע איפוס של חמש דקות לפני כל כניסה חוזרת.', ['ממוקד', 'מתוסכל'], ['רדיפה אחרי כניסה']],
+    ['מגבלת ההפסד היומית שמרה על איכות ההחלטות.', 'להקטין גודל מוקדם יותר כשהתנאים אינם ברורים.', 'להתחיל בחצי גודל עד שהמבנה מתבהר.', ['רגוע', 'לחוץ'], ['סיכון גדול מדי']],
+    ['הכניסות, הסטופים והיציאות נשארו שיטתיים.', null, 'לחזור על אותה הכנה ורשימת בדיקה לביצוע.', ['רגוע', 'בטוח'], []],
+  ],
+  rules: [
+    ['לא להיכנס ללא סטופ מוגדר', 'סכום הסיכון, הסטופ ורמת הביטול חייבים להיות ברורים לפני הכניסה.'],
+    ['לעולם לא להרחיק את הסטופ', 'אפשר להדק סטופ אך לא להגדיל את הסיכון המקורי.'],
+    ['להפסיק לאחר הגעה למגבלת ההפסד היומית', 'לסיים את הסשן כאשר מגיעים למגבלת ההפסד המתועדת.'],
+    ['לבצע רק סטאפים מתועדים', 'לכל עסקה חייבים להיות אסטרטגיה וסטאפ בשמות ברורים.'],
+    ['להמתין לאישור הסטאפ', 'לא לצפות את האות לפני שהאישור קיים.'],
+    ['לתעד כל סשן שהושלם', 'ליצור סיכום יומי לאחר כל סשן מסחר שהושלם.'],
+    ['לכבד את מספר העסקאות המרבי ליום', 'לא לעבור את מספר העסקאות היומי שתוכנן.'],
+    ['לסקור הפרות כללים לפני הסשן הבא', 'יש לסקור בדיקות שהופרו לפני הסשן הבא.'],
+  ],
+  checkNotes: { broken: 'חריגת דמו מתועדת לסקירה.', followed: 'התוכנית בוצעה.', not_applicable: 'הכלל לא היה רלוונטי להקשר הזה.', noPrior: 'לא הייתה הפרה קודמת שדרשה סקירה.' },
+  goals: [
+    ['להגיע לרווח והפסד נטו של 7,000 דולר', 'רווח והפסד נטו מעסקאות סגורות לאורך תקופת הדמו.'],
+    ['להשלים 60 עסקאות סגורות', 'לבנות מדגם עקבי ללא הזנת התקדמות ידנית.'],
+    ['לשמור על 60% הצלחה', 'מושהה בזמן בחינת בחירת הסטאפים.'],
+    ['להגיע לממוצע של לפחות 0.30R', 'יעד תהליכי היסטורי שהועבר לארכיון.'],
+    ['להגיע ל־85% עמידה בכללים במחזור הבא', 'יעד עתידי שאינו זמין עד שיהיו בדיקות רלוונטיות.'],
+    ['להשלים שלושה סיכומים במחזור הקודם', 'יעד יומן היסטורי שלא הושג באופן מכוון.'],
+    ['לשמור על חמש הפרות כללים לכל היותר', 'המספר המרבי של בדיקות שהופרו בתקופת הדמו.'],
+  ],
+});
+
+export function normalizeDemoLocale(locale) {
+  const normalized = locale == null ? 'en' : String(locale).trim();
+  if (!DEMO_LOCALES.includes(normalized)) throw new RangeError('DEMO_LOCALE must be exactly en or he.');
+  return normalized;
+}
+
+function localizeDatasetText(dataset, locale) {
+  if (locale === 'en') return { ...dataset, locale };
+  return {
+    ...dataset,
+    locale,
+    accounts: dataset.accounts.map((row, index) => ({ ...row, accountName: HEBREW_TEXT.accountNames[index] })),
+    trades: dataset.trades.map((row, index) => ({
+      ...row,
+      strategy: HEBREW_TEXT.strategies[index % HEBREW_TEXT.strategies.length],
+      setup: HEBREW_TEXT.setups[index % HEBREW_TEXT.setups.length],
+      notes: row.status === 'open' ? HEBREW_TEXT.openTradeNote : HEBREW_TEXT.tradeNotes[index % HEBREW_TEXT.tradeNotes.length],
+      emotions: HEBREW_TEXT.emotions[index % HEBREW_TEXT.emotions.length],
+    })),
+    journalEntries: dataset.journalEntries.map((row, index) => ({ ...row, title: HEBREW_TEXT.journal[index][0], content: HEBREW_TEXT.journal[index][1], tags: HEBREW_TEXT.journal[index][2] })),
+    dailyReviewDetails: dataset.dailyReviewDetails.map((row, index) => {
+      const [wentWell, improve, nextSessionPlan, emotions, mistakes] = HEBREW_TEXT.dailyDetails[index];
+      return { ...row, wentWell, improve, nextSessionPlan, emotions, mistakes };
+    }),
+    rules: dataset.rules.map((row, index) => ({ ...row, name: HEBREW_TEXT.rules[index][0], description: HEBREW_TEXT.rules[index][1] })),
+    ruleChecks: dataset.ruleChecks.map((row) => ({ ...row, notes: row.notes === 'No prior break required review.' ? HEBREW_TEXT.checkNotes.noPrior : HEBREW_TEXT.checkNotes[row.outcome] })),
+    goals: dataset.goals.map((row, index) => ({ ...row, name: HEBREW_TEXT.goals[index][0], description: HEBREW_TEXT.goals[index][1] })),
+  };
+}
 
 function stableUuid(namespace, userId, anchorDate, index) {
   const hex = createHash('sha256')
@@ -399,7 +493,7 @@ export function validateDemoDataset(dataset) {
   return summary;
 }
 
-export function generateDemoDataset({ userId, timezone, anchorDate }) {
+export function generateDemoDataset({ userId, timezone, anchorDate, locale = 'en' }) {
   if (!userId) throw new Error('A target user ID is required.');
   assertTimezone(timezone);
   if (!isValidDateKey(anchorDate)) throw new RangeError('Expected a valid demo anchor date.');
@@ -420,6 +514,7 @@ export function generateDemoDataset({ userId, timezone, anchorDate }) {
     journalEntries: journal.entries, journalEntryTrades: journal.links, dailyReviewDetails: journal.details,
     rules: ruleData.rules, ruleChecks: ruleData.checks, goals,
   };
-  validateDemoDataset(dataset);
-  return dataset;
+  const localizedDataset = localizeDatasetText(dataset, normalizeDemoLocale(locale));
+  validateDemoDataset(localizedDataset);
+  return localizedDataset;
 }

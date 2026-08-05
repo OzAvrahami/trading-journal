@@ -2,8 +2,10 @@ import { useForm } from 'react-hook-form';
 import { Button } from '../ui/Button.jsx';
 import { Checkbox, Field, Input, Select } from '../ui/FormControls.jsx';
 import { RULE_SCOPES } from './ruleTypes.js';
+import { useTranslation } from 'react-i18next';
 
 export function RuleForm({ rule, onSubmit, loading = false }) {
+  const { t } = useTranslation();
   const isEdit = Boolean(rule);
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
@@ -25,45 +27,45 @@ export function RuleForm({ rule, onSubmit, loading = false }) {
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
-      <Field label="Rule name" required error={errors.name?.message}>
+      <Field label={t('rules.ruleName')} required error={errors.name?.message}>
         {(fieldProps) => (
           <Input
             data-autofocus
             maxLength={120}
             {...fieldProps}
             {...register('name', {
-              required: 'Enter a rule name.',
-              validate: (value) => value.trim().length > 0 || 'Enter a rule name.',
-              maxLength: { value: 120, message: 'Use 120 characters or fewer.' },
+              required: t('rules.nameRequired'),
+              validate: (value) => value.trim().length > 0 || t('rules.nameRequired'),
+              maxLength: { value: 120, message: t('validation.maxLength', { field: t('rules.ruleName'), max: 120 }) },
             })}
           />
         )}
       </Field>
 
-      <Field label="Description" helpText="Optional context that explains what following this rule means." error={errors.description?.message}>
+      <Field label={t('common.description')} helpText={t('routes.rules.description')} error={errors.description?.message}>
         {(fieldProps) => (
           <textarea
             rows={4}
             maxLength={1000}
             className="input min-h-24 resize-y"
             {...fieldProps}
-            {...register('description', { maxLength: { value: 1000, message: 'Use 1,000 characters or fewer.' } })}
+            {...register('description', { maxLength: { value: 1000, message: t('validation.maxLength', { field: t('common.description'), max: 1000 }) } })}
           />
         )}
       </Field>
 
-      <Field label="Scope" required error={errors.scope?.message}>
+      <Field label={t('common.scope')} required error={errors.scope?.message}>
         {(fieldProps) => (
-          <Select {...fieldProps} {...register('scope', { required: 'Choose a rule scope.' })}>
+          <Select {...fieldProps} {...register('scope', { required: t('validation.required', { field: t('common.scope') }) })}>
             {RULE_SCOPES.map((scope) => <option key={scope.value} value={scope.value}>{scope.label}</option>)}
           </Select>
         )}
       </Field>
 
-      <Checkbox label="Rule is active" {...register('isActive')} />
+      <Checkbox label={t('status.active')} {...register('isActive')} />
 
       <Button type="submit" variant="primary" size="mobile" className="w-full" loading={loading}>
-        {isEdit ? 'Save rule' : 'Create rule'}
+        {isEdit ? t('rules.saveRule') : t('rules.createRule')}
       </Button>
     </form>
   );

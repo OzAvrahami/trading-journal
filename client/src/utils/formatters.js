@@ -1,3 +1,6 @@
+import { activeLocale, formattingLocale } from '../i18n/index.js';
+import { formatDateKey, normalizeDateKey } from './dateOnly.js';
+
 const LRI = '\u2066';
 const FSI = '\u2068';
 const PDI = '\u2069';
@@ -20,10 +23,10 @@ export function formatLtrText(value) {
   return isolateLtr(String(value));
 }
 
-export function rawCurrency(value, opts = {}) {
+export function rawCurrency(value, opts = {}, locale = activeLocale()) {
   if (value == null) return EMPTY_VALUE;
   const normalizedValue = normalizeZero(value);
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat(formattingLocale(locale), {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
@@ -47,9 +50,11 @@ export function formatSignedCurrency(value, opts = {}) {
   });
 }
 
-export function rawDate(value) {
+export function rawDate(value, locale = activeLocale()) {
   if (!value) return EMPTY_VALUE;
-  return new Date(value).toLocaleDateString('en-US', {
+  const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? normalizeDateKey(value) : null;
+  if (dateKey) return formatDateKey(dateKey, { month: 'short', day: 'numeric', year: 'numeric' }, locale);
+  return new Date(value).toLocaleDateString(formattingLocale(locale), {
     month: 'short', day: 'numeric', year: 'numeric',
   });
 }
@@ -60,9 +65,9 @@ export function formatDate(value) {
   return formatted === EMPTY_VALUE ? formatted : isolateAuto(formatted);
 }
 
-export function rawDatetime(value) {
+export function rawDatetime(value, locale = activeLocale()) {
   if (!value) return EMPTY_VALUE;
-  return new Date(value).toLocaleString('en-US', {
+  return new Date(value).toLocaleString(formattingLocale(locale), {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -76,9 +81,11 @@ export function formatDatetime(value) {
 
 export function rawDuration(minutes) {
   if (minutes == null) return EMPTY_VALUE;
-  if (minutes < 60) return `${minutes}m`;
+  const hebrew = activeLocale() === 'he';
+  if (minutes < 60) return hebrew ? `${minutes} דק׳` : `${minutes}m`;
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
+  if (hebrew) return remainingMinutes > 0 ? `${hours} שע׳ ${remainingMinutes} דק׳` : `${hours} שע׳`;
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
 }
 
@@ -89,7 +96,19 @@ export function formatDuration(minutes) {
 
 export function rawPct(value, decimals = 1) {
   if (value == null) return EMPTY_VALUE;
-  return `${(normalizeZero(value) * 100).toFixed(decimals)}%`;
+  return new Intl.NumberFormat(formattingLocale(), {
+    style: 'percent', minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+  }).format(normalizeZero(value));
+}
+
+export function rawNumber(value, opts = {}) {
+  if (value == null) return EMPTY_VALUE;
+  return new Intl.NumberFormat(formattingLocale(), opts).format(normalizeZero(value));
+}
+
+export function formatNumber(value, opts = {}) {
+  const formatted = rawNumber(value, opts);
+  return formatted === EMPTY_VALUE ? formatted : isolateLtr(formatted);
 }
 
 export function formatPct(value, decimals = 1) {

@@ -8,8 +8,10 @@ import { Card } from '../ui/Card.jsx';
 import { IconButton } from '../ui/IconButton.jsx';
 import { ValueIndicator } from '../ui/ValueIndicator.jsx';
 import { journalType } from './journalTypes.js';
+import { useTranslation } from 'react-i18next';
 
 function LinkedTrade({ trade }) {
+  const { t } = useTranslation();
   return (
     <li>
       <Link
@@ -18,12 +20,12 @@ function LinkedTrade({ trade }) {
       >
         <span className="font-mono font-semibold text-primary" dir="ltr">{trade.symbol}</span>
         <span className="text-muted" dir="ltr">{formatDateKey(normalizeDateKey(trade.entryDatetime), { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-        <span className="capitalize text-secondary">{trade.status || 'Unavailable'}</span>
+        <span className="capitalize text-secondary">{trade.status ? t(`status.${trade.status}`, { defaultValue: trade.status }) : t('common.unavailable')}</span>
         <span className="ms-auto">
           {trade.pnlNet == null ? (
-            <span className="font-mono text-muted" dir="ltr"><span className="sr-only">Net PnL unavailable: </span>—</span>
+            <span className="font-mono text-muted" dir="ltr"><span className="sr-only">{t('journal.netPnlUnavailable')}: </span>—</span>
           ) : (
-            <ValueIndicator value={trade.pnlNet}><span className="sr-only">Net PnL: </span>{formatSignedCurrency(trade.pnlNet)}</ValueIndicator>
+            <ValueIndicator value={trade.pnlNet}><span className="sr-only">{t('common.netPnl')}: </span>{formatSignedCurrency(trade.pnlNet)}</ValueIndicator>
           )}
         </span>
       </Link>
@@ -32,6 +34,7 @@ function LinkedTrade({ trade }) {
 }
 
 export function JournalEntryCard({ entry, onEdit, onDelete, deleting = false, compact = false }) {
+  const { t } = useTranslation();
   const type = journalType(entry.entryType);
   const CompleteIcon = entry.isComplete ? CheckCircle : Clock;
   return (
@@ -41,17 +44,17 @@ export function JournalEntryCard({ entry, onEdit, onDelete, deleting = false, co
         <span className="font-mono text-xs text-muted" dir="ltr">{formatDateKey(entry.entryDate)}</span>
         <Badge variant={entry.isComplete ? 'information' : 'warning'}>
           <CompleteIcon size={13} aria-hidden="true" />
-          {entry.isComplete ? 'Complete' : 'Incomplete'}
+          {t(`status.${entry.isComplete ? 'complete' : 'incomplete'}`)}
         </Badge>
         {(onEdit || onDelete) && (
           <div className="ms-auto flex items-center gap-1">
             {onEdit && (
-              <IconButton label={`Edit ${entry.title}`} size="mobile" className="adaptive:h-8 adaptive:w-8" onClick={() => onEdit(entry)}>
+              <IconButton label={t('journal.editNamed', { title: entry.title })} size="mobile" className="adaptive:h-8 adaptive:w-8" onClick={() => onEdit(entry)}>
                 <PencilSimple size={16} aria-hidden="true" />
               </IconButton>
             )}
             {onDelete && (
-              <IconButton label={`Delete ${entry.title}`} variant="destructive" size="mobile" className="adaptive:h-8 adaptive:w-8" disabled={deleting} aria-busy={deleting || undefined} onClick={() => onDelete(entry)}>
+              <IconButton label={t('journal.deleteNamed', { title: entry.title })} variant="destructive" size="mobile" className="adaptive:h-8 adaptive:w-8" disabled={deleting} aria-busy={deleting || undefined} onClick={() => onDelete(entry)}>
                 <Trash size={16} aria-hidden="true" />
               </IconButton>
             )}
@@ -63,15 +66,15 @@ export function JournalEntryCard({ entry, onEdit, onDelete, deleting = false, co
       <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-secondary">{entry.content}</p>
 
       {entry.tags?.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Tags">
+        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t('common.tags')}>
           {entry.tags.map((tag) => <li key={tag}><Badge variant="neutral" dir="auto">{tag}</Badge></li>)}
         </ul>
       )}
 
       {entry.trades?.length > 0 && (
-        <section className="mt-3 border-t border-default pt-3" aria-label="Linked trades">
+        <section className="mt-3 border-t border-default pt-3" aria-label={t('common.linkedTrades')}>
           <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-secondary">
-            <LinkSimple size={14} aria-hidden="true" /> Linked trades
+            <LinkSimple size={14} aria-hidden="true" /> {t('common.linkedTrades')}
           </h4>
           <ul className="grid gap-2 adaptive:grid-cols-2">
             {entry.trades.map((trade) => <LinkedTrade key={trade.id} trade={trade} />)}
@@ -83,16 +86,17 @@ export function JournalEntryCard({ entry, onEdit, onDelete, deleting = false, co
 }
 
 export function JournalTimeline({ entries, pagination, page, onPageChange, onEdit, onDelete, deletingId }) {
+  const { t } = useTranslation();
   return (
-    <section aria-label="Journal timeline" className="space-y-3">
+    <section aria-label={t('journal.timeline')} className="space-y-3">
       {entries.map((entry) => (
         <JournalEntryCard key={entry.id} entry={entry} onEdit={onEdit} onDelete={onDelete} deleting={deletingId === entry.id} />
       ))}
       {pagination?.totalPages > 1 && (
-        <nav className="flex flex-wrap items-center justify-center gap-2 pt-2" aria-label="Journal timeline pagination">
-          <Button type="button" size="mobile" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button>
-          <span className="px-2 text-sm text-secondary" aria-current="page" dir="ltr">Page {pagination.page} of {pagination.totalPages}</span>
-          <Button type="button" size="mobile" disabled={page >= pagination.totalPages} onClick={() => onPageChange(page + 1)}>Next</Button>
+        <nav className="flex flex-wrap items-center justify-center gap-2 pt-2" aria-label={t('journal.pagination')}>
+          <Button type="button" size="mobile" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>{t('common.previous')}</Button>
+          <span className="px-2 text-sm text-secondary" aria-current="page" dir="ltr">{t('common.pageOf', { page: pagination.page, pages: pagination.totalPages })}</span>
+          <Button type="button" size="mobile" disabled={page >= pagination.totalPages} onClick={() => onPageChange(page + 1)}>{t('common.next')}</Button>
         </nav>
       )}
     </section>

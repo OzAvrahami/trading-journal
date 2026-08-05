@@ -15,6 +15,7 @@ import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 import { periodRange } from '../utils/dateOnly.js';
 import { useUserTimezone } from '../hooks/useUserTimezone.js';
+import { useTranslation } from 'react-i18next';
 const PERIODS = [
   { id: 'today', label: 'Today' },
   { id: 'wtd', label: 'WTD' },
@@ -23,8 +24,9 @@ const PERIODS = [
 ];
 
 function MetricsSkeleton() {
+  const { t } = useTranslation();
   return (
-    <section className="space-y-3" aria-label="Loading Dashboard metrics">
+    <section className="space-y-3" aria-label={t('dashboard.loadingMetrics')}>
       <div className="grid grid-cols-2 gap-3 compact:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-24" label={`Loading primary metric ${index + 1}`} />)}
       </div>
@@ -36,6 +38,7 @@ function MetricsSkeleton() {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const timezone = useUserTimezone();
   const [dateRange, setDateRange] = useState(() => periodRange('mtd', timezone));
   const [breakdownBy, setBreakdownBy] = useState('strategy');
@@ -109,36 +112,36 @@ export default function Dashboard() {
     <div className="space-y-4 adaptive:space-y-5">
       <RouteHeaderControls
         slot="dashboardScope"
-        commands={[{ id: 'addTrade', label: 'Add trade', description: 'Open the existing trade form', keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) }]}
+        commands={[{ id: 'addTrade', label: t('dashboard.addTrade'), description: t('dashboard.addTrade'), keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) }]}
       >
         <div className="flex w-full flex-wrap items-center gap-2 compact:w-auto compact:justify-end">
           <label className="relative flex w-full items-center adaptive:w-56">
             <Bank size={15} className="pointer-events-none absolute start-2.5 text-muted" aria-hidden="true" />
-            <span className="sr-only">Account</span>
+            <span className="sr-only">{t('common.account')}</span>
             <select
-              aria-label="Account"
+              aria-label={t('common.account')}
               value={scope.type === 'account' ? scope.id : ''}
               onChange={handleAccountChange}
               disabled={accountsQuery.isLoading}
               className="input min-h-11 ps-8 adaptive:min-h-9"
               dir="ltr"
             >
-              <option value="">All accounts</option>
+              <option value="">{t('common.allAccounts')}</option>
               {accounts.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}
             </select>
           </label>
 
           {scope.type !== 'account' && companies.length > 1 && (
             <label className="w-full adaptive:w-40">
-              <span className="sr-only">Company</span>
-              <select aria-label="Company" value={scope.type === 'company' ? scope.name : ''} onChange={handleCompanyChange} className="input min-h-11 adaptive:min-h-9" dir="ltr">
-                <option value="">All companies</option>
+              <span className="sr-only">{t('common.company')}</span>
+              <select aria-label={t('common.company')} value={scope.type === 'company' ? scope.name : ''} onChange={handleCompanyChange} className="input min-h-11 adaptive:min-h-9" dir="ltr">
+                <option value="">{t('common.all')}</option>
                 {companies.map((company) => <option key={company} value={company}>{company}</option>)}
               </select>
             </label>
           )}
 
-          <div role="group" aria-label="Dashboard period" className="flex min-h-11 flex-1 gap-0.5 rounded-md border border-default bg-surface-sunken p-0.5 adaptive:min-h-9 adaptive:flex-none">
+          <div role="group" aria-label={t('dashboard.period')} className="flex min-h-11 flex-1 gap-0.5 rounded-md border border-default bg-surface-sunken p-0.5 adaptive:min-h-9 adaptive:flex-none">
             {PERIODS.map((item) => (
               <button
                 key={item.id}
@@ -147,47 +150,47 @@ export default function Dashboard() {
                 onClick={() => applyPeriod(item.id)}
                 className={`min-w-12 flex-1 rounded-sm px-2 font-mono text-xs transition-colors adaptive:flex-none ${period === item.id ? 'bg-surface font-semibold text-primary shadow-flat' : 'text-muted hover:text-primary'}`}
               >
-                {item.label}
+                {t(`dashboard.${item.id}`)}
               </button>
             ))}
           </div>
 
           {period === 'custom' && (
-            <div className="flex w-full gap-2 adaptive:w-auto" aria-label="Custom dashboard dates">
+            <div className="flex w-full gap-2 adaptive:w-auto" aria-label={t('dashboard.customDates')}>
               <label className="min-w-0 flex-1 adaptive:w-36 adaptive:flex-none">
-                <span className="sr-only">Start date</span>
-                <input aria-label="Start date" type="date" value={dateRange.from} onChange={(event) => updateCustomDate('from', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
+                <span className="sr-only">{t('goals.startDate')}</span>
+                <input aria-label={t('goals.startDate')} type="date" value={dateRange.from} onChange={(event) => updateCustomDate('from', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
               </label>
               <label className="min-w-0 flex-1 adaptive:w-36 adaptive:flex-none">
-                <span className="sr-only">End date</span>
-                <input aria-label="End date" type="date" value={dateRange.to} onChange={(event) => updateCustomDate('to', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
+                <span className="sr-only">{t('goals.endDate')}</span>
+                <input aria-label={t('goals.endDate')} type="date" value={dateRange.to} onChange={(event) => updateCustomDate('to', event.target.value)} className="input min-h-11 font-mono text-end adaptive:min-h-9" dir="ltr" />
               </label>
             </div>
           )}
 
           <Button variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
-            Add Trade
+            {t('dashboard.addTrade')}
           </Button>
         </div>
       </RouteHeaderControls>
 
       {accountsQuery.isError && (
         <div className="text-xs text-negative" role="alert">
-          Account options could not be loaded. Period controls and all-account analytics remain available.{' '}
-          <button type="button" className="font-medium underline" onClick={() => accountsQuery.refetch()}>Retry accounts</button>
+          {t('accounts.loadFailed')}{' '}
+          <button type="button" className="font-medium underline" onClick={() => accountsQuery.refetch()}>{t('common.retry')}</button>
         </div>
       )}
 
-      {refreshing && <p className="text-xs text-muted" role="status">Refreshing Dashboard data…</p>}
+      {refreshing && <p className="text-xs text-muted" role="status">{t('common.loading')}</p>}
 
       {summaryQuery.isLoading ? <MetricsSkeleton /> : summaryQuery.isError && !fullFailure ? (
-        <ErrorState title="Performance metrics could not be loaded" detail="Summary KPIs are unavailable for the selected scope." available="Filters, Add Trade, and any successful charts" onRetry={summaryQuery.refetch} />
+        <ErrorState title={t('errors.loadFailed')} detail={t('analytics.noData')} available={t('common.filters')} onRetry={summaryQuery.refetch} />
       ) : <SummaryCards data={summaryQuery.data} />}
 
       {noClosedTrades && (
         <EmptyState
-          title="No closed trades in this period"
-          detail="Choose another date range or add a trade to start building your performance history."
+          title={t('dashboard.noTrades')}
+          detail={t('dashboard.noTradesDetail')}
         />
       )}
 
@@ -201,7 +204,7 @@ export default function Dashboard() {
           <TradingCalendar qParams={qParams} timezone={timezone} errorsOnly />
         </>
       ) : fullFailure ? (
-        <ErrorState title="Dashboard analytics could not be loaded" detail="Summary metrics and all chart queries failed for the selected scope." available="Filters, Add Trade, and the independently loaded calendar" onRetry={retryAnalytics} />
+        <ErrorState title={t('dashboard.loadFailed')} detail={t('dashboard.loadFailedDetail')} available={t('common.filters')} onRetry={retryAnalytics} />
       ) : (
         <>
           <EquityCurve data={equityQuery.data?.data} isLoading={equityQuery.isLoading} error={equityQuery.error} onRetry={equityQuery.refetch} />

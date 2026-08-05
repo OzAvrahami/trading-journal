@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { X } from '@phosphor-icons/react';
 import { IconButton } from './IconButton.jsx';
+import { useTranslation } from 'react-i18next';
 
 const FOCUSABLE = [
   'a[href]',
@@ -12,6 +13,7 @@ const FOCUSABLE = [
 ].join(',');
 
 export function Modal({ open, onClose, title, children, size = 'md' }) {
+  const { t } = useTranslation();
   const panelRef = useRef(null);
   const restoreFocusRef = useRef(null);
   const titleId = useId();
@@ -89,7 +91,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
       >
         <div className="flex min-h-14 items-center justify-between gap-4 border-b border-default px-5 py-3">
           <h2 id={titleId} className="text-base font-semibold text-primary">{title}</h2>
-          <IconButton label="Close dialog" variant="tertiary" size="sm" onClick={onClose}>
+          <IconButton label={t('shell.closeDialog')} variant="tertiary" size="sm" onClick={onClose}>
             <X size={18} aria-hidden="true" />
           </IconButton>
         </div>

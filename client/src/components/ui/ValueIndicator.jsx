@@ -1,11 +1,13 @@
 import { CaretDown, CaretUp } from '@phosphor-icons/react';
 import { formatCurrency } from '../../utils/formatters.js';
+import { useTranslation } from 'react-i18next';
 
 export function ValueIndicator({ value, children, className = '' }) {
+  const { t } = useTranslation();
   const normalizedValue = value === 0 ? 0 : value;
   const state = normalizedValue > 0 ? 'positive' : normalizedValue < 0 ? 'negative' : 'neutral';
   const Icon = state === 'positive' ? CaretUp : state === 'negative' ? CaretDown : null;
-  const text = state === 'positive' ? 'Gain' : state === 'negative' ? 'Loss' : 'No change';
+  const text = state === 'positive' ? t('common.gain') : state === 'negative' ? t('common.lossValue') : t('common.noChange');
   const color = state === 'positive' ? 'text-positive' : state === 'negative' ? 'text-negative' : 'text-secondary';
 
   return (

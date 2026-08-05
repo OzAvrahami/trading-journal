@@ -16,6 +16,7 @@ import {
   DEMO_ACCOUNT_TYPES,
   generateDemoDataset,
   localDateTimeToInstant,
+  normalizeDemoLocale,
   summarizeDemoDataset,
   validateDemoDataset,
 } from './demoSeedData.js';
@@ -277,5 +278,42 @@ describe('deterministic demo fixture generation', () => {
     for (const key of ['positions', 'executions', 'portfolioTransactions', 'holdings', 'lots', 'dividends', 'allocation', 'notifications']) {
       assert.equal(Object.hasOwn(dataset, key), false);
     }
+  });
+
+  test('defaults to English and accepts only the supported demo locales', () => {
+    assert.equal(normalizeDemoLocale(), 'en');
+    assert.equal(normalizeDemoLocale('en'), 'en');
+    assert.equal(normalizeDemoLocale(' he '), 'he');
+    assert.throws(() => normalizeDemoLocale(''), /exactly en or he/);
+    assert.throws(() => normalizeDemoLocale('fr'), /exactly en or he/);
+  });
+
+  test('localizes human-readable fixture text without changing structural data or KPIs', () => {
+    const english = generateDemoDataset({ ...options, locale: 'en' });
+    const hebrew = generateDemoDataset({ ...options, locale: 'he' });
+    const structure = (dataset) => ({
+      anchorDate: dataset.anchorDate,
+      timezone: dataset.timezone,
+      accounts: dataset.accounts.map(({ id, userId, company, accountNumber, accountType, status }) => ({ id, userId, company, accountNumber, accountType, status })),
+      trades: dataset.trades.map(({ id, userId, accountId, symbol, market, direction, status, timeframe, entryDatetime, exitDatetime, pnlGross, fees, pnlNet, rMultiple, durationMinutes, dedupKey }) => ({ id, userId, accountId, symbol, market, direction, status, timeframe, entryDatetime, exitDatetime, pnlGross, fees, pnlNet, rMultiple, durationMinutes, dedupKey })),
+      journal: dataset.journalEntries.map(({ id, userId, entryType, entryDate, isComplete }) => ({ id, userId, entryType, entryDate, isComplete })),
+      journalLinks: dataset.journalEntryTrades,
+      details: dataset.dailyReviewDetails.map(({ journalEntryId, userId, reviewDate }) => ({ journalEntryId, userId, reviewDate })),
+      rules: dataset.rules.map(({ id, userId, scope, isActive }) => ({ id, userId, scope, isActive })),
+      checks: dataset.ruleChecks.map(({ id, userId, ruleId, outcome, checkDate, tradeId, journalEntryId }) => ({ id, userId, ruleId, outcome, checkDate, tradeId, journalEntryId })),
+      goals: dataset.goals.map(({ id, userId, metricKey, comparison, targetValue, startDate, endDate, status }) => ({ id, userId, metricKey, comparison, targetValue, startDate, endDate, status })),
+    });
+
+    assert.deepEqual(structure(hebrew), structure(english));
+    assert.deepEqual(summarizeDemoDataset(hebrew), summarizeDemoDataset(english));
+    assert.equal(hebrew.accounts[0].accountName, 'חשבון מסחר אישי');
+    assert.match(hebrew.trades[0].notes, /[א-ת]/u);
+    assert.match(hebrew.journalEntries[0].title + hebrew.journalEntries[0].content, /[א-ת]/u);
+    assert.match(hebrew.dailyReviewDetails[0].wentWell + hebrew.dailyReviewDetails[0].nextSessionPlan, /[א-ת]/u);
+    assert.equal(hebrew.rules[0].name, 'לא להיכנס ללא סטופ מוגדר');
+    assert.match(hebrew.goals[0].name + hebrew.goals[0].description, /[א-ת]/u);
+    assert.deepEqual(hebrew.trades.map((trade) => trade.symbol), english.trades.map((trade) => trade.symbol));
+    assert.deepEqual(hebrew.accounts.map((account) => account.company), english.accounts.map((account) => account.company));
+    assert.deepEqual(hebrew.accounts.map((account) => account.accountNumber), english.accounts.map((account) => account.accountNumber));
   });
 });

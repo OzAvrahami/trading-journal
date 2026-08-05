@@ -8,6 +8,7 @@ import '@fontsource/ibm-plex-mono/latin-400.css';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-mono/latin-600.css';
 import App from './App.jsx';
+import { I18nProvider } from './i18n/I18nProvider.jsx';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -21,8 +22,10 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </I18nProvider>
   </React.StrictMode>
 );

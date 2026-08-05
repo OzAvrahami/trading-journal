@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MagnifyingGlass } from '@phosphor-icons/react';
 import { Modal } from '../ui/Modal.jsx';
+import { useTranslation } from 'react-i18next';
 
 export function CommandPalette({ open, onClose, commands }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -42,22 +44,22 @@ export function CommandPalette({ open, onClose, commands }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Search or run a command" size="md">
+    <Modal open={open} onClose={onClose} title={t('shell.searchCommand')} size="md">
       <label className="flex min-h-11 items-center gap-2 rounded-md border border-default bg-surface-raised px-3">
         <MagnifyingGlass size={17} className="shrink-0 text-muted" aria-hidden="true" />
-        <span className="sr-only">Search commands</span>
+        <span className="sr-only">{t('shell.searchCommands')}</span>
         <input
           type="search"
           value={query}
           data-autofocus
           onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }}
           onKeyDown={handleKeyDown}
-          placeholder="Navigate or run an available action"
+          placeholder={t('shell.commandPlaceholder')}
           className="min-w-0 flex-1 border-0 bg-transparent text-sm text-primary outline-none placeholder:text-muted"
         />
       </label>
 
-      <div className="mt-3" role="listbox" aria-label="Available commands">
+      <div className="mt-3" role="listbox" aria-label={t('shell.availableCommands')}>
         {filteredCommands.length ? filteredCommands.map((command, index) => {
           const Icon = command.Icon;
           const selected = index === activeIndex;
@@ -79,12 +81,10 @@ export function CommandPalette({ open, onClose, commands }) {
             </button>
           );
         }) : (
-          <p className="px-3 py-6 text-center text-sm text-muted">No matching commands</p>
+          <p className="px-3 py-6 text-center text-sm text-muted">{t('shell.noCommands')}</p>
         )}
       </div>
-      <p className="mt-3 border-t border-default pt-3 text-xs text-muted">
-        <span className="font-mono" dir="ltr">Up / Down</span> to move · <span className="font-mono" dir="ltr">Enter</span> to open · <span className="font-mono" dir="ltr">Esc</span> to close
-      </p>
+      <p className="mt-3 border-t border-default pt-3 text-xs text-muted">{t('shell.commandHelp')}</p>
     </Modal>
   );
 }

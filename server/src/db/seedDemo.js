@@ -15,6 +15,7 @@ import { dateKeyInTimezone, isValidDateKey, isValidTimezone } from '../utils/dat
 import {
   generateDemoDataset,
   localDateTimeToInstant,
+  normalizeDemoLocale,
   summarizeDemoDataset,
   validateDemoDataset,
 } from './demoSeedData.js';
@@ -91,13 +92,14 @@ export function readDemoSeedConfig(env = process.env) {
   if (env.DEMO_RESET_CONFIRM !== REQUIRED_CONFIRMATION) {
     throw new Error(`DEMO_RESET_CONFIRM must exactly equal ${REQUIRED_CONFIRMATION}.`);
   }
+  const locale = env.DEMO_LOCALE === undefined ? 'en' : normalizeDemoLocale(env.DEMO_LOCALE);
   const anchorDate = env.DEMO_ANCHOR_DATE == null || env.DEMO_ANCHOR_DATE === ''
     ? null
     : String(env.DEMO_ANCHOR_DATE).trim();
   if (anchorDate != null && !isValidDateKey(anchorDate)) {
     throw new Error('DEMO_ANCHOR_DATE must be a real YYYY-MM-DD calendar date.');
   }
-  return { email, anchorDate };
+  return { email, anchorDate, locale };
 }
 
 export function maskDatabaseHost(databaseUrl) {
@@ -151,7 +153,7 @@ async function loadCurrentCounts(database, userId) {
   return Object.fromEntries(entries);
 }
 
-async function collectBackup(database, user, now) {
+async function collectBackup(database, user, now, demoLocale) {
   const data = {};
   for (const { key, sql } of BACKUP_SELECTS) {
     const result = await database.query(sql, [user.id]);
@@ -162,13 +164,14 @@ async function collectBackup(database, user, now) {
       version: 1,
       exportedAt: now.toISOString(),
       timezone: user.timezone,
+      demoLocale,
       targetUserId: user.id,
     },
     ...data,
   };
 }
 
-function warningLines({ user, counts, anchorDate, host }) {
+function warningLines({ user, counts, anchorDate, host, locale }) {
   return [
     'DESTRUCTIVE DEMO RESET (one user only)',
     `Target email: ${user.email}`,
@@ -176,6 +179,7 @@ function warningLines({ user, counts, anchorDate, host }) {
     `User timezone: ${user.timezone}`,
     `Database host: ${host}`,
     `Anchor date: ${anchorDate}`,
+    `Demo locale: ${locale}`,
     `Current records: ${RESET_STEPS.map(({ table }) => `${table}=${counts[table] ?? 0}`).join(', ')}`,
     'Preserved: users, refresh_tokens, schema_migrations, profile, timezone, and authentication sessions.',
   ];
@@ -433,7 +437,7 @@ export async function runDemoSeed({
   const user = await loadTargetUser(database, config.email);
   const anchorDate = config.anchorDate ?? dateKeyInTimezone(user.timezone, clock);
   const counts = await loadCurrentCounts(database, user.id);
-  const backup = await collectBackup(database, user, clock);
+  const backup = await collectBackup(database, user, clock, config.locale);
   const backupPath = await backupWriter({ backup, email: user.email, now: clock, directory: backupDirectory });
 
   for (const line of warningLines({
@@ -441,6 +445,7 @@ export async function runDemoSeed({
     counts,
     anchorDate,
     host: maskDatabaseHost(env.DATABASE_URL),
+    locale: config.locale,
   })) logger.warn(line);
 
   const client = await database.connect();
@@ -453,7 +458,7 @@ export async function runDemoSeed({
       const result = await client.query(step.sql, [user.id]);
       deleted[step.table] = Number(result.rowCount ?? 0);
     }
-    const dataset = generateDemoDataset({ userId: user.id, timezone: user.timezone, anchorDate });
+    const dataset = generateDemoDataset({ userId: user.id, timezone: user.timezone, anchorDate, locale: config.locale });
     validateDemoDataset(dataset);
     await insertDemoDataset(client, dataset);
     const validation = await persistedValidator(client, dataset);
@@ -462,7 +467,7 @@ export async function runDemoSeed({
     const summary = summarizeDemoDataset(dataset);
     logger.info(`Demo seed committed for ${user.email}: ${summary.accounts} accounts, ${summary.closed} closed trades, ${summary.open} open trades, ${summary.journalEntries} Journal entries, ${summary.rules} rules, ${summary.goals} goals.`);
     logger.info(`Backup: ${backupPath}`);
-    return { user: { id: user.id, email: user.email, timezone: user.timezone }, anchorDate, backupPath, deleted, summary, validation };
+    return { user: { id: user.id, email: user.email, timezone: user.timezone }, anchorDate, locale: config.locale, backupPath, deleted, summary, validation };
   } catch (error) {
     let failure = error;
     if (began) {

@@ -104,4 +104,30 @@ export function resolveRouteMetadata(pathname) {
   return ROUTES.find((route) => route.match(pathname)) || FALLBACK;
 }
 
+const ROUTE_KEYS = new Map([
+  ['/dashboard', 'dashboard'], ['/trades', 'trades'], ['/daily-review', 'dailyReview'],
+  ['/accounts', 'accounts'], ['/import', 'import'], ['/insights/analytics', 'analytics'],
+  ['/insights/journal', 'journal'], ['/insights/rules', 'rules'], ['/insights/goals', 'goals'],
+]);
+
+export function localizeRouteMetadata(metadata, t) {
+  const routeKey = metadata.nav === '/trades' && metadata.title === 'Trade details'
+    ? 'tradeDetail'
+    : ROUTE_KEYS.get(metadata.nav);
+  if (!routeKey) return metadata;
+  const breadcrumbMap = {
+    Journal: 'navigation.journal', Trading: 'navigation.trading', Manage: 'navigation.manage',
+    Insights: 'navigation.insights', Dashboard: 'navigation.dashboard', Trades: 'navigation.trades',
+    'Daily Review': 'navigation.dailyReview', 'Trade details': 'routes.tradeDetail.title',
+    Accounts: 'navigation.accounts', Import: 'navigation.import', Analytics: 'navigation.analytics',
+    'Journal & Reviews': 'navigation.journal', 'Rules & Adherence': 'navigation.rules', Goals: 'navigation.goals',
+  };
+  return {
+    ...metadata,
+    title: t(`routes.${routeKey}.title`),
+    description: t(`routes.${routeKey}.description`),
+    breadcrumbs: metadata.breadcrumbs.map((crumb) => t(breadcrumbMap[crumb] || crumb)),
+  };
+}
+
 export const routeMetadata = ROUTES;

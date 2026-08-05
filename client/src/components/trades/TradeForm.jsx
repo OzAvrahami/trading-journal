@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { accountsApi } from '../../api/accounts.js';
+import { useTranslation } from 'react-i18next';
 
 const MARKETS    = ['stocks', 'crypto', 'futures', 'forex'];
 const DIRECTIONS = ['long', 'short'];
@@ -13,6 +14,7 @@ const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h
  * In edit mode (defaultValues.id set): account is shown as read-only text.
  */
 export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isEdit = Boolean(defaultValues.id);
 
@@ -66,9 +68,9 @@ export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       {/* Account selector (create only) */}
-      {!isEdit && field('Account *',
-        <select className="input" {...register('accountId', { required: 'Required' })}>
-          <option value="">Select account…</option>
+      {!isEdit && field(`${t('common.account')} *`,
+        <select className="input" {...register('accountId', { required: t('common.required') })}>
+          <option value="">{t('accounts.chooseAccount', { defaultValue: 'Select account…' })}</option>
           {activeAccounts.map(a => (
             <option key={a.id} value={a.id}>{accountLabel(a)}</option>
           ))}
@@ -78,19 +80,19 @@ export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
 
       {/* Row 1: Symbol + Market + Direction */}
       <div className="grid grid-cols-3 gap-3">
-        {field('Symbol *',
-          <input className="input uppercase" placeholder="AAPL" {...register('symbol', { required: 'Required' })} />,
+        {field(`${t('common.symbol')} *`,
+          <input dir="ltr" className="input uppercase" placeholder="AAPL" {...register('symbol', { required: t('common.required') })} />,
           errors.symbol
         )}
-        {field('Market *',
-          <select className="input" {...register('market', { required: 'Required' })}>
-            {MARKETS.map(m => <option key={m}>{m}</option>)}
+        {field(`${t('common.market')} *`,
+          <select className="input" {...register('market', { required: t('common.required') })}>
+            {MARKETS.map(m => <option key={m} value={m}>{t(`status.${m}`, { defaultValue: m })}</option>)}
           </select>,
           errors.market
         )}
-        {field('Direction *',
-          <select className="input" {...register('direction', { required: 'Required' })}>
-            {DIRECTIONS.map(d => <option key={d}>{d}</option>)}
+        {field(`${t('common.direction')} *`,
+          <select className="input" {...register('direction', { required: t('common.required') })}>
+            {DIRECTIONS.map(d => <option key={d} value={d}>{t(`status.${d}`)}</option>)}
           </select>,
           errors.direction
         )}
@@ -98,42 +100,42 @@ export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
 
       {/* Row 2: Entry datetime + Entry price + Quantity */}
       <div className="grid grid-cols-3 gap-3">
-        {field('Entry Time *',
-          <input type="datetime-local" className="input" {...register('entryDatetime', { required: 'Required' })} />,
+        {field(`${t('common.entry')} *`,
+          <input type="datetime-local" dir="ltr" className="input" {...register('entryDatetime', { required: t('common.required') })} />,
           errors.entryDatetime
         )}
-        {field('Entry Price *',
-          <input type="number" step="any" className="input" placeholder="185.50" {...register('entryPrice', { required: 'Required', valueAsNumber: true })} />,
+        {field(`${t('common.entryPrice')} *`,
+          <input type="number" dir="ltr" step="any" className="input" placeholder="185.50" {...register('entryPrice', { required: t('common.required'), valueAsNumber: true })} />,
           errors.entryPrice
         )}
-        {field('Quantity *',
-          <input type="number" step="any" className="input" placeholder="100" {...register('quantity', { required: 'Required', valueAsNumber: true })} />,
+        {field(`${t('common.quantity')} *`,
+          <input type="number" dir="ltr" step="any" className="input" placeholder="100" {...register('quantity', { required: t('common.required'), valueAsNumber: true })} />,
           errors.quantity
         )}
       </div>
 
       {/* Row 3: Exit datetime + Exit price + Fees */}
       <div className="grid grid-cols-3 gap-3">
-        {field('Exit Time',
-          <input type="datetime-local" className="input" {...register('exitDatetime')} />
+        {field(t('common.exit'),
+          <input type="datetime-local" dir="ltr" className="input" {...register('exitDatetime')} />
         )}
-        {field('Exit Price',
-          <input type="number" step="any" className="input" placeholder="187.20" {...register('exitPrice', { valueAsNumber: true })} />
+        {field(t('common.exitPrice'),
+          <input type="number" dir="ltr" step="any" className="input" placeholder="187.20" {...register('exitPrice', { valueAsNumber: true })} />
         )}
-        {field('Fees',
-          <input type="number" step="any" className="input" placeholder="0" {...register('fees', { valueAsNumber: true })} />
+        {field(t('common.fees'),
+          <input type="number" dir="ltr" step="any" className="input" placeholder="0" {...register('fees', { valueAsNumber: true })} />
         )}
       </div>
 
       {/* Row 4: Strategy + Setup + Timeframe */}
       <div className="grid grid-cols-3 gap-3">
-        {field('Strategy',
+        {field(t('common.strategy'),
           <input className="input" placeholder="breakout" {...register('strategy')} />
         )}
-        {field('Setup',
+        {field(t('common.setup'),
           <input className="input" placeholder="bull-flag" {...register('setup')} />
         )}
-        {field('Timeframe',
+        {field(t('common.timeframe'),
           <select className="input" {...register('timeframe')}>
             <option value="">—</option>
             {TIMEFRAMES.map(t => <option key={t}>{t}</option>)}
@@ -143,24 +145,24 @@ export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
 
       {/* Row 5: Risk / SL / TP */}
       <div className="grid grid-cols-3 gap-3">
-        {field('Risk Amount ($)',
+        {field(t('common.riskAmount'),
           <input type="number" step="any" className="input" placeholder="100" {...register('riskAmount', { valueAsNumber: true })} />
         )}
-        {field('Stop Loss',
+        {field(t('common.stopLoss'),
           <input type="number" step="any" className="input" placeholder="184.50" {...register('stopLoss', { valueAsNumber: true })} />
         )}
-        {field('Take Profit',
+        {field(t('common.takeProfit'),
           <input type="number" step="any" className="input" placeholder="188.50" {...register('takeProfit', { valueAsNumber: true })} />
         )}
       </div>
 
       {/* Notes */}
       <div>
-        <label className="label">Notes</label>
+        <label className="label">{t('common.notes')}</label>
         <textarea
           rows={3}
           className="input resize-none"
-          placeholder="Strong volume on breakout..."
+          placeholder={t('trades.notesPlaceholder')}
           {...register('notes')}
         />
       </div>
@@ -168,7 +170,7 @@ export function TradeForm({ defaultValues = {}, onSubmit, loading }) {
       {/* Submit */}
       <div className="pt-2">
         <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? 'Saving…' : (isEdit ? 'Update Trade' : 'Add Trade')}
+          {loading ? t('common.saving') : (isEdit ? t('trades.editTrade') : t('trades.addTrade'))}
         </button>
       </div>
     </form>

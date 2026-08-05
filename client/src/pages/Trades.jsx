@@ -13,25 +13,27 @@ import { downloadBlob } from '../utils/csvExport.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 import { useUserTimezone } from '../hooks/useUserTimezone.js';
+import { useTranslation } from 'react-i18next';
 
 function TradesSkeleton() {
+  const { t } = useTranslation();
   return (
-    <div aria-label="Loading trades" className="space-y-3">
+    <div aria-label={t('trades.loading')} className="space-y-3">
       <div className="hidden overflow-hidden rounded-lg border border-default bg-surface adaptive:block">
         <div className="grid grid-cols-6 gap-3 border-b border-default p-3">
-          {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-4" label="Loading table header" />)}
+          {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-4" label={t('trades.loadingHeader')} />)}
         </div>
         {Array.from({ length: 5 }, (_, row) => (
           <div key={row} className="grid grid-cols-6 gap-3 border-b border-default p-3 last:border-0">
-            {Array.from({ length: 6 }, (_, cell) => <Skeleton key={cell} className="h-5" label="Loading trade row" />)}
+            {Array.from({ length: 6 }, (_, cell) => <Skeleton key={cell} className="h-5" label={t('trades.loadingRow')} />)}
           </div>
         ))}
       </div>
       <div className="grid gap-3 adaptive:hidden">
         {Array.from({ length: 3 }, (_, index) => (
           <div key={index} className="rounded-lg border border-default bg-surface p-4">
-            <Skeleton className="h-5 w-2/3" label="Loading trade card" />
-            <Skeleton className="mt-4 h-14" label="Loading trade details" />
+            <Skeleton className="h-5 w-2/3" label={t('trades.loadingCard')} />
+            <Skeleton className="mt-4 h-14" label={t('trades.loadingDetails')} />
           </div>
         ))}
       </div>
@@ -40,6 +42,7 @@ function TradesSkeleton() {
 }
 
 export default function Trades() {
+  const { t } = useTranslation();
   const timezone = useUserTimezone();
   const [filters, setFilters] = useState(DEFAULT_TRADE_FILTERS);
   const [addOpen, setAddOpen] = useState(false);
@@ -61,9 +64,9 @@ export default function Trades() {
     try {
       const blob = await tradesApi.exportCsv(filters);
       downloadBlob(blob, `trades-${new Date().toISOString().slice(0, 10)}.csv`);
-      toast.success('CSV exported!');
+      toast.success(t('trades.csvExported', { defaultValue: 'CSV exported!' }));
     } catch {
-      toast.error('Export failed.');
+      toast.error(t('trades.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -95,8 +98,8 @@ export default function Trades() {
       <RouteHeaderControls
         slot="tradesActions"
         commands={[
-          { id: 'exportTrades', label: 'Export trades', description: 'Export the current filter scope as CSV', keywords: 'download csv', Icon: DownloadSimple, action: handleExport },
-          { id: 'addTrade', label: 'Add trade', description: 'Open the existing trade form', keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) },
+          { id: 'exportTrades', label: t('trades.exportCsv'), description: t('trades.exportCsv'), keywords: 'download csv', Icon: DownloadSimple, action: handleExport },
+          { id: 'addTrade', label: t('trades.addTrade'), description: t('trades.addTrade'), keywords: 'new quick add', Icon: Plus, action: () => setAddOpen(true) },
         ]}
       >
         <div className="flex flex-wrap items-center gap-2">
@@ -109,10 +112,10 @@ export default function Trades() {
             leadingIcon={<DownloadSimple size={17} aria-hidden="true" />}
             onClick={handleExport}
           >
-            Export CSV
+            {t('trades.exportCsv')}
           </Button>
           <Button type="button" variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={17} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
-            Add trade
+            {t('trades.addTrade')}
           </Button>
         </div>
       </RouteHeaderControls>
@@ -121,16 +124,16 @@ export default function Trades() {
 
       {tradesQuery.isError && hasUsableData && (
         <ErrorState
-          title="Trades could not be refreshed"
-          detail="The current filters are unchanged and the last available results remain visible."
+          title={t('trades.loadFailed')}
+          detail={t('trades.noTradesDetail')}
           onRetry={tradesQuery.refetch}
         />
       )}
 
       {pagination && (
         <div className="flex min-h-8 flex-wrap items-center justify-between gap-2 text-xs text-secondary" role="status" aria-live="polite">
-          <span dir="ltr">Showing {rangeStart}–{rangeEnd} of {pagination.total} trades</span>
-          {tradesQuery.isFetching && !tradesQuery.isLoading && <span className="text-muted">Refreshing results…</span>}
+          <span dir="ltr">{t('trades.showing', { defaultValue: `Showing ${rangeStart}–${rangeEnd} of ${pagination.total} trades`, from: rangeStart, to: rangeEnd, total: pagination.total })}</span>
+          {tradesQuery.isFetching && !tradesQuery.isLoading && <span className="text-muted">{t('common.loading')}</span>}
         </div>
       )}
 
@@ -138,15 +141,15 @@ export default function Trades() {
         <TradesSkeleton />
       ) : tradesQuery.isError && !hasUsableData ? (
         <ErrorState
-          title="Trades could not be loaded"
-          detail="Your filter selections are still in place. Try loading the list again."
+          title={t('trades.loadFailed')}
+          detail={t('trades.noTradesDetail')}
           onRetry={tradesQuery.refetch}
         />
       ) : trades.length === 0 ? (
         <EmptyState
           filtered={hasActiveFilters}
-          title={hasActiveFilters ? 'No trades match the current filters' : 'No trades recorded yet'}
-          detail={hasActiveFilters ? 'Clear the current filters to return to the full trade list.' : 'Use Add trade when you are ready to record your first trade.'}
+          title={hasActiveFilters ? t('trades.filteredEmpty') : t('trades.noTrades')}
+          detail={t('trades.noTradesDetail')}
           onClear={hasActiveFilters ? clearFilters : undefined}
         />
       ) : (
@@ -160,23 +163,23 @@ export default function Trades() {
       )}
 
       {pagination && pagination.totalPages > 1 && (
-        <nav className="flex flex-wrap items-center justify-center gap-2 pt-2" aria-label="Trade list pagination">
+        <nav className="flex flex-wrap items-center justify-center gap-2 pt-2" aria-label={t('common.trades')}>
           <Button
             type="button"
             size="mobile"
             disabled={filters.page <= 1}
             onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
           >
-            Previous
+            {t('common.previous')}
           </Button>
-          <span className="px-2 text-sm text-secondary" aria-current="page" dir="ltr">Page {pagination.page} of {pagination.totalPages}</span>
+          <span className="px-2 text-sm text-secondary" aria-current="page" dir="ltr">{t('common.pageOf', { page: pagination.page, pages: pagination.totalPages })}</span>
           <Button
             type="button"
             size="mobile"
             disabled={filters.page >= pagination.totalPages}
             onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
           >
-            Next
+            {t('common.next')}
           </Button>
         </nav>
       )}

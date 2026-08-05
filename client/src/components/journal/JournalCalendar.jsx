@@ -19,6 +19,7 @@ import { EmptyState, ErrorState } from '../ui/States.jsx';
 import { IconButton } from '../ui/IconButton.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
 import { JournalEntryCard } from './JournalTimeline.jsx';
+import { useTranslation } from 'react-i18next';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -42,6 +43,7 @@ export function buildJournalCalendarGrid(month, summaries = []) {
 }
 
 export function JournalCalendar({ month, selectedDate, timezone = DEFAULT_TIMEZONE, onMonthChange, onDateSelect, onEdit, onDelete, deletingId }) {
+  const { t } = useTranslation();
   const { isRtl } = useDirection();
   const calendarQuery = useQuery({
     queryKey: ['journal', 'calendar', month],
@@ -73,31 +75,31 @@ export function JournalCalendar({ month, selectedDate, timezone = DEFAULT_TIMEZO
         <div className="flex flex-wrap items-center gap-2">
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-primary">{monthLabel}</h2>
-            <p className="mt-0.5 text-xs text-muted">Weeks begin on Sunday. Select a day to review its entries.</p>
+            <p className="mt-0.5 text-xs text-muted">{t('journal.calendarHelp')}</p>
           </div>
-          <IconButton label="Previous month" size="mobile" className="adaptive:h-9 adaptive:w-9" onClick={() => onMonthChange(addMonthsToKey(month, -1))}>
+          <IconButton label={t('journal.previousMonth')} size="mobile" className="adaptive:h-9 adaptive:w-9" onClick={() => onMonthChange(addMonthsToKey(month, -1))}>
             <PreviousIcon size={17} aria-hidden="true" />
           </IconButton>
-          <Button type="button" size="mobile" className="adaptive:min-h-9" onClick={goToday}>Today</Button>
-          <IconButton label="Next month" size="mobile" className="adaptive:h-9 adaptive:w-9" onClick={() => onMonthChange(addMonthsToKey(month, 1))}>
+          <Button type="button" size="mobile" className="adaptive:min-h-9" onClick={goToday}>{t('common.today')}</Button>
+          <IconButton label={t('journal.nextMonth')} size="mobile" className="adaptive:h-9 adaptive:w-9" onClick={() => onMonthChange(addMonthsToKey(month, 1))}>
             <NextIcon size={17} aria-hidden="true" />
           </IconButton>
         </div>
 
         {calendarQuery.isLoading ? (
-          <Skeleton className="mt-4 h-[25rem] w-full" label="Loading journal calendar" />
+          <Skeleton className="mt-4 h-[25rem] w-full" label={t('journal.loadingCalendar')} />
         ) : calendarQuery.isError && !calendarQuery.data ? (
-          <div className="mt-4"><ErrorState title="Journal calendar could not be loaded" detail="Month-level entry counts are unavailable." available="Timeline and journal entry form" onRetry={calendarQuery.refetch} /></div>
+          <div className="mt-4"><ErrorState title={t('journal.calendarLoadFailed')} detail={t('journal.monthCountsUnavailable')} available={t('journal.timelineAndForm')} onRetry={calendarQuery.refetch} /></div>
         ) : (
           <>
-            {calendarQuery.isError && <div className="mt-4"><ErrorState title="Journal calendar could not be refreshed" detail="The last available month remains visible." onRetry={calendarQuery.refetch} /></div>}
-            {calendarQuery.isFetching && !calendarQuery.isLoading && <p className="mt-2 text-xs text-muted" role="status">Refreshing calendar…</p>}
+            {calendarQuery.isError && <div className="mt-4"><ErrorState title={t('journal.calendarRefreshFailed')} detail={t('journal.lastMonthVisible')} onRetry={calendarQuery.refetch} /></div>}
+            {calendarQuery.isFetching && !calendarQuery.isLoading && <p className="mt-2 text-xs text-muted" role="status">{t('journal.refreshingCalendar')}</p>}
             {(calendarQuery.data?.days?.length ?? 0) === 0 && (
-              <p className="mt-4 rounded-md border border-dashed border-strong bg-surface-raised p-3 text-sm text-secondary">No journal entries this month</p>
+              <p className="mt-4 rounded-md border border-dashed border-strong bg-surface-raised p-3 text-sm text-secondary">{t('journal.noEntriesMonth')}</p>
             )}
-            <div className="mt-4" role="grid" aria-label={`Journal entries for ${monthLabel}`}>
+            <div className="mt-4" role="grid" aria-label={t('journal.entriesForMonth', { month: monthLabel })}>
               <div className="grid grid-cols-7 gap-1 adaptive:gap-1.5" role="row">
-                {WEEKDAYS.map((day) => <div key={day} role="columnheader" className="pb-1 text-center text-[0.65625rem] font-semibold uppercase tracking-wide text-muted">{day}</div>)}
+                {WEEKDAYS.map((day) => <div key={day} role="columnheader" className="pb-1 text-center text-[0.65625rem] font-semibold uppercase tracking-wide text-muted">{t(`analytics.weekdays.${day.toLowerCase()}`)}</div>)}
               </div>
               <div className="grid grid-cols-7 gap-1 adaptive:gap-1.5">
                 {grid.map((day, index) => {
@@ -111,7 +113,7 @@ export function JournalCalendar({ month, selectedDate, timezone = DEFAULT_TIMEZO
                       role="gridcell"
                       aria-selected={isSelected}
                       aria-current={isToday ? 'date' : undefined}
-                      aria-label={`${formatDateKey(day.date)}, ${day.total} ${day.total === 1 ? 'entry' : 'entries'}, ${day.complete} complete, ${day.incomplete} incomplete`}
+                      aria-label={t('journal.daySummaryLabel', { date: formatDateKey(day.date), count: day.total, total: day.total, complete: day.complete, incomplete: day.incomplete })}
                       onClick={() => onDateSelect(day.date)}
                       className={`flex min-h-16 min-w-0 flex-col items-start rounded-sm border p-1.5 text-start transition-colors adaptive:min-h-20 adaptive:p-2 ${day.total ? 'border-strong bg-surface-raised hover:border-action' : 'border-default bg-surface-sunken text-muted'} ${isSelected ? 'ring-2 ring-action ring-offset-1 ring-offset-surface' : ''}`}
                     >
@@ -138,20 +140,20 @@ export function JournalCalendar({ month, selectedDate, timezone = DEFAULT_TIMEZO
         <div className="flex items-center gap-2">
           <CalendarBlank size={17} className="text-muted" aria-hidden="true" />
           <h2 id="selected-day-heading" className="text-sm font-semibold text-primary">
-            {selectedDate ? formatDateKey(selectedDate) : 'Selected day'}
+            {selectedDate ? formatDateKey(selectedDate) : t('journal.selectedDay')}
           </h2>
         </div>
         {!selectedDate ? (
-          <EmptyState title="Select a calendar day" detail="Choose a day to see its real journal entries." />
+          <EmptyState title={t('journal.selectDay')} detail={t('journal.selectDayDetail')} />
         ) : selectedQuery.isLoading ? (
-          <Skeleton className="h-40 w-full" label="Loading selected day entries" />
+          <Skeleton className="h-40 w-full" label={t('journal.loadingSelectedDay')} />
         ) : selectedQuery.isError && !selectedQuery.data ? (
-          <ErrorState title="Selected day could not be loaded" detail="Entries for this day are unavailable." available="Month counts and navigation" onRetry={selectedQuery.refetch} />
+          <ErrorState title={t('journal.selectedDayLoadFailed')} detail={t('journal.selectedDayUnavailable')} available={t('journal.monthNavigation')} onRetry={selectedQuery.refetch} />
         ) : selectedEntries.length === 0 ? (
-          <EmptyState title="No journal entries on this day" detail="The selected calendar date has no saved entries." />
+          <EmptyState title={t('journal.noEntriesDay')} detail={t('journal.noEntriesDayDetail')} />
         ) : (
           <div className="space-y-3">
-            {selectedQuery.isError && <ErrorState title="Selected day could not be refreshed" detail="The last available entries remain visible." onRetry={selectedQuery.refetch} />}
+            {selectedQuery.isError && <ErrorState title={t('journal.selectedDayRefreshFailed')} detail={t('journal.lastEntriesVisible')} onRetry={selectedQuery.refetch} />}
             {selectedEntries.map((entry) => <JournalEntryCard key={entry.id} entry={entry} compact onEdit={onEdit} onDelete={onDelete} deleting={deletingId === entry.id} />)}
           </div>
         )}
