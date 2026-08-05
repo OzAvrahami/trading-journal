@@ -1,5 +1,12 @@
 const ROUTES = [
   {
+    match: (pathname) => /^\/accounts\/[^/]+$/.test(pathname),
+    title: 'Account details',
+    description: 'Review account identity, tracked balance context, performance, and recent trades.',
+    breadcrumbs: ['Manage', 'Accounts', 'Account details'],
+    nav: '/accounts', routeKey: 'accountDetail', headerControls: [], commandActions: [],
+  },
+  {
     match: (pathname) => pathname === '/strategies',
     title: 'Strategies & Setups',
     description: 'Manage reusable trade classifications and review their real performance.',
@@ -150,7 +157,7 @@ export function localizeRouteMetadata(metadata, t) {
     'Strategies & Setups': 'navigation.strategies',
     'Daily Review': 'navigation.dailyReview', 'Trade details': 'routes.tradeDetail.title',
     'New Trade': 'routes.tradeNew.title', 'Edit Trade': 'routes.tradeEdit.title',
-    Accounts: 'navigation.accounts', Import: 'navigation.import', Analytics: 'navigation.analytics',
+    Accounts: 'navigation.accounts', 'Account details': 'routes.accountDetail.title', Import: 'navigation.import', Analytics: 'navigation.analytics',
     'Journal & Reviews': 'navigation.journal', 'Rules & Adherence': 'navigation.rules', Goals: 'navigation.goals',
   };
   return {

@@ -1,278 +1,58 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { accountsApi } from '../api/accounts.js';
-import { useToast } from '../components/ui/Toast.jsx';
-import { Modal } from '../components/ui/Modal.jsx';
-import { Spinner } from '../components/ui/Spinner.jsx';
-import { Plus } from '@phosphor-icons/react';
-import { Button } from '../components/ui/Button.jsx';
-import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Archive, ArrowCounterClockwise, CheckCircle, Eye, PencilSimple, Plus } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
+import { accountsApi } from '../api/accounts.js';
+import { AccountForm } from '../components/accounts/AccountForm.jsx';
+import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
+import { Badge } from '../components/ui/Badge.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { Card } from '../components/ui/Card.jsx';
+import { Modal } from '../components/ui/Modal.jsx';
+import { Skeleton } from '../components/ui/Skeleton.jsx';
+import { EmptyState, ErrorState } from '../components/ui/States.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
+import { formatDate, formatNumber, formatPct, formatR, formatSignedCurrency, formatCurrency } from '../utils/formatters.js';
 
-const PROP_FIRMS = [
-  'Topstep', 'Lucid', 'MFF', 'Apex', 'FTMO', 'E8', 'The5ers',
-  'Earn2Trade', 'Tradeify', 'Bulenox', 'BluSky', 'Funded Engineer',
-];
-
-const ACCOUNT_TYPES    = ['funded', 'evaluation', 'demo', 'live'];
-const ACCOUNT_STATUSES = ['active', 'inactive', 'archived'];
-
-const STATUS_COLORS = {
-  active:   'badge-green',
-  inactive: 'badge-gray',
-  archived: 'badge-gray',
-};
-
-// ---- Account form -----------------------------------------------------------
-
-function AccountForm({ defaultValues = {}, onSubmit, loading }) {
+function money(value, account, signed = false) { return (signed ? formatSignedCurrency : formatCurrency)(value, { currency: account.baseCurrency }); }
+function AccountCard({ account, onView, onEdit, onLifecycle, onDefault }) {
   const { t } = useTranslation();
-  const [form, setForm] = useState({
-    company:       defaultValues.company       || '',
-    accountNumber: defaultValues.accountNumber || '',
-    accountName:   defaultValues.accountName   || '',
-    accountType:   defaultValues.accountType   || '',
-    status:        defaultValues.status        || 'active',
-  });
-
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.company.trim() || !form.accountNumber.trim()) return;
-    onSubmit({
-      company:       form.company,
-      accountNumber: form.accountNumber,
-      accountName:   form.accountName  || null,
-      accountType:   form.accountType  || null,
-      status:        form.status,
-    });
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">{t('accounts.broker', { defaultValue: 'Prop Firm / Broker' })} *</label>
-          <input
-            className="input"
-            list="firm-list"
-            placeholder="Topstep"
-            value={form.company}
-            onChange={e => set('company', e.target.value)}
-            required
-          />
-          <datalist id="firm-list">
-            {PROP_FIRMS.map(f => <option key={f} value={f} />)}
-          </datalist>
-        </div>
-        <div>
-          <label className="label">{t('common.accountNumber')} *</label>
-          <input
-            className="input"
-            placeholder={t('accounts.numberPlaceholder')}
-            dir="ltr"
-            value={form.accountNumber}
-            onChange={e => set('accountNumber', e.target.value)}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">{t('common.displayName')}</label>
-          <input
-            className="input"
-            placeholder={t('accounts.namePlaceholder')}
-            value={form.accountName}
-            onChange={e => set('accountName', e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="label">{t('common.type')}</label>
-          <select className="input" value={form.accountType} onChange={e => set('accountType', e.target.value)}>
-            <option value="">—</option>
-            {ACCOUNT_TYPES.map(type => <option key={type} value={type}>{t(`status.${type}`)}</option>)}
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="label">{t('common.status')}</label>
-        <select className="input" value={form.status} onChange={e => set('status', e.target.value)}>
-          {ACCOUNT_STATUSES.map(status => <option key={status} value={status}>{t(`status.${status}`)}</option>)}
-        </select>
-      </div>
-
-      <div className="pt-1">
-        <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? t('common.saving') : (defaultValues.id ? t('accounts.editAccount') : t('auth.createAccount'))}
-        </button>
-      </div>
-    </form>
-  );
+  return <Card className="min-w-0 space-y-4">
+    <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-base font-semibold text-primary" dir="auto">{account.accountName || account.company}</h3><p className="mt-1 truncate text-xs text-muted" dir="auto">{account.company}</p><p className="mt-1 font-mono text-xs text-secondary" dir="ltr">{account.accountNumber}</p></div><div className="flex flex-wrap justify-end gap-1"><Badge>{t(`status.${account.status}`)}</Badge>{account.isDefault && <Badge variant="positive"><CheckCircle size={13} aria-hidden="true" />{t('accounts.defaultAccount')}</Badge>}</div></div>
+    <dl className="grid grid-cols-2 gap-3 text-sm adaptive:grid-cols-3">
+      <div><dt className="text-xs text-muted">{t('accounts.openingBalance')}</dt><dd className="mt-1 font-mono" dir="ltr">{money(account.openingBalance, account)}</dd></div>
+      <div><dt className="text-xs text-muted">{t('accounts.trackedBalance')}</dt><dd className="mt-1 font-mono" dir="ltr">{money(account.trackedBalance, account)}</dd></div>
+      <div><dt className="text-xs text-muted">{t('common.netPnl')}</dt><dd className="mt-1 font-mono" dir="ltr">{money(account.pnlNet, account, true)}</dd></div>
+      <div><dt className="text-xs text-muted">{t('accounts.closedOpen')}</dt><dd className="mt-1 font-mono" dir="ltr">{account.closedTrades} / {account.openTrades}</dd></div>
+      <div><dt className="text-xs text-muted">{t('common.winRate')}</dt><dd className="mt-1 font-mono" dir="ltr">{formatPct(account.winRate)}</dd></div>
+      <div><dt className="text-xs text-muted">{t('common.averageR')}</dt><dd className="mt-1 font-mono" dir="ltr">{formatR(account.averageR)}</dd></div>
+      <div><dt className="text-xs text-muted">{t('common.profitFactor')}</dt><dd className="mt-1 font-mono" dir="ltr">{account.profitFactor == null ? '—' : formatNumber(account.profitFactor, { maximumFractionDigits: 2 })}</dd></div>
+      <div><dt className="text-xs text-muted">{t('accounts.lastTrade')}</dt><dd className="mt-1 font-mono text-xs" dir="ltr">{formatDate(account.lastTradeAt)}</dd></div>
+      <div><dt className="text-xs text-muted">{t('accounts.baseCurrency')}</dt><dd className="mt-1 font-mono" dir="ltr">{account.baseCurrency}</dd></div>
+    </dl>
+    <div className="flex flex-wrap gap-2 border-t border-default pt-3"><Button type="button" variant="secondary" size="mobile" leadingIcon={<Eye size={16} aria-hidden="true" />} onClick={() => onView(account)}>{t('common.view')}</Button><Button type="button" variant="tertiary" size="mobile" leadingIcon={<PencilSimple size={16} aria-hidden="true" />} onClick={() => onEdit(account)}>{t('common.edit')}</Button>{account.status === 'archived' ? <Button type="button" variant="tertiary" size="mobile" leadingIcon={<ArrowCounterClockwise size={16} aria-hidden="true" />} onClick={() => onLifecycle(account, 'active')}>{t('accounts.restore')}</Button> : <><Button type="button" variant="tertiary" size="mobile" leadingIcon={<Archive size={16} aria-hidden="true" />} onClick={() => onLifecycle(account, 'archived')}>{t('accounts.archive')}</Button>{!account.isDefault && <Button type="button" variant="tertiary" size="mobile" onClick={() => onDefault(account)}>{t('accounts.setDefault')}</Button>}</>}</div>
+  </Card>;
 }
 
-// ---- Main page --------------------------------------------------------------
-
 export default function Accounts() {
-  const { t } = useTranslation();
-  const qc    = useQueryClient();
-  const toast = useToast();
-
-  const [modalState, setModalState] = useState(null); // null | { mode: 'create' } | { mode: 'edit', account }
-  const [deleteTarget, setDeleteTarget] = useState(null); // account to confirm-delete
-
-  const { data: accounts = [], isLoading } = useQuery({
-    queryKey: ['accounts'],
-    queryFn:  accountsApi.list,
-  });
-
+  const { t } = useTranslation(); const toast = useToast(); const qc = useQueryClient(); const navigate = useNavigate();
+  const [form, setForm] = useState(null); const [confirm, setConfirm] = useState(null);
+  const query = useQuery({ queryKey: ['accounts', { includeArchived: true }], queryFn: () => accountsApi.list({ includeArchived: 'true' }) });
   const invalidate = () => qc.invalidateQueries({ queryKey: ['accounts'] });
-
-  const createMutation = useMutation({
-    mutationFn: (data) => accountsApi.create(data),
-    onSuccess: () => { invalidate(); toast.success(t('accounts.accountCreated')); setModalState(null); },
-    onError:   (err) => toast.error(err.response?.data?.error?.message || t('accounts.saveFailed')),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => accountsApi.update(id, data),
-    onSuccess: () => { invalidate(); toast.success(t('accounts.accountUpdated')); setModalState(null); },
-    onError:   (err) => toast.error(err.response?.data?.error?.message || t('accounts.saveFailed')),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => accountsApi.remove(id),
-    onSuccess: () => { invalidate(); toast.success(t('accounts.accountDeleted')); setDeleteTarget(null); },
-    onError:   (err) => toast.error(err.response?.data?.error?.message || t('accounts.deleteFailed')),
-  });
-
-  function accountLabel(a) {
-    const base = `${a.company} — ${a.accountNumber}`;
-    return a.accountName ? `${base} (${a.accountName})` : base;
-  }
-
-  return (
-    <div className="space-y-4">
-      <RouteHeaderControls
-        slot="accountActions"
-        commands={[{ id: 'addAccount', label: t('accounts.newAccount'), description: t('accounts.newAccount'), keywords: 'new broker prop firm', Icon: Plus, action: () => setModalState({ mode: 'create' }) }]}
-      >
-        <Button variant="primary" size="mobile" className="adaptive:min-h-9" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setModalState({ mode: 'create' })}>
-          {t('accounts.newAccount')}
-        </Button>
-      </RouteHeaderControls>
-
-      {/* Table */}
-      {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner className="w-8 h-8" /></div>
-      ) : accounts.length === 0 ? (
-        <div className="card text-center py-16 text-gray-500">
-          {t('accounts.noAccountsDetail')}
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-800">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-800 bg-gray-900">
-                {[t('accounts.broker', { defaultValue: 'Prop Firm / Broker' }), t('common.accountNumber'), t('common.name'), t('common.type'), t('common.status'), t('common.trades'), ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-start text-xs font-medium text-gray-500 whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {accounts.map(a => (
-                <tr key={a.id} className="bg-gray-950 hover:bg-gray-900 transition">
-                  <td className="px-4 py-3 font-medium text-gray-100 capitalize">{a.company}</td>
-                  <td className="px-4 py-3 text-gray-300 font-mono">{a.accountNumber}</td>
-                  <td className="px-4 py-3 text-gray-400">{a.accountName || '—'}</td>
-                  <td className="px-4 py-3 text-gray-400">{a.accountType ? t(`status.${a.accountType}`) : '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`badge ${STATUS_COLORS[a.status] || 'badge-gray'}`}>{t(`status.${a.status}`)}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-400">{a.tradesCount}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setModalState({ mode: 'edit', account: a })}
-                        className="text-xs text-gray-500 hover:text-gray-200 transition px-2 py-1"
-                      >
-                        {t('common.edit')}
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(a)}
-                        className="text-xs text-gray-600 hover:text-red-400 transition px-2 py-1"
-                      >
-                        {t('common.delete')}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Create / Edit modal */}
-      <Modal
-        open={modalState !== null}
-        onClose={() => setModalState(null)}
-        title={modalState?.mode === 'edit' ? t('accounts.editAccount') : t('accounts.newAccountDialog')}
-        size="md"
-      >
-        {modalState?.mode === 'create' && (
-          <AccountForm
-            onSubmit={createMutation.mutate}
-            loading={createMutation.isPending}
-          />
-        )}
-        {modalState?.mode === 'edit' && (
-          <AccountForm
-            defaultValues={modalState.account}
-            onSubmit={(data) => updateMutation.mutate({ id: modalState.account.id, data })}
-            loading={updateMutation.isPending}
-          />
-        )}
-      </Modal>
-
-      {/* Delete confirmation modal */}
-      <Modal
-        open={deleteTarget !== null}
-        onClose={() => setDeleteTarget(null)}
-        title={t('accounts.deleteAccount')}
-        size="sm"
-      >
-        {deleteTarget && (
-          <div className="space-y-4">
-            {deleteTarget.tradesCount > 0 ? (
-              <p className="text-sm text-amber-400">
-                {t('accounts.hasTrades', { count: deleteTarget.tradesCount })}
-              </p>
-            ) : (
-              <p className="text-sm text-gray-300">
-                {t('accounts.permanentDelete', { account: `${deleteTarget.company} — ${deleteTarget.accountNumber}` })}
-              </p>
-            )}
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteTarget(null)} className="btn-secondary text-sm">
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteTarget.id)}
-                disabled={deleteMutation.isPending || deleteTarget.tradesCount > 0}
-                className="btn-danger text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {deleteMutation.isPending ? t('common.deleting') : t('common.delete')}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
-  );
+  const save = useMutation({ mutationFn: ({ id, data }) => id ? accountsApi.update(id, data) : accountsApi.create(data), onSuccess: () => { invalidate(); setForm(null); toast.success(t('accounts.accountSaved')); }, onError: e => toast.error(e.response?.data?.error?.message || t('accounts.saveFailed')) });
+  const lifecycle = useMutation({ mutationFn: ({ account, data }) => accountsApi.update(account.id, data), onSuccess: () => { invalidate(); setConfirm(null); toast.success(t('accounts.accountUpdated')); }, onError: e => toast.error(e.response?.data?.error?.message || t('accounts.saveFailed')) });
+  const accounts = query.data || []; const active = accounts.filter(a => a.status === 'active'); const archived = accounts.filter(a => a.status !== 'active');
+  const currencies = [...new Set(accounts.map(a => a.baseCurrency))]; const mixed = currencies.length > 1; const defaultAccount = accounts.find(a => a.isDefault);
+  const totals = accounts.reduce((sum, a) => ({ closed: sum.closed + a.closedTrades, open: sum.open + a.openTrades, tracked: sum.tracked + a.trackedBalance }), { closed: 0, open: 0, tracked: 0 });
+  const confirmLifecycle = (account, status) => setConfirm({ account, data: { status }, label: status === 'archived' ? t('accounts.archiveConfirm', { name: account.accountName || account.company }) : t('accounts.restoreConfirm', { name: account.accountName || account.company }) });
+  return <div className="space-y-5"><RouteHeaderControls slot="accountActions"><Button variant="primary" size="mobile" leadingIcon={<Plus size={16} aria-hidden="true" />} onClick={() => setForm({ mode: 'create' })}>{t('accounts.newAccount')}</Button></RouteHeaderControls>
+    {query.isLoading ? <div className="grid gap-4 compact:grid-cols-2"><Skeleton className="h-56" /><Skeleton className="h-56" /></div> : query.isError ? <ErrorState title={t('accounts.loadFailed')} detail={t('accounts.loadFailedDetail')} onRetry={query.refetch} /> : !accounts.length ? <EmptyState title={t('accounts.noAccounts')} detail={t('accounts.noAccountsDetail')} action={<Button variant="primary" onClick={() => setForm({ mode: 'create' })}>{t('accounts.newAccount')}</Button>} /> : <>
+      <section aria-labelledby="accounts-summary"><h2 id="accounts-summary" className="mb-3 text-sm font-semibold text-primary">{t('common.summary')}</h2><dl className="grid grid-cols-2 gap-3 adaptive:grid-cols-5"><Card density="compact"><dt className="text-xs text-muted">{t('accounts.activeAccounts')}</dt><dd className="mt-1 font-mono text-xl" dir="ltr">{active.length}</dd></Card><Card density="compact"><dt className="text-xs text-muted">{t('accounts.archivedAccounts')}</dt><dd className="mt-1 font-mono text-xl" dir="ltr">{archived.length}</dd></Card><Card density="compact"><dt className="text-xs text-muted">{t('accounts.defaultAccount')}</dt><dd className="mt-1 truncate text-sm" dir="auto">{defaultAccount?.accountName || defaultAccount?.company || t('accounts.noDefault')}</dd></Card><Card density="compact"><dt className="text-xs text-muted">{t('accounts.closedOpen')}</dt><dd className="mt-1 font-mono text-xl" dir="ltr">{totals.closed} / {totals.open}</dd></Card><Card density="compact"><dt className="text-xs text-muted">{t('accounts.trackedBalance')}</dt><dd className="mt-1 font-mono text-lg" dir="ltr">{mixed ? '—' : formatCurrency(totals.tracked, { currency: currencies[0] })}</dd>{mixed && <p className="mt-1 text-xs text-muted">{t('accounts.mixedCurrencyDetail')}</p>}</Card></dl></section>
+      <section aria-labelledby="active-accounts"><h2 id="active-accounts" className="mb-3 text-sm font-semibold text-primary">{t('accounts.activeAccounts')}</h2><div className="grid gap-4 compact:grid-cols-2 wide:grid-cols-3">{active.map(a => <AccountCard key={a.id} account={a} onView={account => navigate(`/accounts/${account.id}`)} onEdit={account => setForm({ mode: 'edit', account })} onLifecycle={confirmLifecycle} onDefault={account => lifecycle.mutate({ account, data: { isDefault: true } })} />)}</div></section>
+      {archived.length > 0 && <section aria-labelledby="archived-accounts"><h2 id="archived-accounts" className="mb-3 text-sm font-semibold text-primary">{t('accounts.inactiveArchivedAccounts')}</h2><div className="grid gap-4 compact:grid-cols-2 wide:grid-cols-3">{archived.map(a => <AccountCard key={a.id} account={a} onView={account => navigate(`/accounts/${account.id}`)} onEdit={account => setForm({ mode: 'edit', account })} onLifecycle={confirmLifecycle} onDefault={() => {}} />)}</div></section>}
+    </>}
+    <Modal open={Boolean(form)} onClose={() => !save.isPending && setForm(null)} title={t(form?.mode === 'edit' ? 'accounts.editAccount' : 'accounts.newAccountDialog')} size="md">{form && <AccountForm account={form.account} loading={save.isPending} onSubmit={data => save.mutate({ id: form.account?.id, data })} />}</Modal>
+    <Modal open={Boolean(confirm)} onClose={() => !lifecycle.isPending && setConfirm(null)} title={t('accounts.confirmLifecycle')} size="sm">{confirm && <div className="space-y-4"><p className="text-sm text-secondary">{confirm.label}</p><div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setConfirm(null)}>{t('common.cancel')}</Button><Button variant="primary" disabled={lifecycle.isPending} onClick={() => lifecycle.mutate(confirm)}>{t('common.update')}</Button></div></div>}</Modal>
+  </div>;
 }

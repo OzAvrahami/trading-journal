@@ -121,6 +121,11 @@ describe('deterministic demo fixture generation', () => {
     assert.ok(dataset.accounts.every((account) => DEMO_ACCOUNT_TYPES.includes(account.accountType)));
     assert.ok(dataset.accounts.every((account) => DEMO_ACCOUNT_STATUSES.includes(account.status)));
     assert.ok(dataset.accounts.every((account) => account.company === account.company.toLowerCase()));
+    assert.ok(dataset.accounts.every((account) => account.baseCurrency === 'USD' && Number.isFinite(account.openingBalance)));
+    assert.equal(dataset.accounts.filter((account) => account.isDefault).length, 1);
+    assert.equal(dataset.accounts.find((account) => account.isDefault).status, 'active');
+    const archivedIds = new Set(dataset.accounts.filter((account) => account.status === 'archived').map((account) => account.id));
+    assert.ok(dataset.trades.some((trade) => archivedIds.has(trade.accountId)));
   });
 
   test('creates coherent open and closed exit-field states', () => {
@@ -294,7 +299,7 @@ describe('deterministic demo fixture generation', () => {
     const structure = (dataset) => ({
       anchorDate: dataset.anchorDate,
       timezone: dataset.timezone,
-      accounts: dataset.accounts.map(({ id, userId, company, accountNumber, accountType, status }) => ({ id, userId, company, accountNumber, accountType, status })),
+      accounts: dataset.accounts.map(({ id, userId, company, accountNumber, accountType, status, baseCurrency, openingBalance, isDefault }) => ({ id, userId, company, accountNumber, accountType, status, baseCurrency, openingBalance, isDefault })),
       trades: dataset.trades.map(({ id, userId, accountId, symbol, market, direction, status, timeframe, entryDatetime, exitDatetime, pnlGross, fees, pnlNet, rMultiple, durationMinutes, dedupKey }) => ({ id, userId, accountId, symbol, market, direction, status, timeframe, entryDatetime, exitDatetime, pnlGross, fees, pnlNet, rMultiple, durationMinutes, dedupKey })),
       journal: dataset.journalEntries.map(({ id, userId, entryType, entryDate, isComplete }) => ({ id, userId, entryType, entryDate, isComplete })),
       journalLinks: dataset.journalEntryTrades,

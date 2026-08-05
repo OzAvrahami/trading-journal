@@ -146,7 +146,7 @@ Optional demo-content locale (defaults to English):
 $env:DEMO_LOCALE="he" # supported: en, he
 ```
 
-`DEMO_LOCALE` changes only human-readable fixture content such as account names, trade notes, Journal entries, Daily Review details, Rules, and Goals. IDs, relationships, symbols, company names, enum keys, dates, timestamps, numeric values, and Analytics/Goals KPI contracts remain identical. Unsupported or blank locale values fail before backup, transaction start, deletion, or insertion.
+`DEMO_LOCALE` changes only human-readable fixture content such as account names, trade notes, Journal entries, Daily Review details, Rules, and Goals. IDs, relationships, symbols, company names, enum keys, dates, timestamps, numeric values, and Analytics/Goals KPI contracts remain identical. Every demo Account uses USD, has a deterministic opening balance, exactly one active Account is the default, and an archived Account retains historical Trades. Unsupported or blank locale values fail before backup, transaction start, deletion, or insertion.
 
 Without `DEMO_ANCHOR_DATE`, the command uses the current calendar date in the target user's IANA timezone. For a given user and anchor date, rerunning recreates the same logical fixtures.
 

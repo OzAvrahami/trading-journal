@@ -179,4 +179,30 @@ Object.assign(he.strategies = {}, {
 Object.assign(he.trades.validation, { setupRequiresStrategy: 'סטאפ מנוהל דורש אסטרטגיה מנוהלת.' });
 Object.assign(he.errors, { STRATEGY_NOT_FOUND: 'האסטרטגיה לא נמצאה.', SETUP_NOT_FOUND: 'הסטאפ לא נמצא.', STRATEGY_NAME_EXISTS: 'כבר קיימת אסטרטגיה בשם הזה.', SETUP_NAME_EXISTS: 'כבר קיים סטאפ בשם הזה באסטרטגיה.', STRATEGY_ARCHIVED: 'יש לבחור אסטרטגיה פעילה.', SETUP_ARCHIVED: 'יש לבחור סטאפ פעיל.', SETUP_REQUIRES_STRATEGY: 'סטאפ מנוהל דורש אסטרטגיה מנוהלת.', SETUP_STRATEGY_MISMATCH: 'הסטאפ אינו שייך לאסטרטגיה שנבחרה.' });
 
+Object.assign(he.routes, {
+  accountDetail: { title: 'פרטי החשבון', description: 'סקירת זהות החשבון, היתרה המחושבת, הביצועים והעסקאות האחרונות.' },
+});
+Object.assign(he.accounts, {
+  accountName: 'שם החשבון', companyBroker: 'חברה או ברוקר', baseCurrency: 'מטבע בסיס', openingBalance: 'יתרת פתיחה',
+  defaultAccount: 'חשבון ברירת מחדל', noDefault: 'לא הוגדר חשבון ברירת מחדל', setDefault: 'הגדרה כברירת מחדל', archive: 'העברת החשבון לארכיון', restore: 'שחזור החשבון',
+  activeAccounts: 'חשבונות פעילים', archivedAccounts: 'חשבונות לא פעילים או בארכיון', inactiveArchivedAccounts: 'חשבונות לא פעילים ובארכיון', closedOpen: 'עסקאות סגורות / פתוחות', trackedBalance: 'יתרה מחושבת',
+  trackedBalanceExplanation: 'יתרת הפתיחה בתוספת הרווח וההפסד הממומש שתועד ב־TradingLog. זו אינה יתרה חיה מהברוקר.',
+  mixedCurrencyDetail: 'החשבונות משתמשים במספר מטבעות. הסכומים הכוללים אינם זמינים משום שלא מתבצעת המרת מטבע.',
+  newAccountDialog: 'חשבון חדש', editAccount: 'עריכת חשבון', createAccount: 'יצירת חשבון', accountSaved: 'החשבון נשמר.',
+  confirmLifecycle: 'אישור שינוי בחשבון', archiveConfirm: 'להעביר את {{name}} לארכיון? העסקאות והביצועים ההיסטוריים יישארו זמינים.',
+  restoreConfirm: 'לשחזר את {{name}}? החשבון יהיה זמין לעסקאות חדשות, אך לא יהפוך אוטומטית לברירת המחדל.',
+  activeAccount: 'חשבון פעיל', archivedAccount: 'חשבון בארכיון', lastTrade: 'עסקה אחרונה', balanceContext: 'הקשר היתרה', performance: 'ביצועים',
+  closedTrades: 'עסקאות סגורות', openTrades: 'עסקאות פתוחות', winners: 'עסקאות מרוויחות', losers: 'עסקאות מפסידות', recentTrades: 'עסקאות אחרונות',
+  viewAllTrades: 'הצגת כל עסקאות החשבון', recentTradesFailed: 'לא ניתן לטעון את העסקאות האחרונות', noTrades: 'אין עסקאות בחשבון הזה',
+  noTradesDetail: 'יש לתעד עסקה בחשבון כדי להתחיל היסטוריית ביצועים.', createTrade: 'יצירת עסקה בחשבון הזה',
+  loadingDetail: 'טוען את פרטי החשבון', notFound: 'החשבון לא נמצא', notFoundDetail: 'החשבון אינו זמין או שייך למשתמש אחר.',
+  backToAccounts: 'חזרה לחשבונות', accountUpdated: 'החשבון עודכן.', saveFailed: 'לא ניתן לשמור את החשבון.', loadFailed: 'לא ניתן לטעון את החשבונות',
+  loadFailedDetail: 'פרטי החשבונות והביצועים אינם זמינים כרגע.',
+  validation: { companyRequired: 'יש להזין חברה או ברוקר.', numberRequired: 'יש להזין מספר חשבון.', currency: 'יש להזין קוד מטבע בן שלוש אותיות.', balance: 'יש להזין יתרת פתיחה תקינה.' },
+});
+Object.assign(he.analytics, {
+  mixedCurrencies: 'מספר מטבעות', mixedCurrenciesDetail: 'הסכומים הכספיים אינם זמינים משום שהטווח כולל מספר מטבעות בסיס ו־TradingLog אינו מבצע המרת מטבע.'
+});
+Object.assign(he.errors, { ACCOUNT_NOT_ACTIVE: 'יש לבחור חשבון פעיל.', ACCOUNT_STATE_INVALID: 'מצב החשבון או המטבע אינם תקינים.', ACCOUNT_EXISTS: 'כבר קיים חשבון עם החברה ומספר החשבון האלה.' });
+
 export default he;

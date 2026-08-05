@@ -164,4 +164,30 @@ Object.assign(en.strategies = {}, {
 Object.assign(en.trades.validation, { setupRequiresStrategy: 'A managed Setup requires a managed Strategy.' });
 Object.assign(en.errors, { STRATEGY_NOT_FOUND: 'The Strategy was not found.', SETUP_NOT_FOUND: 'The Setup was not found.', STRATEGY_NAME_EXISTS: 'A Strategy with this name already exists.', SETUP_NAME_EXISTS: 'A Setup with this name already exists in this Strategy.', STRATEGY_ARCHIVED: 'Choose an active Strategy.', SETUP_ARCHIVED: 'Choose an active Setup.', SETUP_REQUIRES_STRATEGY: 'A managed Setup requires a managed Strategy.', SETUP_STRATEGY_MISMATCH: 'The Setup does not belong to the selected Strategy.' });
 
+Object.assign(en.routes, {
+  accountDetail: { title: 'Account details', description: 'Review account identity, tracked balance context, performance, and recent trades.' },
+});
+Object.assign(en.accounts, {
+  accountName: 'Account name', companyBroker: 'Company / broker', baseCurrency: 'Base currency', openingBalance: 'Opening balance',
+  defaultAccount: 'Default account', noDefault: 'No default account', setDefault: 'Set as default', archive: 'Archive account', restore: 'Restore account',
+  activeAccounts: 'Active accounts', archivedAccounts: 'Inactive or archived accounts', inactiveArchivedAccounts: 'Inactive and archived accounts', closedOpen: 'Closed / open trades', trackedBalance: 'Tracked balance',
+  trackedBalanceExplanation: 'Opening balance plus realized net PnL recorded in TradingLog. This is not a live broker balance.',
+  mixedCurrencyDetail: 'These accounts use multiple currencies. Monetary totals are unavailable because no FX conversion is performed.',
+  newAccountDialog: 'New Account', editAccount: 'Edit account', createAccount: 'Create account', accountSaved: 'Account saved.',
+  confirmLifecycle: 'Confirm account change', archiveConfirm: 'Archive {{name}}? Historical trades and performance remain available.',
+  restoreConfirm: 'Restore {{name}}? It will become selectable for new trades but will not become the default automatically.',
+  activeAccount: 'Active account', archivedAccount: 'Archived account', lastTrade: 'Last trade', balanceContext: 'Balance context', performance: 'Performance',
+  closedTrades: 'Closed trades', openTrades: 'Open trades', winners: 'Winners', losers: 'Losers', recentTrades: 'Recent trades',
+  viewAllTrades: 'View all account trades', recentTradesFailed: 'Recent trades could not be loaded', noTrades: 'No trades for this account',
+  noTradesDetail: 'Record a trade for this account to begin its performance history.', createTrade: 'Create trade for this account',
+  loadingDetail: 'Loading account details', notFound: 'Account not found', notFoundDetail: 'This account is unavailable or belongs to another user.',
+  backToAccounts: 'Back to accounts', accountUpdated: 'Account updated.', saveFailed: 'Account could not be saved.', loadFailed: 'Accounts could not be loaded',
+  loadFailedDetail: 'Owned account metadata and performance are unavailable right now.',
+  validation: { companyRequired: 'Enter a company or broker.', numberRequired: 'Enter an account number.', currency: 'Enter a three-letter currency code.', balance: 'Enter a valid opening balance.' },
+});
+Object.assign(en.analytics, {
+  mixedCurrencies: 'Mixed currencies', mixedCurrenciesDetail: 'Monetary totals are unavailable because this scope contains multiple base currencies and TradingLog does not perform FX conversion.'
+});
+Object.assign(en.errors, { ACCOUNT_NOT_ACTIVE: 'Choose an active account.', ACCOUNT_STATE_INVALID: 'The account lifecycle or currency is invalid.', ACCOUNT_EXISTS: 'An account with this company and number already exists.' });
+
 export default en;

@@ -125,12 +125,13 @@ describe('Daily Review owned persistence', () => {
 
 describe('Daily Review day summary', () => {
   test('keeps owned entry-date boundaries and maps real closed/open metrics', async () => {
-    let captured;
+    const calls = [];
     const queryable = { query: async (sql, params) => {
-      captured = { sql, params };
+      calls.push({ sql, params });
       return { rows: [{ closed_trades: 3, open_trades: 1, winners: 1, losers: 1, breakeven: 1, pnl_net: '75.5', total_fees: '8', best_trade: { id: entryId, symbol: 'NQ', pnlNet: 100, direction: 'long', accountId: null, entryDatetime: '2026-08-04T06:00:00Z', exitDatetime: '2026-08-04T06:10:00Z' }, worst_trade: null }] };
     } };
     const result = await getDaySummary(userId, date, 'Asia/Jerusalem', queryable);
+    const captured = calls.find(call => /FROM trades t/.test(call.sql));
     assert.match(captured.sql, /t\.user_id = \$1/);
     assert.match(captured.sql, /t\.entry_datetime >= \(\$2::date::timestamp AT TIME ZONE \$3\)/);
     assert.match(captured.sql, /t\.entry_datetime < \(\(\$4::date \+ 1\)::timestamp AT TIME ZONE \$3\)/);

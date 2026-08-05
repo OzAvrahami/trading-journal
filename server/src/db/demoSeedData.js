@@ -507,6 +507,13 @@ export function validateDemoDataset(dataset) {
   if (dataset.accounts.some((account) => !DEMO_ACCOUNT_TYPES.includes(account.accountType) || !DEMO_ACCOUNT_STATUSES.includes(account.status))) {
     throw new Error('Demo account enum is invalid.');
   }
+  const defaultAccounts = dataset.accounts.filter((account) => account.isDefault);
+  if (defaultAccounts.length !== 1 || defaultAccounts[0].status !== 'active') {
+    throw new Error('Demo Accounts require exactly one active default.');
+  }
+  if (dataset.accounts.some((account) => !/^[A-Z]{3}$/.test(account.baseCurrency) || !Number.isFinite(account.openingBalance))) {
+    throw new Error('Demo Account currency or opening balance is invalid.');
+  }
   const accountIds = new Set(dataset.accounts.map((account) => account.id));
   const strategiesById = new Map(dataset.managedStrategies.map((strategy) => [strategy.id, strategy]));
   const setupsById = new Map(dataset.managedSetups.map((setup) => [setup.id, setup]));
@@ -558,7 +565,11 @@ export function generateDemoDataset({ userId, timezone, anchorDate, locale = 'en
     const createdAt = localDateTimeToInstant(addDaysToDateKey(anchorDate, -45), '12:00:00', timezone).toISOString();
     return {
       id: stableUuid('account', userId, anchorDate, index), userId,
-      ...definition, createdAt, updatedAt: createdAt,
+      ...definition,
+      baseCurrency: 'USD',
+      openingBalance: [25000, 18000, 35000, 50000, 40000, 150000, 50000, 100000][index],
+      isDefault: index === 3,
+      createdAt, updatedAt: createdAt,
     };
   });
   const managed = buildManagedClassifications(userId, anchorDate, timezone);

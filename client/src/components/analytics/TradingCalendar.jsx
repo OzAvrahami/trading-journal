@@ -69,6 +69,10 @@ export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOn
 
   if (errorsOnly) return null;
 
+  if (query.data?.monetaryTotalsAvailable === false) {
+    return <Card><h2 className="text-sm font-semibold text-primary">{t('analytics.mixedCurrencies')}</h2><p className="mt-2 text-sm text-secondary">{t('analytics.mixedCurrenciesDetail')}</p></Card>;
+  }
+
   const apiDays = query.data?.days ?? [];
   const pnlByDate = new Map(apiDays.map(day => [normalizeDateKey(day.date), day]).filter(([key]) => key));
   const days = buildCalendarDays(calendarParams.from, calendarParams.to, pnlByDate);
@@ -83,7 +87,7 @@ export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOn
     <Card className="min-w-0">
       <div className="flex flex-wrap items-baseline gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-primary">Daily realized PnL · {monthLabel}</h2>
+          <h2 className="text-sm font-semibold text-primary">{t('analytics.dailyRealized')} · <bdi>{monthLabel}</bdi></h2>
           <p className="mt-1 text-xs text-muted">{t('analytics.calendarDescription')}</p>
         </div>
         <ValueIndicator value={total} className="ms-auto text-sm font-semibold">{formatSignedCurrency(total)}</ValueIndicator>

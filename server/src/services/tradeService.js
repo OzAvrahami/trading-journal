@@ -164,7 +164,7 @@ export async function getTrade(userId, tradeId) {
 
 export async function createTrade(userId, data) {
   const exitState = validateTradeState(data);
-  await validateAccountOwnership(userId, data.accountId);
+  await validateAccountOwnership(userId, data.accountId, { requireActive: true });
   const classification = await resolveTradeClassification(userId, {
     strategyId: data.strategyId ?? null,
     setupId: data.setupId ?? null,
