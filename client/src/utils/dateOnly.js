@@ -1,6 +1,13 @@
 const DATE_KEY = /^(\d{4})-(\d{2})-(\d{2})/;
 export const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
 
+export function isValidDateKey(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value ?? ''))) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+}
+
 export function normalizeDateKey(value) {
   if (!value) return null;
   const match = String(value).match(DATE_KEY);

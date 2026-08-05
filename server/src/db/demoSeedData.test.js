@@ -187,6 +187,21 @@ describe('deterministic demo fixture generation', () => {
     assert.ok(dataset.journalEntryTrades.every((link) => link.userId === userId));
   });
 
+  test('creates deterministic structured details for owned daily_review Journal entries', () => {
+    const dataset = generateDemoDataset(options);
+    assert.equal(dataset.dailyReviewDetails.length, 4);
+    const entries = new Map(dataset.journalEntries.map((entry) => [entry.id, entry]));
+    for (const detail of dataset.dailyReviewDetails) {
+      const entry = entries.get(detail.journalEntryId);
+      assert.equal(detail.userId, userId);
+      assert.equal(entry.entryType, 'daily_review');
+      assert.equal(detail.reviewDate, entry.entryDate);
+      assert.ok(detail.emotions.length > 0 && detail.emotions.length <= 10);
+      assert.ok(detail.mistakes.length <= 10);
+    }
+    assert.deepEqual(generateDemoDataset(options).dailyReviewDetails, dataset.dailyReviewDetails);
+  });
+
   test('creates trade/daily/general Rules, historical inactive checks and a no-eligible rule', () => {
     const dataset = generateDemoDataset(options);
     assert.deepEqual(new Set(dataset.rules.map((rule) => rule.scope)), new Set(['trade', 'daily', 'general']));

@@ -149,6 +149,54 @@ export function calculateExpectancy(totalNetPnl, closedTrades) {
   return Number(totalNetPnl || 0) / count;
 }
 
+export async function getDaySummary(userId, date, timezone = DEFAULT_TIMEZONE, queryable = pool) {
+  const { params, where } = buildQueryParts(userId, { from: date, to: date }, timezone);
+  const result = await queryable.query(`
+    WITH day_trades AS (
+      SELECT t.id, t.symbol, t.direction, t.account_id, t.entry_datetime,
+             t.exit_datetime, t.status, t.pnl_net, t.fees
+      FROM trades t
+      WHERE ${where}
+    )
+    SELECT
+      COUNT(*) FILTER (WHERE status = 'closed')::int AS closed_trades,
+      COUNT(*) FILTER (WHERE status = 'open')::int AS open_trades,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net > 0)::int AS winners,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net < 0)::int AS losers,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net = 0)::int AS breakeven,
+      SUM(pnl_net) FILTER (WHERE status = 'closed') AS pnl_net,
+      COALESCE(SUM(fees), 0) AS total_fees,
+      (SELECT jsonb_build_object(
+         'id', id, 'symbol', symbol, 'pnlNet', pnl_net, 'direction', direction,
+         'accountId', account_id, 'entryDatetime', entry_datetime, 'exitDatetime', exit_datetime)
+       FROM day_trades WHERE status = 'closed'
+       ORDER BY pnl_net DESC, id ASC LIMIT 1) AS best_trade,
+      (SELECT jsonb_build_object(
+         'id', id, 'symbol', symbol, 'pnlNet', pnl_net, 'direction', direction,
+         'accountId', account_id, 'entryDatetime', entry_datetime, 'exitDatetime', exit_datetime)
+       FROM day_trades WHERE status = 'closed'
+       ORDER BY pnl_net ASC, id ASC LIMIT 1) AS worst_trade
+    FROM day_trades`, params);
+  const row = result.rows[0];
+  const closedTrades = Number(row.closed_trades ?? 0);
+  const winners = Number(row.winners ?? 0);
+  const mapIdentity = (trade) => trade ? { ...trade, pnlNet: Number(trade.pnlNet) } : null;
+  return {
+    date,
+    timezone,
+    closedTrades,
+    openTrades: Number(row.open_trades ?? 0),
+    winners,
+    losers: Number(row.losers ?? 0),
+    breakeven: Number(row.breakeven ?? 0),
+    pnlNet: closedTrades ? Number(row.pnl_net) : null,
+    totalFees: Number(row.total_fees ?? 0),
+    winRate: closedTrades ? Number(((winners / closedTrades) * 100).toFixed(2)) : null,
+    bestTrade: mapIdentity(row.best_trade),
+    worstTrade: mapIdentity(row.worst_trade),
+  };
+}
+
 // ---- Equity curve -----------------------------------------------------------
 
 export async function getEquityCurve(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {

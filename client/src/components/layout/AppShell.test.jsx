@@ -81,7 +81,7 @@ describe('AppShell', () => {
     expect(trigger).toHaveFocus();
 
     await user.keyboard('{Control>}k{/Control}');
-    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+    await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{Enter}');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Accounts' })).toBeInTheDocument());
   });
 

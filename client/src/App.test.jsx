@@ -16,6 +16,10 @@ vi.mock('./pages/Analytics.jsx', () => ({ default: () => <span>Analytics page</s
 vi.mock('./pages/Journal.jsx', () => ({ default: () => <span>Journal page</span> }));
 vi.mock('./pages/Rules.jsx', () => ({ default: () => <span>Rules page</span> }));
 vi.mock('./pages/Goals.jsx', () => ({ default: () => <span>Goals page</span> }));
+vi.mock('./pages/DailyReview.jsx', () => ({
+  default: () => <span>Daily Review page</span>,
+  DailyReviewTodayRedirect: () => <span>Daily Review today redirect</span>,
+}));
 vi.mock('./pages/Login.jsx', () => ({ default: () => <span>Login page</span> }));
 
 import { AppRoutes, ProtectedRoute, PublicRoute } from './App.jsx';
@@ -101,5 +105,17 @@ describe('route guards', () => {
     render(<MemoryRouter initialEntries={['/insights/goals']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Login page')).toBeInTheDocument();
     expect(screen.queryByText('Goals page')).not.toBeInTheDocument();
+  });
+
+  it('renders the selected-date Daily Review as a protected route', () => {
+    authState.current = { user: { id: 'user-1' }, loading: false };
+    render(<MemoryRouter initialEntries={['/daily-review/2026-08-04']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Daily Review page');
+  });
+
+  it('protects both Daily Review route forms', () => {
+    render(<MemoryRouter initialEntries={['/daily-review']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByText('Login page')).toBeInTheDocument();
+    expect(screen.queryByText('Daily Review today redirect')).not.toBeInTheDocument();
   });
 });

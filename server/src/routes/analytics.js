@@ -28,6 +28,14 @@ function validateDateRange(value, context) {
 }
 
 export const baseSchema = z.object(baseFields).superRefine(validateDateRange);
+export const daySummarySchema = z.object({ date: dateKeySchema });
+
+router.get('/day-summary', validateQuery(daySummarySchema), async (req, res, next) => {
+  try {
+    const timezone = await getUserTimezone(req.user.id);
+    res.json(await analyticsService.getDaySummary(req.user.id, req.query.date, timezone));
+  } catch (err) { next(err); }
+});
 
 export const breakdownSchema = z.object({
   ...baseFields,

@@ -59,4 +59,15 @@ describe('route metadata', () => {
     });
     expect(resolveRouteMetadata('/insights/goals').headerControls).not.toContain('analyticsScope');
   });
+
+  it('resolves Daily Review metadata and its date navigation slot', () => {
+    expect(resolveRouteMetadata('/daily-review/2026-08-04')).toMatchObject({
+      title: 'Daily Review',
+      description: 'Review the selected trading day, record what happened, and prepare for the next session.',
+      breadcrumbs: ['Trading', 'Daily Review'],
+      nav: '/daily-review',
+      headerControls: ['dailyReviewDate'],
+    });
+    expect(resolveRouteMetadata('/daily-review').commandActions).toEqual([]);
+  });
 });

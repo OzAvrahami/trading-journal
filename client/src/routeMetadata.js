@@ -18,6 +18,15 @@ const ROUTES = [
     commandActions: ['addTrade', 'exportTrades'],
   },
   {
+    match: (pathname) => pathname === '/daily-review' || /^\/daily-review\/[^/]+$/.test(pathname),
+    title: 'Daily Review',
+    description: 'Review the selected trading day, record what happened, and prepare for the next session.',
+    breadcrumbs: ['Trading', 'Daily Review'],
+    nav: '/daily-review',
+    headerControls: ['dailyReviewDate'],
+    commandActions: [],
+  },
+  {
     match: (pathname) => /^\/trades\/[^/]+$/.test(pathname),
     title: 'Trade details',
     description: 'Review the recorded trade context and outcome.',
