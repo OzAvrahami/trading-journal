@@ -8,7 +8,7 @@ import { mobileMoreItems, mobileNavigationItems } from './navigation.js';
 export function MobileNav() {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
-  const moreActive = mobileMoreItems.some((item) => item.to === location.pathname);
+  const moreActive = mobileMoreItems.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
 
   return (
     <>

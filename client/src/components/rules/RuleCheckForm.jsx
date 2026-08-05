@@ -20,7 +20,7 @@ function accountLabel(account) {
   return account.accountName || `${account.company} — ${account.accountNumber}`;
 }
 
-export function RuleCheckForm({ check, rules, initialRuleId, timezone = DEFAULT_TIMEZONE, onSubmit, loading = false }) {
+export function RuleCheckForm({ check, rules, initialRuleId, initialDate, timezone = DEFAULT_TIMEZONE, onSubmit, loading = false }) {
   const [tradeSearch, setTradeSearch] = useState('');
   const [journalSearch, setJournalSearch] = useState('');
   const [tradeId, setTradeId] = useState(check?.trade?.id ?? '');
@@ -34,7 +34,7 @@ export function RuleCheckForm({ check, rules, initialRuleId, timezone = DEFAULT_
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: {
       ruleId: check?.ruleId ?? initialRuleId ?? '',
-      checkDate: check?.checkDate ?? localTodayKey(new Date(), timezone),
+      checkDate: check?.checkDate ?? initialDate ?? localTodayKey(new Date(), timezone),
       outcome: check?.outcome ?? '',
       notes: check?.notes ?? '',
     },

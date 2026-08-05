@@ -27,6 +27,7 @@ export const RESET_STEPS = Object.freeze([
   { table: 'rule_checks', sql: 'DELETE FROM rule_checks WHERE user_id = $1' },
   { table: 'trading_rules', sql: 'DELETE FROM trading_rules WHERE user_id = $1' },
   { table: 'journal_entry_trades', sql: 'DELETE FROM journal_entry_trades WHERE user_id = $1' },
+  { table: 'daily_review_details', sql: 'DELETE FROM daily_review_details WHERE user_id = $1' },
   { table: 'journal_entries', sql: 'DELETE FROM journal_entries WHERE user_id = $1' },
   { table: 'trades', sql: 'DELETE FROM trades WHERE user_id = $1' },
   { table: 'trading_accounts', sql: 'DELETE FROM trading_accounts WHERE user_id = $1' },
@@ -37,6 +38,7 @@ export const BACKUP_SELECTS = Object.freeze([
   { key: 'trades', table: 'trades', sql: 'SELECT * FROM trades WHERE user_id = $1 ORDER BY entry_datetime, id' },
   { key: 'journalEntries', table: 'journal_entries', sql: 'SELECT * FROM journal_entries WHERE user_id = $1 ORDER BY entry_date, created_at, id' },
   { key: 'journalEntryTrades', table: 'journal_entry_trades', sql: 'SELECT * FROM journal_entry_trades WHERE user_id = $1 ORDER BY journal_entry_id, trade_id' },
+  { key: 'dailyReviewDetails', table: 'daily_review_details', sql: 'SELECT * FROM daily_review_details WHERE user_id = $1 ORDER BY review_date, journal_entry_id' },
   { key: 'tradingRules', table: 'trading_rules', sql: 'SELECT * FROM trading_rules WHERE user_id = $1 ORDER BY sort_order, created_at, id' },
   { key: 'ruleChecks', table: 'rule_checks', sql: 'SELECT * FROM rule_checks WHERE user_id = $1 ORDER BY check_date, created_at, id' },
   { key: 'goals', table: 'goals', sql: 'SELECT * FROM goals WHERE user_id = $1 ORDER BY created_at, id' },
@@ -215,7 +217,7 @@ async function insertTrades(client, trades) {
   }
 }
 
-async function insertJournal(client, entries, links) {
+async function insertJournal(client, entries, links, details) {
   for (const entry of entries) {
     await client.query(
       `INSERT INTO journal_entries
@@ -230,6 +232,16 @@ async function insertJournal(client, entries, links) {
       `INSERT INTO journal_entry_trades (journal_entry_id, trade_id, user_id, created_at)
        VALUES ($1,$2,$3,$4)`,
       [link.journalEntryId, link.tradeId, link.userId, link.createdAt],
+    );
+  }
+  for (const detail of details) {
+    await client.query(
+      `INSERT INTO daily_review_details
+         (journal_entry_id, user_id, review_date, went_well, improve, next_session_plan,
+          emotions, mistakes, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [detail.journalEntryId, detail.userId, detail.reviewDate, detail.wentWell, detail.improve,
+        detail.nextSessionPlan, detail.emotions, detail.mistakes, detail.createdAt, detail.updatedAt],
     );
   }
 }
@@ -271,7 +283,7 @@ async function insertGoals(client, goals) {
 export async function insertDemoDataset(client, dataset) {
   await insertAccounts(client, dataset.accounts);
   await insertTrades(client, dataset.trades);
-  await insertJournal(client, dataset.journalEntries, dataset.journalEntryTrades);
+  await insertJournal(client, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails);
   await insertRules(client, dataset.rules, dataset.ruleChecks);
   await insertGoals(client, dataset.goals);
 }
@@ -291,6 +303,10 @@ const INTEGRITY_SQL = `SELECT
     WHERE t.user_id = $1 AND a.id IS NULL) AS foreign_accounts,
   (SELECT COUNT(*)::int FROM journal_entries WHERE user_id = $1) AS journal_entries,
   (SELECT COUNT(*)::int FROM journal_entry_trades WHERE user_id = $1) AS journal_links,
+  (SELECT COUNT(*)::int FROM daily_review_details WHERE user_id = $1) AS daily_review_details,
+  (SELECT COUNT(*)::int FROM daily_review_details drd
+    LEFT JOIN journal_entries je ON je.id = drd.journal_entry_id AND je.user_id = drd.user_id
+    WHERE drd.user_id = $1 AND (je.id IS NULL OR je.entry_type <> 'daily_review' OR je.entry_date <> drd.review_date)) AS invalid_daily_review_details,
   (SELECT COUNT(*)::int FROM journal_entry_trades jet
     LEFT JOIN journal_entries je ON je.id = jet.journal_entry_id AND je.user_id = jet.user_id
     LEFT JOIN trades t ON t.id = jet.trade_id AND t.user_id = jet.user_id
@@ -350,10 +366,10 @@ export async function validatePersistedDemo(client, dataset) {
   const expected = summarizeDemoDataset(dataset);
   const integrity = await client.query(INTEGRITY_SQL, [dataset.userId, dataset.timezone]);
   const row = integrity.rows[0] ?? {};
-  for (const key of ['accounts', 'trades', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'rules', 'ruleChecks', 'goals']) {
+  for (const key of ['accounts', 'trades', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals']) {
     expectCount(row, key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), expected[key]);
   }
-  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_journal_links', 'invalid_rule_links']) {
+  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links']) {
     expectCount(row, key, 0);
   }
   if (Number(row.rules_without_eligible) < 1 || Number(row.inactive_rules_with_history) < 1) {

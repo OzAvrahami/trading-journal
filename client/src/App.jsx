@@ -14,6 +14,7 @@ import Analytics from './pages/Analytics.jsx';
 import Journal from './pages/Journal.jsx';
 import Rules from './pages/Rules.jsx';
 import Goals from './pages/Goals.jsx';
+import DailyReview, { DailyReviewTodayRedirect } from './pages/DailyReview.jsx';
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,6 +48,8 @@ export function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/trades"    element={<ProtectedRoute><Trades /></ProtectedRoute>} />
       <Route path="/trades/:id" element={<ProtectedRoute><TradeDetail /></ProtectedRoute>} />
+      <Route path="/daily-review" element={<ProtectedRoute><DailyReviewTodayRedirect /></ProtectedRoute>} />
+      <Route path="/daily-review/:date" element={<ProtectedRoute><DailyReview /></ProtectedRoute>} />
       <Route path="/import"    element={<ProtectedRoute><Import /></ProtectedRoute>} />
       <Route path="/accounts"  element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
       <Route path="/insights/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />

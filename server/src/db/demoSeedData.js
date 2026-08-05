@@ -229,7 +229,21 @@ function buildJournal(userId, anchorDate, timezone, trades) {
       createdAt: entry.createdAt,
     }));
   });
-  return { entries, links };
+  const detailTemplates = [
+    ['Waited for confirmation and respected planned risk.', 'Avoid checking results between setups.', 'Trade documented setups and stop after the planned count.', ['Focused', 'Patient'], []],
+    ['The first two setups matched the plan.', 'Pause after a stopped trade before considering re-entry.', 'Use a five-minute reset before any re-entry.', ['Focused', 'Frustrated'], ['Chased entry']],
+    ['The daily loss limit protected decision quality.', 'Reduce size sooner when conditions are unclear.', 'Begin with half size until structure improves.', ['Calm', 'Anxious'], ['Oversized risk']],
+    ['Entries, stops, and exits stayed mechanical.', null, 'Repeat the same preparation and execution checklist.', ['Calm', 'Confident'], []],
+  ];
+  const details = entries.filter((entry) => entry.entryType === 'daily_review').map((entry, index) => {
+    const [wentWell, improve, nextSessionPlan, emotions, mistakes] = detailTemplates[index];
+    return {
+      journalEntryId: entry.id, userId, reviewDate: entry.entryDate,
+      wentWell, improve, nextSessionPlan, emotions, mistakes,
+      createdAt: entry.createdAt, updatedAt: entry.updatedAt,
+    };
+  });
+  return { entries, links, details };
 }
 
 function buildRules(userId, anchorDate, timezone, trades, journalEntries, tradingDates) {
@@ -326,6 +340,7 @@ export function summarizeDemoDataset(dataset) {
     profitFactor: Number((grossProfit / grossLoss).toFixed(4)),
     journalEntries: dataset.journalEntries.length,
     journalLinks: dataset.journalEntryTrades.length,
+    dailyReviewDetails: dataset.dailyReviewDetails.length,
     rules: dataset.rules.length,
     ruleChecks: dataset.ruleChecks.length,
     goals: dataset.goals.length,
@@ -337,7 +352,7 @@ export function validateDemoDataset(dataset) {
   const expected = {
     accounts: 8, trades: 57, closed: 53, open: 4, winners: 31, losers: 20,
     breakeven: 2, tradingDates: 22, pnlNet: 7486, totalFees: 346,
-    journalEntries: 14, rules: 8, goals: 7,
+    journalEntries: 14, dailyReviewDetails: 4, rules: 8, goals: 7,
   };
   Object.entries(expected).forEach(([key, value]) => {
     if (summary[key] !== value) throw new Error(`Demo dataset ${key} expected ${value}, received ${summary[key]}.`);
@@ -345,7 +360,7 @@ export function validateDemoDataset(dataset) {
   if (Math.abs(summary.expectancy - 141.25) > 0.01 || Math.abs(summary.profitFactor - 1.699) > 0.001) {
     throw new Error('Demo headline calculations are inconsistent.');
   }
-  const ownedCollections = [dataset.accounts, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.rules, dataset.ruleChecks, dataset.goals];
+  const ownedCollections = [dataset.accounts, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails, dataset.rules, dataset.ruleChecks, dataset.goals];
   if (ownedCollections.some((rows) => rows.some((row) => row.userId !== dataset.userId))) {
     throw new Error('Demo dataset contains a foreign user row.');
   }
@@ -365,6 +380,11 @@ export function validateDemoDataset(dataset) {
   const journalIds = new Set(dataset.journalEntries.map((entry) => entry.id));
   if (dataset.journalEntryTrades.some((link) => !journalIds.has(link.journalEntryId) || !tradeIds.has(link.tradeId))) {
     throw new Error('Demo Journal link is invalid.');
+  }
+  if (dataset.dailyReviewDetails.some((detail) => !journalIds.has(detail.journalEntryId)
+    || dataset.journalEntries.find((entry) => entry.id === detail.journalEntryId)?.entryType !== 'daily_review'
+    || dataset.journalEntries.find((entry) => entry.id === detail.journalEntryId)?.entryDate !== detail.reviewDate)) {
+    throw new Error('Demo Daily Review detail is invalid.');
   }
   const ruleIds = new Set(dataset.rules.map((rule) => rule.id));
   if (dataset.ruleChecks.some((check) => !ruleIds.has(check.ruleId)
@@ -397,7 +417,7 @@ export function generateDemoDataset({ userId, timezone, anchorDate }) {
   const goals = buildGoals(userId, anchorDate, timezone, tradingDates);
   const dataset = {
     userId, timezone, anchorDate, tradingDates, accounts, trades,
-    journalEntries: journal.entries, journalEntryTrades: journal.links,
+    journalEntries: journal.entries, journalEntryTrades: journal.links, dailyReviewDetails: journal.details,
     rules: ruleData.rules, ruleChecks: ruleData.checks, goals,
   };
   validateDemoDataset(dataset);
