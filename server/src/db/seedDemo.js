@@ -31,11 +31,15 @@ export const RESET_STEPS = Object.freeze([
   { table: 'daily_review_details', sql: 'DELETE FROM daily_review_details WHERE user_id = $1' },
   { table: 'journal_entries', sql: 'DELETE FROM journal_entries WHERE user_id = $1' },
   { table: 'trades', sql: 'DELETE FROM trades WHERE user_id = $1' },
+  { table: 'setups', sql: 'DELETE FROM setups WHERE user_id = $1' },
+  { table: 'strategies', sql: 'DELETE FROM strategies WHERE user_id = $1' },
   { table: 'trading_accounts', sql: 'DELETE FROM trading_accounts WHERE user_id = $1' },
 ]);
 
 export const BACKUP_SELECTS = Object.freeze([
   { key: 'tradingAccounts', table: 'trading_accounts', sql: 'SELECT * FROM trading_accounts WHERE user_id = $1 ORDER BY created_at, id' },
+  { key: 'strategies', table: 'strategies', sql: 'SELECT * FROM strategies WHERE user_id = $1 ORDER BY created_at, id' },
+  { key: 'setups', table: 'setups', sql: 'SELECT * FROM setups WHERE user_id = $1 ORDER BY created_at, id' },
   { key: 'trades', table: 'trades', sql: 'SELECT * FROM trades WHERE user_id = $1 ORDER BY entry_datetime, id' },
   { key: 'journalEntries', table: 'journal_entries', sql: 'SELECT * FROM journal_entries WHERE user_id = $1 ORDER BY entry_date, created_at, id' },
   { key: 'journalEntryTrades', table: 'journal_entry_trades', sql: 'SELECT * FROM journal_entry_trades WHERE user_id = $1 ORDER BY journal_entry_id, trade_id' },
@@ -203,20 +207,37 @@ async function insertTrades(client, trades) {
       `INSERT INTO trades (
          id, user_id, account_id, symbol, market, direction,
          entry_datetime, exit_datetime, entry_price, exit_price, quantity, fees,
-         strategy, setup, timeframe, risk_amount, stop_loss, take_profit, notes,
+         strategy, setup, strategy_id, setup_id, timeframe, risk_amount, stop_loss, take_profit, notes,
          emotions, screenshot_links, status, pnl_gross, pnl_net, r_multiple,
          duration_minutes, dedup_key, created_at, updated_at
        ) VALUES (
          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,
-         $20,$21,$22,$23,$24,$25,$26,$27,$28,$29
+         $20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31
        )`,
       [
         trade.id, trade.userId, trade.accountId, trade.symbol, trade.market, trade.direction,
         trade.entryDatetime, trade.exitDatetime, trade.entryPrice, trade.exitPrice, trade.quantity, trade.fees,
-        trade.strategy, trade.setup, trade.timeframe, trade.riskAmount, trade.stopLoss, trade.takeProfit, trade.notes,
+        trade.strategy, trade.setup, trade.strategyId, trade.setupId, trade.timeframe, trade.riskAmount, trade.stopLoss, trade.takeProfit, trade.notes,
         JSON.stringify(trade.emotions), trade.screenshotLinks, trade.status, trade.pnlGross, trade.pnlNet,
         trade.rMultiple, trade.durationMinutes, trade.dedupKey, trade.createdAt, trade.updatedAt,
       ],
+    );
+  }
+}
+
+async function insertManagedClassifications(client, strategies, setups) {
+  for (const strategy of strategies) {
+    await client.query(
+      `INSERT INTO strategies (id, user_id, name, description, is_active, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [strategy.id, strategy.userId, strategy.name, strategy.description, strategy.isActive, strategy.createdAt, strategy.updatedAt],
+    );
+  }
+  for (const setup of setups) {
+    await client.query(
+      `INSERT INTO setups (id, user_id, strategy_id, name, description, is_active, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [setup.id, setup.userId, setup.strategyId, setup.name, setup.description, setup.isActive, setup.createdAt, setup.updatedAt],
     );
   }
 }
@@ -286,6 +307,7 @@ async function insertGoals(client, goals) {
 
 export async function insertDemoDataset(client, dataset) {
   await insertAccounts(client, dataset.accounts);
+  await insertManagedClassifications(client, dataset.managedStrategies, dataset.managedSetups);
   await insertTrades(client, dataset.trades);
   await insertJournal(client, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails);
   await insertRules(client, dataset.rules, dataset.ruleChecks);
@@ -294,6 +316,8 @@ export async function insertDemoDataset(client, dataset) {
 
 const INTEGRITY_SQL = `SELECT
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1) AS accounts,
+  (SELECT COUNT(*)::int FROM strategies WHERE user_id = $1) AS managed_strategies,
+  (SELECT COUNT(*)::int FROM setups WHERE user_id = $1) AS managed_setups,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1) AS trades,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1 AND status = 'closed') AS closed,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1 AND status = 'open') AS open,
@@ -305,6 +329,13 @@ const INTEGRITY_SQL = `SELECT
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1 AND duration_minutes < 0) AS negative_durations,
   (SELECT COUNT(*)::int FROM trades t LEFT JOIN trading_accounts a ON a.id = t.account_id AND a.user_id = t.user_id
     WHERE t.user_id = $1 AND a.id IS NULL) AS foreign_accounts,
+  (SELECT COUNT(*)::int FROM setups su LEFT JOIN strategies s ON s.id = su.strategy_id AND s.user_id = su.user_id
+    WHERE su.user_id = $1 AND s.id IS NULL) AS invalid_setup_owners,
+  (SELECT COUNT(*)::int FROM trades t
+    LEFT JOIN strategies s ON s.id = t.strategy_id AND s.user_id = t.user_id
+    LEFT JOIN setups su ON su.id = t.setup_id AND su.user_id = t.user_id
+    WHERE t.user_id = $1 AND ((t.strategy_id IS NOT NULL AND s.id IS NULL)
+      OR (t.setup_id IS NOT NULL AND (su.id IS NULL OR t.strategy_id IS NULL OR su.strategy_id <> t.strategy_id)))) AS invalid_managed_links,
   (SELECT COUNT(*)::int FROM journal_entries WHERE user_id = $1) AS journal_entries,
   (SELECT COUNT(*)::int FROM journal_entry_trades WHERE user_id = $1) AS journal_links,
   (SELECT COUNT(*)::int FROM daily_review_details WHERE user_id = $1) AS daily_review_details,
@@ -370,10 +401,10 @@ export async function validatePersistedDemo(client, dataset) {
   const expected = summarizeDemoDataset(dataset);
   const integrity = await client.query(INTEGRITY_SQL, [dataset.userId, dataset.timezone]);
   const row = integrity.rows[0] ?? {};
-  for (const key of ['accounts', 'trades', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals']) {
+  for (const key of ['accounts', 'managedStrategies', 'managedSetups', 'trades', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals']) {
     expectCount(row, key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), expected[key]);
   }
-  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links']) {
+  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links']) {
     expectCount(row, key, 0);
   }
   if (Number(row.rules_without_eligible) < 1 || Number(row.inactive_rules_with_history) < 1) {
@@ -465,7 +496,7 @@ export async function runDemoSeed({
     await client.query('COMMIT');
     began = false;
     const summary = summarizeDemoDataset(dataset);
-    logger.info(`Demo seed committed for ${user.email}: ${summary.accounts} accounts, ${summary.closed} closed trades, ${summary.open} open trades, ${summary.journalEntries} Journal entries, ${summary.rules} rules, ${summary.goals} goals.`);
+    logger.info(`Demo seed committed for ${user.email}: ${summary.accounts} accounts, ${summary.managedStrategies} Strategies, ${summary.managedSetups} Setups, ${summary.closed} closed trades, ${summary.open} open trades, ${summary.journalEntries} Journal entries, ${summary.rules} rules, ${summary.goals} goals.`);
     logger.info(`Backup: ${backupPath}`);
     return { user: { id: user.id, email: user.email, timezone: user.timezone }, anchorDate, locale: config.locale, backupPath, deleted, summary, validation };
   } catch (error) {

@@ -15,6 +15,8 @@ import journalRoutes from './routes/journal.js';
 import rulesRoutes from './routes/rules.js';
 import goalsRoutes from './routes/goals.js';
 import dailyReviewRoutes from './routes/dailyReviews.js';
+import strategiesRoutes from './routes/strategies.js';
+import setupsRoutes from './routes/setups.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -67,6 +69,8 @@ app.use('/api/journal', journalRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/goals', goalsRoutes);
 app.use('/api/daily-reviews', dailyReviewRoutes);
+app.use('/api/strategies', strategiesRoutes);
+app.use('/api/setups', setupsRoutes);
 app.use('/api/imports', importRoutes);
 
 // 404 handler

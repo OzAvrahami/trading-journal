@@ -45,6 +45,8 @@ function storedMode() {
 export function TradeForm({
   defaultValues,
   accounts = [],
+  managedStrategies = [],
+  managedSetups = [],
   timezone,
   isEdit = false,
   variant = 'editor',
@@ -67,10 +69,12 @@ export function TradeForm({
   const symbolRef = useRef(null);
   const mountedRef = useRef(false);
   const {
-    register, handleSubmit, watch, reset, setError, setFocus,
+    register, handleSubmit, watch, reset, setError, setFocus, setValue,
     formState: { errors, isDirty },
   } = useForm({ defaultValues: initialValues, shouldUnregister: false });
   const status = watch('status');
+  const strategyId = watch('strategyId');
+  const setupId = watch('setupId');
 
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
   useEffect(() => {
@@ -109,7 +113,68 @@ export function TradeForm({
   );
   const coreLocked = isEdit;
   const selectableAccounts = isEdit ? accounts : accounts.filter((account) => account.status === 'active');
+  const strategyOptions = managedStrategies.filter((strategy) => strategy.isActive || strategy.id === strategyId);
+  const setupOptions = managedSetups.filter((setup) => setup.strategyId === strategyId && (setup.isActive || setup.id === setupId));
   const grid = 'grid gap-4 adaptive:grid-cols-2 wide:grid-cols-3';
+
+  function changeManagedStrategy(event) {
+    const nextId = event.target.value;
+    const selected = managedStrategies.find((strategy) => strategy.id === nextId);
+    setValue('strategyId', nextId, { shouldDirty: true, shouldValidate: true });
+    if (selected) setValue('strategy', selected.name, { shouldDirty: true });
+    setValue('setupId', '', { shouldDirty: true });
+    setValue('setup', '', { shouldDirty: true });
+  }
+
+  function changeManagedSetup(event) {
+    const nextId = event.target.value;
+    const selected = managedSetups.find((setup) => setup.id === nextId);
+    setValue('setupId', nextId, { shouldDirty: true, shouldValidate: true });
+    if (selected) setValue('setup', selected.name, { shouldDirty: true });
+  }
+
+  const classificationFields = (quick = false) => (
+    <div className={quick ? 'grid gap-4' : grid}>
+      <Field id={`${formId}-strategyId`} label={t('strategies.managedStrategy')} help={t('strategies.hybridHelp')} error={errors.strategyId}>
+        {(accessibility) => (
+          <select
+            {...register('strategyId')}
+            {...accessibility}
+            value={strategyId || ''}
+            onChange={changeManagedStrategy}
+            className="input min-h-11"
+            dir="auto"
+          >
+            <option value="">{t('strategies.customLegacyValue')}</option>
+            {strategyOptions.map((strategy) => (
+              <option key={strategy.id} value={strategy.id}>{strategy.name}{strategy.isActive ? '' : ` · ${t('status.archived')}`}</option>
+            ))}
+          </select>
+        )}
+      </Field>
+      {!strategyId && field('strategy', t('common.strategy'), (props) => <input {...props} className="input min-h-11" dir="auto" placeholder={t('trades.strategyPlaceholder')} />)}
+      {!quick && strategyId && (
+        <Field id={`${formId}-setupId`} label={t('strategies.managedSetup')} error={errors.setupId}>
+          {(accessibility) => (
+            <select
+              {...register('setupId')}
+              {...accessibility}
+              value={setupId || ''}
+              onChange={changeManagedSetup}
+              className="input min-h-11"
+              dir="auto"
+            >
+              <option value="">{t('strategies.customLegacyValue')}</option>
+              {setupOptions.map((setup) => (
+                <option key={setup.id} value={setup.id}>{setup.name}{setup.isActive ? '' : ` · ${t('status.archived')}`}</option>
+              ))}
+            </select>
+          )}
+        </Field>
+      )}
+      {!quick && !setupId && field('setup', t('common.setup'), (props) => <input {...props} className="input min-h-11" dir="auto" placeholder={t('trades.setupPlaceholder')} />)}
+    </div>
+  );
 
   return (
     <form noValidate onSubmit={handleSubmit(submit)} className="space-y-4" data-testid={`trade-form-${variant}`}>
@@ -170,13 +235,18 @@ export function TradeForm({
 
       {variant !== 'quick' && (
         <Section id={`${formId}-context`} title={t('trades.sections.context')}>
-          <div className={grid}>
-            {field('strategy', t('common.strategy'), (props) => <input {...props} className="input min-h-11" dir="auto" placeholder={t('trades.strategyPlaceholder')} />)}
-            {field('setup', t('common.setup'), (props) => <input {...props} className="input min-h-11" dir="auto" placeholder={t('trades.setupPlaceholder')} />)}
+          {classificationFields(false)}
+          <div className={`${grid} mt-4`}>
             {mode === 'advanced' && field('timeframe', t('common.timeframe'), (props) => (
               <select {...props} className="input min-h-11" dir="ltr"><option value="">—</option>{TIMEFRAMES.map((timeframe) => <option key={timeframe} value={timeframe}>{timeframe}</option>)}</select>
             ))}
           </div>
+        </Section>
+      )}
+
+      {variant === 'quick' && managedStrategies.length > 0 && (
+        <Section id={`${formId}-classification`} title={t('strategies.classification')} detail={t('strategies.quickAddBoundary')}>
+          {classificationFields(true)}
         </Section>
       )}
 

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { accountsApi } from '../../api/accounts.js';
 import { tradesApi } from '../../api/trades.js';
+import { strategiesApi } from '../../api/strategies.js';
 import { useUserTimezone } from '../../hooks/useUserTimezone.js';
 import { Modal } from '../ui/Modal.jsx';
 import { ErrorState, EmptyState } from '../ui/States.jsx';
@@ -20,6 +21,11 @@ export function QuickAddModal({ open, onClose }) {
   const [dirty, setDirty] = useState(false);
   const submitGuardRef = useRef(false);
   const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: accountsApi.list, enabled: open });
+  const strategiesQuery = useQuery({
+    queryKey: ['strategies', { includeArchived: false }],
+    queryFn: () => strategiesApi.list({ includeArchived: 'false' }),
+    enabled: open,
+  });
 
   const mutation = useMutation({
     mutationFn: (data) => tradesApi.create(data),
@@ -70,6 +76,7 @@ export function QuickAddModal({ open, onClose }) {
       ) : (
         <TradeForm
           accounts={accounts}
+          managedStrategies={strategiesQuery.data?.strategies || []}
           timezone={timezone}
           variant="quick"
           loading={mutation.isPending}

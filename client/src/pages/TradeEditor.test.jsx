@@ -5,9 +5,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../components/ui/Toast.jsx';
 
-const api = vi.hoisted(() => ({ accounts: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn() }));
+const api = vi.hoisted(() => ({ accounts: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), strategies: vi.fn(), setups: vi.fn() }));
 vi.mock('../api/accounts.js', () => ({ accountsApi: { list: api.accounts } }));
 vi.mock('../api/trades.js', () => ({ tradesApi: { get: api.get, create: api.create, update: api.update } }));
+vi.mock('../api/strategies.js', () => ({ strategiesApi: { list: api.strategies, listSetups: api.setups } }));
 vi.mock('../hooks/useUserTimezone.js', () => ({ useUserTimezone: () => 'Asia/Jerusalem' }));
 vi.mock('../hooks/useDirection.js', () => ({ useDirection: () => ({ isRtl: false }) }));
 vi.mock('../components/trades/TradeForm.jsx', () => ({
@@ -47,6 +48,8 @@ describe('TradeEditor', () => {
     api.get.mockResolvedValue(trade);
     api.create.mockResolvedValue(trade);
     api.update.mockResolvedValue(trade);
+    api.strategies.mockResolvedValue({ strategies: [] });
+    api.setups.mockResolvedValue({ setups: [] });
   });
 
   it('loads real accounts and creates once before navigating to Trade Detail', async () => {
@@ -99,7 +102,7 @@ describe('TradeEditor', () => {
     renderEditor();
     await screen.findByText('Creating trade');
     await userEvent.click(screen.getByRole('button', { name: 'Save mocked' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to create trade.');
+    expect(await screen.findByText('Failed to create trade.', { selector: '[role="alert"]' })).toBeInTheDocument();
     expect(screen.getByText('Creating trade')).toBeInTheDocument();
   });
 

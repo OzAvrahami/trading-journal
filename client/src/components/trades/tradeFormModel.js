@@ -6,7 +6,7 @@ export const DIRECTIONS = ['long', 'short'];
 export const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'];
 
 const optionalNumbers = ['exitPrice', 'riskAmount', 'stopLoss', 'takeProfit'];
-const mutableFields = ['exitDatetime', 'exitPrice', 'quantity', 'fees', 'strategy', 'setup', 'timeframe', 'riskAmount', 'stopLoss', 'takeProfit', 'notes', 'emotions', 'screenshotLinks'];
+const mutableFields = ['exitDatetime', 'exitPrice', 'quantity', 'fees', 'strategy', 'setup', 'strategyId', 'setupId', 'timeframe', 'riskAmount', 'stopLoss', 'takeProfit', 'notes', 'emotions', 'screenshotLinks'];
 
 function text(value) { return typeof value === 'string' ? value : ''; }
 function optionalText(value) { const next = text(value).trim(); return next || null; }
@@ -27,6 +27,8 @@ export function createTradeFormValues({ user, timezone, accountId = '' } = {}) {
     fees: '0',
     strategy: '',
     setup: '',
+    strategyId: '',
+    setupId: '',
     timeframe: user?.defaults?.timeframe || '5m',
     riskAmount: '',
     stopLoss: '',
@@ -47,7 +49,7 @@ export function mapTradeToFormValues(trade, timezone) {
     entryDatetime: instantToLocalDateTime(trade?.entryDatetime, timezone),
     exitDatetime: instantToLocalDateTime(trade?.exitDatetime, timezone),
     entryPrice: trade?.entryPrice ?? '', exitPrice: trade?.exitPrice ?? '', quantity: trade?.quantity ?? '', fees: trade?.fees ?? 0,
-    strategy: text(trade?.strategy), setup: text(trade?.setup), timeframe: text(trade?.timeframe),
+    strategy: text(trade?.strategy), setup: text(trade?.setup), strategyId: trade?.strategyId || '', setupId: trade?.setupId || '', timeframe: text(trade?.timeframe),
     riskAmount: trade?.riskAmount ?? '', stopLoss: trade?.stopLoss ?? '', takeProfit: trade?.takeProfit ?? '', notes: text(trade?.notes),
     emotionPre: text(emotions.pre), emotionDuring: text(emotions.during), emotionPost: text(emotions.post),
     screenshotLinks: Array.isArray(trade?.screenshotLinks) ? trade.screenshotLinks.join('\n') : '',
@@ -76,6 +78,7 @@ export function validateTradeForm(values, { timezone, isEdit = false, t = (key) 
     if (!(numeric(values.exitPrice) > 0)) errors.exitPrice = t('trades.validation.closedExitPriceRequired');
     if (entry && exit && new Date(exit) < new Date(entry)) errors.exitDatetime = t('trades.validation.exitBeforeEntry');
   }
+  if (values.setupId && !values.strategyId) errors.setupId = t('trades.validation.setupRequiresStrategy');
 
   const links = text(values.screenshotLinks).split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
   if (links.length > 10) errors.screenshotLinks = t('trades.validation.screenshotLimit');
@@ -97,7 +100,7 @@ export function normalizeTradePayload(values, { timezone, isEdit = false } = {})
     entryPrice: numeric(values.entryPrice), quantity: numeric(values.quantity), fees: numeric(values.fees) ?? 0,
     exitDatetime: values.status === 'closed' ? localDateTimeToInstant(values.exitDatetime, timezone) : null,
     exitPrice: values.status === 'closed' ? numeric(values.exitPrice) : null,
-    strategy: optionalText(values.strategy), setup: optionalText(values.setup), timeframe: optionalText(values.timeframe),
+    strategy: optionalText(values.strategy), setup: optionalText(values.setup), strategyId: optionalText(values.strategyId), setupId: optionalText(values.setupId), timeframe: optionalText(values.timeframe),
     riskAmount: numeric(values.riskAmount), stopLoss: numeric(values.stopLoss), takeProfit: numeric(values.takeProfit), notes: optionalText(values.notes),
     emotions: Object.keys(emotions).length ? emotions : null, screenshotLinks: links.length ? links : null,
   };

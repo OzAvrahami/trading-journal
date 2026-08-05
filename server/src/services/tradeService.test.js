@@ -41,6 +41,8 @@ function tradeRow(overrides = {}) {
     fees: '1',
     strategy: null,
     setup: null,
+    strategy_id: null,
+    setup_id: null,
     timeframe: null,
     risk_amount: null,
     stop_loss: null,
@@ -163,11 +165,13 @@ describe('trade update state and duration', () => {
           exit_price: params[3],
           quantity: String(params[4]),
           fees: String(params[5]),
-          status: params[15],
-          pnl_gross: params[16],
-          pnl_net: params[17],
-          r_multiple: params[18],
-          duration_minutes: params[19],
+          strategy_id: params[8],
+          setup_id: params[9],
+          status: params[17],
+          pnl_gross: params[18],
+          pnl_net: params[19],
+          r_multiple: params[20],
+          duration_minutes: params[21],
         })] };
       }
       throw new Error('Unexpected query');
@@ -232,6 +236,86 @@ describe('trade update state and duration', () => {
       exitDatetime: '2026-08-01T09:59:00.000Z',
       exitPrice: 99,
     })), error => error.code === 'VALIDATION_ERROR');
+  });
+});
+
+describe('managed Trade classification', () => {
+  const strategyId = '44444444-4444-4444-8444-444444444444';
+  const setupId = '55555555-5555-4555-8555-555555555555';
+
+  test('legacy text-only create remains backward compatible', () => {
+    const parsed = createSchema.safeParse(createPayload({ strategy: 'Legacy ORB', setup: 'Retest' }));
+    assert.equal(parsed.success, true);
+    assert.equal(parsed.data.strategyId, undefined);
+  });
+
+  test('managed create validates ownership and stores IDs with current-name snapshots', async () => {
+    const calls = [];
+    pool.query = async (sql, params) => {
+      calls.push({ sql, params });
+      if (/SELECT id FROM trading_accounts/.test(sql)) return { rows: [{ id: accountId }] };
+      if (/FROM strategies WHERE/.test(sql)) return { rows: [{ id: strategyId, name: 'ORB', is_active: true }] };
+      if (/FROM setups WHERE/.test(sql)) return { rows: [{ id: setupId, strategy_id: strategyId, name: 'Retest', is_active: true }] };
+      if (/INSERT INTO trades/.test(sql)) return { rows: [tradeRow({ strategy: 'ORB', setup: 'Retest', strategy_id: strategyId, setup_id: setupId })] };
+      throw new Error(`Unexpected query: ${sql}`);
+    };
+    const result = await createTrade(userId, createPayload({ strategyId, setupId, strategy: 'stale', setup: 'stale' }));
+    assert.equal(result.strategyId, strategyId);
+    assert.equal(result.setupId, setupId);
+    const insert = calls.find((call) => /INSERT INTO trades/.test(call.sql));
+    assert.equal(insert.params[11], 'ORB');
+    assert.equal(insert.params[12], 'Retest');
+    assert.equal(insert.params[13], strategyId);
+    assert.equal(insert.params[14], setupId);
+  });
+
+  test('setup without Strategy and mismatched Setup are rejected before insert', async () => {
+    assert.equal(createSchema.safeParse(createPayload({ setupId })).success, true);
+    pool.query = async (sql) => {
+      if (/trading_accounts/.test(sql)) return { rows: [{ id: accountId }] };
+      if (/FROM strategies WHERE/.test(sql)) return { rows: [{ id: strategyId, name: 'ORB', is_active: true }] };
+      if (/FROM setups WHERE/.test(sql)) return { rows: [{ id: setupId, strategy_id: '66666666-6666-4666-8666-666666666666', name: 'Wrong', is_active: true }] };
+      throw new Error('Insert must not run');
+    };
+    await assert.rejects(() => createTrade(userId, createPayload({ setupId })), (error) => error.code === 'SETUP_REQUIRES_STRATEGY');
+    await assert.rejects(() => createTrade(userId, createPayload({ strategyId, setupId })), (error) => error.code === 'SETUP_STRATEGY_MISMATCH');
+  });
+
+  test('managed update validates the final relationship and writes fresh snapshots without creating a Trade', async () => {
+    const nextStrategyId = '66666666-6666-4666-8666-666666666666';
+    const nextSetupId = '77777777-7777-4777-8777-777777777777';
+    const calls = [];
+    pool.query = async (sql, params) => {
+      calls.push({ sql, params });
+      if (/SELECT \* FROM trades/.test(sql)) return { rows: [tradeRow({ strategy: 'Old snapshot', setup: 'Old setup', strategy_id: strategyId, setup_id: setupId })] };
+      if (/SELECT id FROM trading_accounts/.test(sql)) return { rows: [{ id: accountId }] };
+      if (/FROM strategies WHERE/.test(sql)) return { rows: [{ id: nextStrategyId, name: 'Mean Reversion', is_active: true }] };
+      if (/FROM setups WHERE/.test(sql)) return { rows: [{ id: nextSetupId, strategy_id: nextStrategyId, name: 'Range fade', is_active: true }] };
+      if (/UPDATE trades/.test(sql)) return { rows: [tradeRow({ strategy: params[6], setup: params[7], strategy_id: params[8], setup_id: params[9] })] };
+      throw new Error(`Unexpected query: ${sql}`);
+    };
+    const result = await updateTrade(userId, tradeId, { strategyId: nextStrategyId, setupId: nextSetupId, strategy: 'stale', setup: 'stale' });
+    assert.deepEqual({ strategyId: result.strategyId, setupId: result.setupId, strategy: result.strategy, setup: result.setup }, {
+      strategyId: nextStrategyId, setupId: nextSetupId, strategy: 'Mean Reversion', setup: 'Range fade',
+    });
+    assert.equal(calls.filter((call) => /UPDATE trades/.test(call.sql)).length, 1);
+    assert.equal(calls.some((call) => /INSERT INTO trades/.test(call.sql)), false);
+  });
+
+  test('clearing managed IDs keeps explicit legacy text and cannot retain an incompatible Setup ID', async () => {
+    const calls = [];
+    pool.query = async (sql, params) => {
+      calls.push({ sql, params });
+      if (/SELECT \* FROM trades/.test(sql)) return { rows: [tradeRow({ strategy: 'ORB', setup: 'Retest', strategy_id: strategyId, setup_id: setupId })] };
+      if (/SELECT id FROM trading_accounts/.test(sql)) return { rows: [{ id: accountId }] };
+      if (/UPDATE trades/.test(sql)) return { rows: [tradeRow({ strategy: params[6], setup: params[7], strategy_id: params[8], setup_id: params[9] })] };
+      throw new Error(`Unexpected query: ${sql}`);
+    };
+    const result = await updateTrade(userId, tradeId, { strategyId: null, setupId: null, strategy: 'Legacy ORB', setup: 'Legacy retest' });
+    assert.deepEqual({ strategyId: result.strategyId, setupId: result.setupId, strategy: result.strategy, setup: result.setup }, {
+      strategyId: null, setupId: null, strategy: 'Legacy ORB', setup: 'Legacy retest',
+    });
+    assert.equal(calls.some((call) => /FROM strategies|FROM setups/.test(call.sql)), false);
   });
 });
 

@@ -65,6 +65,7 @@ describe('AppShell', () => {
     const dialog = screen.getByRole('dialog', { name: 'Search or run a command' });
     expect(within(dialog).getByLabelText('Search commands')).toHaveFocus();
     expect(within(dialog).getByRole('option', { name: /Dashboard/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('option', { name: /^Strategies & Setups/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /Analytics/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /^Journal & Reviews/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /^Rules & Adherence/ })).toBeInTheDocument();
@@ -81,7 +82,7 @@ describe('AppShell', () => {
     expect(trigger).toHaveFocus();
 
     await user.keyboard('{Control>}k{/Control}');
-    await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{Enter}');
+    await user.click(within(screen.getByRole('dialog', { name: 'Search or run a command' })).getByRole('option', { name: /^Accounts/ }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Accounts' })).toBeInTheDocument());
   });
 

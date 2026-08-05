@@ -4,6 +4,8 @@ export function invalidateTradeQueries(queryClient, tradeId) {
     queryClient.invalidateQueries({ queryKey: ['analytics'] }),
     queryClient.invalidateQueries({ queryKey: ['daily-review'] }),
     queryClient.invalidateQueries({ queryKey: ['accounts'] }),
+    queryClient.invalidateQueries({ queryKey: ['strategies'] }),
+    queryClient.invalidateQueries({ queryKey: ['setups'] }),
   ];
   if (tradeId) operations.push(queryClient.invalidateQueries({ queryKey: ['trade', tradeId] }));
   return Promise.all(operations);

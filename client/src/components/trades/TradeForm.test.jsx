@@ -11,6 +11,23 @@ const accounts = [
   { id: 'a1', company: 'Broker', accountNumber: '100', accountName: 'Main', status: 'active' },
   { id: 'a2', company: 'Broker', accountNumber: '200', accountName: 'Old', status: 'inactive' },
 ];
+const managedStrategies = [
+  { id: 's1', name: 'Opening Range Breakout', isActive: true },
+  { id: 's2', name: 'Mean Reversion', isActive: true },
+  { id: 's3', name: 'Archived Momentum', isActive: false },
+];
+const managedSetups = [
+  { id: 'u1', strategyId: 's1', name: 'Confirmed breakout', isActive: true },
+  { id: 'u2', strategyId: 's2', name: 'Range fade', isActive: true },
+  { id: 'u3', strategyId: 's3', name: 'Archived continuation', isActive: false },
+];
+
+const validOpen = {
+  accountId: 'a1', symbol: 'MNQ', market: 'futures', direction: 'long', status: 'open',
+  entryDatetime: '2026-08-04T10:00', exitDatetime: '', entryPrice: 22000, exitPrice: '', quantity: 1, fees: 0,
+  strategy: '', setup: '', strategyId: '', setupId: '', timeframe: '5m', riskAmount: '', stopLoss: '', takeProfit: '',
+  notes: '', emotionPre: '', emotionDuring: '', emotionPost: '', screenshotLinks: '',
+};
 
 function renderForm(props = {}) {
   return render(<TradeForm accounts={accounts} timezone="Asia/Jerusalem" onSubmit={vi.fn()} {...props} />);
@@ -93,4 +110,53 @@ describe('TradeForm', () => {
     expect(screen.getByLabelText(/סימול/)).toHaveValue('NQ');
     expect(document.documentElement).toHaveAttribute('dir', 'rtl');
   });
+
+  it('selects owned managed classification, filters Setups, and submits IDs with current-name snapshots', async () => {
+    const onSubmit = vi.fn();
+    renderForm({ defaultValues: validOpen, managedStrategies, managedSetups, onSubmit });
+    await userEvent.selectOptions(screen.getByLabelText('Managed Strategy'), 's1');
+    expect(screen.getByLabelText('Managed Setup')).toHaveValue('');
+    expect(withinOptions(screen.getByLabelText('Managed Setup'))).toEqual(['', 'u1']);
+    await userEvent.selectOptions(screen.getByLabelText('Managed Setup'), 'u1');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Trade' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      strategyId: 's1', setupId: 'u1', strategy: 'Opening Range Breakout', setup: 'Confirmed breakout',
+    }), 'save', expect.any(Object));
+  });
+
+  it('does not auto-match legacy text and clears an incompatible managed Setup when Strategy changes', async () => {
+    const legacy = { ...validOpen, strategy: 'Opening Range Breakout', setup: 'Confirmed breakout' };
+    const view = renderForm({ defaultValues: legacy, managedStrategies, managedSetups });
+    expect(screen.getByLabelText('Managed Strategy')).toHaveValue('');
+    expect(screen.getByLabelText('Strategy')).toHaveValue('Opening Range Breakout');
+    view.unmount();
+
+    renderForm({
+      defaultValues: { ...validOpen, strategyId: 's1', setupId: 'u1', strategy: 'Opening Range Breakout', setup: 'Confirmed breakout' },
+      managedStrategies,
+      managedSetups,
+    });
+    await userEvent.selectOptions(screen.getByLabelText('Managed Strategy'), 's2');
+    expect(screen.getByLabelText('Managed Setup')).toHaveValue('');
+    expect(screen.getByLabelText('Setup')).toHaveValue('');
+  });
+
+  it('preserves archived managed links during edit without offering unrelated archived values', () => {
+    renderForm({
+      isEdit: true,
+      defaultValues: { ...validOpen, strategyId: 's3', setupId: 'u3', strategy: 'Archived Momentum', setup: 'Archived continuation' },
+      managedStrategies,
+      managedSetups,
+    });
+    const strategy = screen.getByLabelText('Managed Strategy');
+    const setup = screen.getByLabelText('Managed Setup');
+    expect(strategy).toHaveValue('s3');
+    expect(setup).toHaveValue('u3');
+    expect(withinOptions(strategy)).toEqual(['', 's1', 's2', 's3']);
+    expect(withinOptions(setup)).toEqual(['', 'u3']);
+  });
 });
+
+function withinOptions(select) {
+  return Array.from(select.options, (option) => option.value);
+}

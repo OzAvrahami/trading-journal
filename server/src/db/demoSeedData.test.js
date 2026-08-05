@@ -316,4 +316,28 @@ describe('deterministic demo fixture generation', () => {
     assert.deepEqual(hebrew.accounts.map((account) => account.company), english.accounts.map((account) => account.company));
     assert.deepEqual(hebrew.accounts.map((account) => account.accountNumber), english.accounts.map((account) => account.accountNumber));
   });
+
+  test('creates deterministic managed Strategies and Setups with intentionally unlinked Trades', () => {
+    const dataset = generateDemoDataset(options);
+    assert.equal(dataset.managedStrategies.length, 5);
+    assert.equal(dataset.managedSetups.length, 10);
+    assert.ok(dataset.trades.some((trade) => trade.strategyId == null && trade.setupId == null));
+    assert.ok(dataset.trades.some((trade) => trade.strategyId != null && trade.setupId != null));
+    const strategyIds = new Set(dataset.managedStrategies.map((strategy) => strategy.id));
+    const setups = new Map(dataset.managedSetups.map((setup) => [setup.id, setup]));
+    dataset.trades.filter((trade) => trade.strategyId).forEach((trade) => {
+      assert.ok(strategyIds.has(trade.strategyId));
+      assert.equal(setups.get(trade.setupId)?.strategyId, trade.strategyId);
+    });
+  });
+
+  test('keeps managed IDs and relationships identical across English and Hebrew', () => {
+    const english = generateDemoDataset({ ...options, locale: 'en' });
+    const hebrew = generateDemoDataset({ ...options, locale: 'he' });
+    assert.deepEqual(hebrew.managedStrategies.map(({ id, userId, isActive }) => ({ id, userId, isActive })), english.managedStrategies.map(({ id, userId, isActive }) => ({ id, userId, isActive })));
+    assert.deepEqual(hebrew.managedSetups.map(({ id, userId, strategyId, isActive }) => ({ id, userId, strategyId, isActive })), english.managedSetups.map(({ id, userId, strategyId, isActive }) => ({ id, userId, strategyId, isActive })));
+    assert.deepEqual(hebrew.trades.map(({ id, strategyId, setupId, pnlNet }) => ({ id, strategyId, setupId, pnlNet })), english.trades.map(({ id, strategyId, setupId, pnlNet }) => ({ id, strategyId, setupId, pnlNet })));
+    assert.match(hebrew.managedStrategies[0].name, /[\u0590-\u05ff]/);
+    assert.match(hebrew.managedSetups[0].name, /[\u0590-\u05ff]/);
+  });
 });

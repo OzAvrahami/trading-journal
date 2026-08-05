@@ -16,6 +16,7 @@ import Journal from './pages/Journal.jsx';
 import Rules from './pages/Rules.jsx';
 import Goals from './pages/Goals.jsx';
 import DailyReview, { DailyReviewTodayRedirect } from './pages/DailyReview.jsx';
+import Strategies from './pages/Strategies.jsx';
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -51,6 +52,7 @@ export function AppRoutes() {
       <Route path="/trades/new" element={<ProtectedRoute><TradeEditor /></ProtectedRoute>} />
       <Route path="/trades/:tradeId/edit" element={<ProtectedRoute><TradeEditor /></ProtectedRoute>} />
       <Route path="/trades/:id" element={<ProtectedRoute><TradeDetail /></ProtectedRoute>} />
+      <Route path="/strategies" element={<ProtectedRoute><Strategies /></ProtectedRoute>} />
       <Route path="/daily-review" element={<ProtectedRoute><DailyReviewTodayRedirect /></ProtectedRoute>} />
       <Route path="/daily-review/:date" element={<ProtectedRoute><DailyReview /></ProtectedRoute>} />
       <Route path="/import"    element={<ProtectedRoute><Import /></ProtectedRoute>} />
