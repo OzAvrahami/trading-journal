@@ -51,6 +51,7 @@ export function parseTradovate(csvBuffer) {
 
     return {
       _rowIndex: index + 2,
+      _sourceIdentifier: [row.buyFillId, row.sellFillId].filter(Boolean).join(':').trim().slice(0, 255) || null,
       symbol: (row.symbol || '').trim().toUpperCase(),
       market: 'futures',
       direction,

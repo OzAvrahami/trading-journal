@@ -205,4 +205,24 @@ Object.assign(he.analytics, {
 });
 Object.assign(he.errors, { ACCOUNT_NOT_ACTIVE: 'יש לבחור חשבון פעיל.', ACCOUNT_STATE_INVALID: 'מצב החשבון או המטבע אינם תקינים.', ACCOUNT_EXISTS: 'כבר קיים חשבון עם החברה ומספר החשבון האלה.' });
 
+Object.assign(he.routes, { importRunDetail: { title: 'הרצת ייבוא', description: 'סקירת התוצאות השמורות של ייבוא עסקאות שאושר.' } });
+he.importHistory = {
+  title: 'היסטוריית ייבוא', privacy: 'בייבוא שאושר נשמרות רק תוצאות תפעוליות מוגבלות. הקובץ המקורי והשורות המלאות אינם נשמרים.',
+  hashing: 'מחשב טביעת קובץ ומנתח…',
+  loading: 'טוען היסטוריית ייבוא', loadFailed: 'לא ניתן לטעון את היסטוריית הייבוא.', empty: 'אין עדיין היסטוריית ייבוא.',
+  viewDetails: 'צפייה בפרטים', viewPrevious: 'צפייה בייבוא הקודם', duplicateTitle: 'קובץ שכבר יובא',
+  duplicateDetail: 'הקובץ הזה כבר יובא בעבר. הוספת העסקאות נחסמה.',
+  imported: 'יובאו', skipped: 'דולגו', failed: 'נכשלו', importedRows: 'שורות שיובאו', skippedRows: 'שורות שדולגו', failedRows: 'שורות שנכשלו',
+  loadingDetail: 'טוען הרצת ייבוא', notFound: 'הרצת הייבוא לא נמצאה', notFoundDetail: 'הרצת הייבוא אינה זמינה או שייכת למשתמש אחר.', back: 'חזרה לייבוא',
+  noRawFile: 'הקובץ המקורי אינו נשמר ב־TradingLog.', sourceType: 'סוג מקור', fileSize: 'גודל קובץ', started: 'התחלה', completedAt: 'סיום', totalRows: 'סך הכול שורות',
+  mapping: 'פרטי מיפוי בטוחים', rowResults: 'תוצאות שורות', rowFilters: 'סינון תוצאות שורות', linkedTrade: 'צפייה בעסקה המקושרת', tradeUnavailable: 'העסקה המקושרת אינה זמינה עוד.', unknownFailure: 'לא ניתן להשלים את הייבוא.',
+  rowPagination: 'דפדוף בשורות הייבוא', previousRows: 'שורות קודמות', nextRows: 'שורות הבאות',
+  noMatchingRows: 'אין תוצאות שורות התואמות למסנן הזה.',
+  status: { processing: 'בתהליך', completed: 'הושלם', completed_with_errors: 'הושלם עם שגיאות', failed: 'נכשל' },
+  rowStatus: { imported: 'יובאה', skipped_duplicate: 'דולגה ככפילות', failed_validation: 'נכשלה בבדיקה', failed_insert: 'נכשלה בהוספה' },
+  filters: { all: 'הכול', imported: 'יובאו', skipped: 'דולגו', failed: 'נכשלו' },
+  errors: { IMPORT_INVALID_FILE: 'קובץ המקור אינו תקין.', IMPORT_INVALID_MAPPING: 'מיפוי הייבוא אינו תקין.', IMPORT_FATAL_ERROR: 'הייבוא נכשל ושינויי העסקאות בוטלו.', IMPORT_NO_ROWS_IMPORTED: 'אף שורת מקור לא יצרה עסקה חדשה.', IMPORT_ROW_DUPLICATE: 'השורה תואמת לשורה אחרת או לעסקה קיימת.', IMPORT_ROW_VALIDATION_FAILED: 'השורה לא עברה את בדיקות העסקה.', IMPORT_ROW_INSERT_FAILED: 'השורה לא נוספה משום שהטרנזקציה בוטלה.' },
+};
+Object.assign(he.errors, { IMPORT_DUPLICATE_FILE: 'הקובץ הזה כבר יובא בעבר.', IMPORT_INVALID_FILE: 'הקובץ שנבחר אינו תקין.', IMPORT_INVALID_MAPPING: 'מיפוי הייבוא אינו תקין.', IMPORT_FATAL_ERROR: 'הייבוא נכשל ולא נשמרו שינויים בעסקאות.', IMPORT_ACCOUNT_NOT_FOUND: 'החשבון שנבחר לא נמצא.', IMPORT_ACCOUNT_ARCHIVED: 'יש לבחור חשבון פעיל לייבוא.' });
+
 export default he;

@@ -208,6 +208,20 @@ describe('deterministic demo fixture generation', () => {
     assert.deepEqual(generateDemoDataset(options).dailyReviewDetails, dataset.dailyReviewDetails);
   });
 
+  test('creates localized deterministic Import History without creating Trades', () => {
+    const english = generateDemoDataset({ ...options, locale: 'en' });
+    const hebrew = generateDemoDataset({ ...options, locale: 'he' });
+    assert.equal(english.importRuns.length, 3);
+    assert.equal(english.importRunRows.length, 8);
+    assert.deepEqual(english.importRuns.map(({ originalFilename, ...run }) => run), hebrew.importRuns.map(({ originalFilename, ...run }) => run));
+    assert.deepEqual(english.importRunRows, hebrew.importRunRows);
+    assert.notDeepEqual(english.importRuns.map((run) => run.originalFilename), hebrew.importRuns.map((run) => run.originalFilename));
+    assert.deepEqual(new Set(english.importRuns.map((run) => run.status)), new Set(['completed', 'completed_with_errors', 'failed']));
+    assert.ok(english.importRunRows.some((row) => row.status === 'skipped_duplicate'));
+    assert.ok(english.importRunRows.some((row) => row.tradeId));
+    assert.equal(english.trades.length, 57);
+  });
+
   test('creates trade/daily/general Rules, historical inactive checks and a no-eligible rule', () => {
     const dataset = generateDemoDataset(options);
     assert.deepEqual(new Set(dataset.rules.map((rule) => rule.scope)), new Set(['trade', 'daily', 'general']));
