@@ -128,7 +128,7 @@ describe('Default and archive transactions', () => {
     assert.equal(updated.status, 'archived');
     assert.equal(updated.isDefault, false);
     const write = calls.find(call => /UPDATE trading_accounts SET company/.test(call.sql));
-    assert.equal(write.params.at(-1), false);
+    assert.equal(write.params[9], false);
     assert.equal(calls.some(call => /COMMIT/.test(call.sql)), true);
   });
 

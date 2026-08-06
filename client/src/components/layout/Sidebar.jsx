@@ -1,5 +1,6 @@
-import { CaretLeft, CaretRight, ChartLineUp, SignOut } from '@phosphor-icons/react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { CaretDown, CaretLeft, CaretRight, ChartLineUp, SignOut } from '@phosphor-icons/react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { IconButton } from '../ui/IconButton.jsx';
 import { navigationGroups } from './navigation.js';
 import { useDirection } from '../../hooks/useDirection.js';
@@ -22,6 +23,13 @@ export function Sidebar({ collapsed, onToggle, user, onLogout }) {
     ? (collapsed ? CaretLeft : CaretRight)
     : (collapsed ? CaretRight : CaretLeft);
   const displayName = user?.displayName?.trim();
+  const location = useLocation();
+  const [expandedItems, setExpandedItems] = useState(() => new Set(['/portfolio']));
+  useEffect(() => {
+    if (location.pathname.startsWith('/portfolio')) {
+      setExpandedItems((current) => new Set(current).add('/portfolio'));
+    }
+  }, [location.pathname]);
 
   return (
     <aside
@@ -56,13 +64,33 @@ export function Sidebar({ collapsed, onToggle, user, onLogout }) {
               </div>
             )}
             <div className="space-y-1">
-              {group.items.map(({ to, labelKey, Icon }) => (
+              {group.items.map(({ to, labelKey, Icon, children }) => children && !collapsed ? (
+                <div key={to}>
+                  <button
+                    type="button"
+                    aria-expanded={expandedItems.has(to)}
+                    className={`flex min-h-11 w-full items-center gap-2.5 border-s-2 px-2.5 text-sm transition-colors ${location.pathname.startsWith(to) ? 'border-action bg-action-soft font-medium text-action' : 'border-transparent text-secondary hover:bg-surface-raised hover:text-primary'}`}
+                    onClick={() => setExpandedItems((current) => {
+                      const next = new Set(current); if (next.has(to)) next.delete(to); else next.add(to); return next;
+                    })}
+                  >
+                    <Icon size={17} className="shrink-0" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate text-start">{t(labelKey)}</span>
+                    <CaretDown size={14} className={`shrink-0 transition-transform ${expandedItems.has(to) ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  </button>
+                  {expandedItems.has(to) && children.map((child) => (
+                    <NavLink key={child.to} to={child.to} end className={({ isActive }) => `ms-6 flex min-h-11 items-center border-s px-3 text-sm ${isActive ? 'border-action font-medium text-action' : 'border-default text-secondary hover:text-primary'}`}>
+                      {t(child.labelKey)}
+                    </NavLink>
+                  ))}
+                </div>
+              ) : (
                 <NavLink
                   key={to}
                   to={to}
                   title={collapsed ? t(labelKey) : undefined}
                   aria-label={collapsed ? t(labelKey) : undefined}
-                  className={({ isActive }) => `flex min-h-9 items-center border-s-2 rounded-e-md rounded-s-none text-sm transition-colors ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} ${isActive ? 'border-action bg-action-soft font-medium text-action' : 'border-transparent text-secondary hover:bg-surface-raised hover:text-primary'}`}
+                  className={({ isActive }) => `flex min-h-11 items-center border-s-2 rounded-e-md rounded-s-none text-sm transition-colors ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} ${isActive ? 'border-action bg-action-soft font-medium text-action' : 'border-transparent text-secondary hover:bg-surface-raised hover:text-primary'}`}
                 >
                   <Icon size={17} className="shrink-0" aria-hidden="true" />
                   {!collapsed && <span className="truncate">{t(labelKey)}</span>}

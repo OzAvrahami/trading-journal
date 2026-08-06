@@ -9,6 +9,7 @@ router.use(requireAuth);
 
 const ACCOUNT_STATUSES = ['active', 'inactive', 'archived'];
 const ACCOUNT_TYPES    = ['funded', 'evaluation', 'demo', 'live'];
+const ACCOUNT_GROUPS   = ['personal_investment', 'active_trading', 'prop_firm'];
 
 const idSchema = z.string().uuid();
 const optionalText = (max) => z.preprocess(
@@ -31,9 +32,21 @@ export const createSchema = z.object({
   baseCurrency:  currencySchema.default('USD'),
   openingBalance: balanceSchema.default(0),
   isDefault:     z.boolean().default(false),
+  accountGroup: z.enum(ACCOUNT_GROUPS).default('active_trading'),
+  includeInInvestmentValue: z.boolean().default(false),
+  includeInNetWorth: z.boolean().default(false),
+  includeInTradingAnalytics: z.boolean().default(true),
+  investmentDisplayName: optionalText(120),
+  linkPortfolioId: idSchema.optional(),
 }).strict().superRefine((value, context) => {
   if (value.isDefault && value.status !== 'active') {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['isDefault'], message: 'Only an active Account can be the default.' });
+  }
+  if (value.accountGroup === 'prop_firm' && (value.includeInInvestmentValue || value.includeInNetWorth)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['accountGroup'], message: 'Prop Firm Accounts can participate only in Trading Analytics.' });
+  }
+  if (value.linkPortfolioId && !value.includeInInvestmentValue) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['includeInInvestmentValue'], message: 'Linked investment data requires investment participation.' });
   }
 });
 
@@ -46,7 +59,14 @@ export const updateSchema = z.object({
   baseCurrency:  currencySchema.optional(),
   openingBalance: balanceSchema.optional(),
   isDefault:     z.boolean().optional(),
+  accountGroup: z.enum(ACCOUNT_GROUPS).optional(),
+  includeInInvestmentValue: z.boolean().optional(),
+  includeInNetWorth: z.boolean().optional(),
+  includeInTradingAnalytics: z.boolean().optional(),
+  investmentDisplayName: optionalText(120),
 }).strict().refine(value => Object.keys(value).length > 0, 'At least one field is required.');
+
+export const linkPortfolioSchema = z.object({ portfolioId: idSchema }).strict();
 
 function validateAccountId(req, res, next) {
   const parsed = idSchema.safeParse(req.params.id);
@@ -78,6 +98,12 @@ router.post('/', validateBody(createSchema), async (req, res, next) => {
 router.patch('/:id', validateAccountId, validateBody(updateSchema), async (req, res, next) => {
   try {
     res.json(await accountService.updateAccount(req.user.id, req.params.id, req.body));
+  } catch (err) { next(err); }
+});
+
+router.post('/:id/link-investment-portfolio', validateAccountId, validateBody(linkPortfolioSchema), async (req, res, next) => {
+  try {
+    res.json(await accountService.linkInvestmentPortfolio(req.user.id, req.params.id, req.body.portfolioId));
   } catch (err) { next(err); }
 });
 

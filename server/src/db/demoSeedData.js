@@ -11,6 +11,7 @@ import {
 
 export const DEMO_ACCOUNT_TYPES = Object.freeze(['funded', 'evaluation', 'demo', 'live']);
 export const DEMO_ACCOUNT_STATUSES = Object.freeze(['active', 'inactive', 'archived']);
+export const DEMO_ACCOUNT_GROUPS = Object.freeze(['personal_investment', 'active_trading', 'prop_firm']);
 export const DEMO_LOCALES = Object.freeze(['en', 'he']);
 
 export const DEMO_DAILY_NET_PNL = Object.freeze([
@@ -194,7 +195,7 @@ function stableUuid(namespace, userId, anchorDate, index) {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
-function buildInvestmentPortfolioData(userId, anchorDate, timezone) {
+function buildInvestmentPortfolioData(userId, anchorDate, timezone, accounts) {
   const createdAt = localDateTimeToInstant(addDaysToDateKey(anchorDate, -240), '12:00:00', timezone).toISOString();
   const portfolioDefinitions = [
     ['Long-term Investments', 'Planned long-term investments tracked with moving average cost.', 'active', true],
@@ -203,7 +204,8 @@ function buildInvestmentPortfolioData(userId, anchorDate, timezone) {
   ];
   const investmentPortfolios = portfolioDefinitions.map(([name, description, status, isDefault], index) => ({
     id: stableUuid('investment-portfolio', userId, anchorDate, index), userId, name, description,
-    baseCurrency: 'USD', status, isDefault, createdAt, updatedAt: createdAt,
+    baseCurrency: 'USD', status, isDefault, tradingAccountId: accounts[[0, 3, 7][index]].id,
+    createdAt, updatedAt: createdAt,
   }));
   const instrumentDefinitions = [
     ['VOO', 'Vanguard S&P 500 ETF', 'NYSEARCA', 'etf'], ['AAPL', 'Apple Inc.', 'NASDAQ', 'stock'],
@@ -634,6 +636,13 @@ export function validateDemoDataset(dataset) {
   if (dataset.accounts.some((account) => !DEMO_ACCOUNT_TYPES.includes(account.accountType) || !DEMO_ACCOUNT_STATUSES.includes(account.status))) {
     throw new Error('Demo account enum is invalid.');
   }
+  if (dataset.accounts.some((account) => !DEMO_ACCOUNT_GROUPS.includes(account.accountGroup)
+    || typeof account.includeInInvestmentValue !== 'boolean'
+    || typeof account.includeInNetWorth !== 'boolean'
+    || typeof account.includeInTradingAnalytics !== 'boolean'
+    || (account.accountGroup === 'prop_firm' && (account.includeInInvestmentValue || account.includeInNetWorth)))) {
+    throw new Error('Demo Account grouping or participation is invalid.');
+  }
   const defaultAccounts = dataset.accounts.filter((account) => account.isDefault);
   if (defaultAccounts.length !== 1 || defaultAccounts[0].status !== 'active') {
     throw new Error('Demo Accounts require exactly one active default.');
@@ -663,8 +672,15 @@ export function validateDemoDataset(dataset) {
   const tradeIds = new Set(dataset.trades.map((trade) => trade.id));
   const portfolioIds = new Set(dataset.investmentPortfolios.map((row) => row.id));
   const instrumentIds = new Set(dataset.investmentInstruments.map((row) => row.id));
+  const linkedAccountIds = dataset.investmentPortfolios.map((row) => row.tradingAccountId);
   if (dataset.investmentPortfolios.filter((row) => row.isDefault).length !== 1
     || dataset.investmentPortfolios.find((row) => row.isDefault)?.status !== 'active'
+    || linkedAccountIds.some((accountId) => !accountIds.has(accountId))
+    || new Set(linkedAccountIds).size !== linkedAccountIds.length
+    || dataset.investmentPortfolios.some((portfolio) => {
+      const account = dataset.accounts.find((candidate) => candidate.id === portfolio.tradingAccountId);
+      return !account?.includeInInvestmentValue || account.baseCurrency !== portfolio.baseCurrency;
+    })
     || dataset.investmentTransactions.some((row) => !portfolioIds.has(row.portfolioId) || (row.instrumentId && !instrumentIds.has(row.instrumentId)))
     || dataset.investmentPrices.some((row) => !instrumentIds.has(row.instrumentId))) {
     throw new Error('Demo investment Portfolio relationships are invalid.');
@@ -729,6 +745,10 @@ export function generateDemoDataset({ userId, timezone, anchorDate, locale = 'en
       baseCurrency: 'USD',
       openingBalance: [25000, 18000, 35000, 50000, 40000, 150000, 50000, 100000][index],
       isDefault: index === 3,
+      accountGroup: index <= 2 ? 'personal_investment' : index <= 4 || index === 7 ? 'active_trading' : 'prop_firm',
+      includeInInvestmentValue: [0, 3, 7].includes(index),
+      includeInNetWorth: [0, 1, 2, 3, 4].includes(index),
+      includeInTradingAnalytics: true,
       createdAt, updatedAt: createdAt,
     };
   });
@@ -744,7 +764,7 @@ export function generateDemoDataset({ userId, timezone, anchorDate, locale = 'en
   const ruleData = buildRules(userId, anchorDate, timezone, trades, journal.entries, tradingDates);
   const goals = buildGoals(userId, anchorDate, timezone, tradingDates);
   const imports = buildImportHistory(userId, anchorDate, timezone, accounts, trades);
-  const investments = buildInvestmentPortfolioData(userId, anchorDate, timezone);
+  const investments = buildInvestmentPortfolioData(userId, anchorDate, timezone, accounts);
   const dataset = {
     userId, timezone, anchorDate, tradingDates, accounts, managedStrategies: managed.strategies, managedSetups: managed.setups, trades,
     journalEntries: journal.entries, journalEntryTrades: journal.links, dailyReviewDetails: journal.details,

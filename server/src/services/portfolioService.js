@@ -11,7 +11,17 @@ function symbol(value) { return String(value).trim().toUpperCase(); }
 function mapPortfolioRow(row) {
   return {
     id: row.id, name: row.name, description: row.description, baseCurrency: row.base_currency,
-    status: row.status, isDefault: Boolean(row.is_default), createdAt: row.created_at, updatedAt: row.updated_at,
+    status: row.status, isDefault: Boolean(row.is_default), tradingAccountId: row.trading_account_id ?? null,
+    tradingAccount: row.trading_account_id ? {
+      id: row.trading_account_id,
+      accountName: row.trading_account_name ?? null,
+      company: row.trading_account_company ?? null,
+      accountNumber: row.trading_account_number ?? null,
+      status: row.trading_account_status ?? null,
+      baseCurrency: row.trading_account_currency ?? row.base_currency,
+      includeInInvestmentValue: Boolean(row.include_in_investment_value),
+    } : null,
+    createdAt: row.created_at, updatedAt: row.updated_at,
   };
 }
 
@@ -74,9 +84,17 @@ FROM investment_transactions t
 JOIN investment_portfolios p ON p.id = t.portfolio_id AND p.user_id = t.user_id
 LEFT JOIN investment_instruments i ON i.id = t.instrument_id AND i.user_id = t.user_id`;
 
+const PORTFOLIO_SELECT = `SELECT p.*,
+  a.account_name AS trading_account_name, a.company AS trading_account_company,
+  a.account_number AS trading_account_number, a.status AS trading_account_status,
+  a.base_currency AS trading_account_currency,
+  a.include_in_investment_value
+FROM investment_portfolios p
+LEFT JOIN trading_accounts a ON a.id = p.trading_account_id AND a.user_id = p.user_id`;
+
 async function loadOwnedPortfolio(userId, portfolioId, queryable = pool, { lock = false } = {}) {
   const result = await queryable.query(
-    `SELECT * FROM investment_portfolios WHERE id = $1 AND user_id = $2${lock ? ' FOR UPDATE' : ''}`,
+    `${PORTFOLIO_SELECT} WHERE p.id = $1 AND p.user_id = $2${lock ? ' FOR UPDATE OF p' : ''}`,
     [portfolioId, userId],
   );
   if (!result.rows[0]) throw createError('PORTFOLIO_NOT_FOUND', 'Portfolio not found.', 404);
@@ -127,12 +145,14 @@ async function derivePortfolio(portfolioRow, transactions, userId, queryable = p
   };
 }
 
-export async function listPortfolios(userId, { includeArchived = false } = {}, queryable = pool) {
+export async function listPortfolios(userId, { includeArchived = false, investmentEnabledOnly = false, accountId = null } = {}, queryable = pool) {
   const portfoliosResult = await queryable.query(
-    `SELECT * FROM investment_portfolios
-     WHERE user_id = $1 AND ($2::boolean OR status = 'active')
-     ORDER BY is_default DESC, status, lower(btrim(name)), id`,
-    [userId, includeArchived],
+    `${PORTFOLIO_SELECT}
+     WHERE p.user_id = $1 AND ($2::boolean OR p.status = 'active')
+       AND ($3::boolean = FALSE OR (p.trading_account_id IS NOT NULL AND a.include_in_investment_value = TRUE AND a.status = 'active'))
+       AND ($4::uuid IS NULL OR p.trading_account_id = $4)
+     ORDER BY p.is_default DESC, p.status, lower(btrim(p.name)), p.id`,
+    [userId, includeArchived, investmentEnabledOnly, accountId],
   );
   if (!portfoliosResult.rows.length) return { portfolios: [] };
   const ids = portfoliosResult.rows.map((row) => row.id);
@@ -251,6 +271,9 @@ export async function updateInstrument(userId, instrumentId, data) {
 async function validateTransactionContext(userId, data, queryable, { currentInstrumentId = null } = {}) {
   const portfolio = await loadOwnedPortfolio(userId, data.portfolioId, queryable, { lock: true });
   if (portfolio.status !== 'active' && !data.id) throw createError('PORTFOLIO_ARCHIVED', 'Archived Portfolios cannot receive new Transactions.', 409);
+  if (portfolio.trading_account_id && portfolio.trading_account_status !== 'active' && !data.id) {
+    throw createError('INVESTMENT_ACCOUNT_ARCHIVED', 'The linked Account is not active and cannot receive new Investment Transactions.', 409);
+  }
   let instrument = null;
   if (data.instrumentId) {
     instrument = await loadOwnedInstrument(userId, data.instrumentId, queryable, { requireActive: data.instrumentId !== currentInstrumentId });

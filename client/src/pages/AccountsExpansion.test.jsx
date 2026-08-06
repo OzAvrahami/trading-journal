@@ -6,12 +6,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n/index.js';
 import { ToastProvider } from '../components/ui/Toast.jsx';
 
-const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), trades: vi.fn() }));
-vi.mock('../api/accounts.js', () => ({ accountsApi: { list: api.list, get: api.get, create: api.create, update: api.update } }));
+const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), link: vi.fn(), portfolioList: vi.fn(), trades: vi.fn() }));
+vi.mock('../api/accounts.js', () => ({ accountsApi: { list: api.list, get: api.get, create: api.create, update: api.update, linkInvestmentPortfolio: api.link } }));
+vi.mock('../api/portfolio.js', () => ({ portfolioApi: { list: api.portfolioList } }));
 vi.mock('../api/trades.js', () => ({ tradesApi: { list: api.trades } }));
 
 import Accounts from './Accounts.jsx';
 import AccountDetail from './AccountDetail.jsx';
+import Portfolio from './Portfolio.jsx';
 import { AccountForm, normalizeAccountForm } from '../components/accounts/AccountForm.jsx';
 import { SummaryCards } from '../components/analytics/SummaryCards.jsx';
 
@@ -36,11 +38,13 @@ describe('Accounts expansion UI', () => {
     api.trades.mockResolvedValue({ data: [{ id: 'trade-1', symbol: 'NQ', entryDatetime: '2026-08-04T10:00:00Z', pnlNet: 100 }], pagination: { total: 1 } });
     api.create.mockResolvedValue(account);
     api.update.mockResolvedValue(account);
+    api.portfolioList.mockResolvedValue({ portfolios: [] });
   });
 
   it('normalizes user-editable fields without changing internal account type keys', () => {
     expect(normalizeAccountForm({ company: ' Broker ', accountNumber: ' A-1 ', accountName: ' Main ', accountType: 'funded', baseCurrency: 'usd', openingBalance: '-5.25', isDefault: true })).toEqual({
       company: 'Broker', accountNumber: 'A-1', accountName: 'Main', accountType: 'funded', baseCurrency: 'USD', openingBalance: -5.25, isDefault: true,
+      accountGroup: undefined, includeInInvestmentValue: false, includeInNetWorth: false, includeInTradingAnalytics: false,
     });
   });
 
@@ -98,5 +102,63 @@ describe('Accounts expansion UI', () => {
     providers(<SummaryCards data={{ isMixedCurrency: true, monetaryTotalsAvailable: false, currencies: ['ILS', 'USD'], totals: { tradesClosed: 3, winners: 2, losers: 1, winRate: 2 / 3, profitFactor: 2, avgRMultiple: 1 }, today: { tradesCount: 1 }, wtd: { tradesCount: 2 }, mtd: { tradesCount: 3 } }} />);
     expect(screen.getByText((content) => content.includes('66.7%'))).toBeInTheDocument();
     expect(screen.getAllByLabelText('Not available').length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('applies group defaults only for new Accounts and keeps explicit edit choices', async () => {
+    await i18n.changeLanguage('en');
+    const onCreate = vi.fn();
+    const { unmount } = providers(<AccountForm initialValues={{ company: 'Broker', accountNumber: 'A-2' }} onSubmit={onCreate} />);
+    await userEvent.selectOptions(screen.getByLabelText('Account group'), 'personal_investment');
+    expect(screen.getByRole('checkbox', { name: 'Portfolio value' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Personal net worth' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Trading analytics' })).not.toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({
+      accountGroup: 'personal_investment', includeInInvestmentValue: true, includeInNetWorth: true, includeInTradingAnalytics: false,
+    }));
+    unmount();
+
+    providers(<AccountForm account={{ ...account, accountGroup: 'active_trading', includeInInvestmentValue: true, includeInNetWorth: false, includeInTradingAnalytics: true }} onSubmit={vi.fn()} />);
+    await userEvent.selectOptions(screen.getByLabelText('Account group'), 'personal_investment');
+    expect(screen.getByRole('checkbox', { name: 'Portfolio value' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Personal net worth' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Trading analytics' })).toBeChecked();
+  });
+
+  it('groups Accounts and rolls a failed participation change back visibly', async () => {
+    await i18n.changeLanguage('en');
+    api.list.mockResolvedValue([{ ...account, accountGroup: 'active_trading', includeInTradingAnalytics: true }]);
+    api.update.mockRejectedValue(new Error('offline'));
+    providers(<Accounts />);
+    expect(await screen.findByRole('heading', { name: 'Active Trading' })).toBeInTheDocument();
+    const analytics = screen.getByRole('checkbox', { name: 'Trading analytics' });
+    expect(analytics).toBeChecked();
+    await userEvent.click(analytics);
+    await waitFor(() => expect(api.update).toHaveBeenCalledWith(account.id, { includeInTradingAnalytics: false }));
+    expect(analytics).toBeChecked();
+  });
+
+  it('presents enabled linked Accounts, keeps unlinked data visible, and groups currencies without FX', async () => {
+    await i18n.changeLanguage('en');
+    const linked = {
+      id: 'portfolio-1', name: 'Internal ledger name', baseCurrency: 'USD', status: 'active', tradingAccountId: account.id,
+      tradingAccount: { id: account.id, accountName: 'Main', company: 'Interactive Brokers', accountNumber: 'IL-001', status: 'active', includeInInvestmentValue: true },
+      positionCount: 2, cashBalance: 100, marketValue: 900, totalValue: 1000, realizedPnl: 25, unrealizedPnl: 50,
+      dividendIncome: 5, valuationAvailable: true, missingPriceCount: 0, lastTransactionDate: '2026-08-01',
+    };
+    api.portfolioList.mockResolvedValue({ portfolios: [
+      linked,
+      { ...linked, id: 'portfolio-2', baseCurrency: 'ILS', tradingAccountId: archived.id, tradingAccount: { ...linked.tradingAccount, id: archived.id, accountName: 'Israel', accountNumber: 'ILS-002', baseCurrency: 'ILS' } },
+      { ...linked, id: 'legacy-portfolio', name: 'Historical ledger', tradingAccountId: null, tradingAccount: null },
+      { ...linked, id: 'disabled-portfolio', tradingAccountId: 'disabled-account', tradingAccount: { ...linked.tradingAccount, id: 'disabled-account', accountName: 'Disabled', includeInInvestmentValue: false } },
+    ] });
+    providers(<Portfolio />, '/portfolio');
+    expect(await screen.findByRole('link', { name: 'Main' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Israel' })).toBeInTheDocument();
+    expect(screen.queryByText('Disabled')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Investment data not linked to an Account' })).toBeInTheDocument();
+    expect(screen.getByText('Historical ledger')).toBeInTheDocument();
+    expect(screen.getAllByText('No FX conversion').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('IL-001')).toHaveAttribute('dir', 'ltr');
   });
 });

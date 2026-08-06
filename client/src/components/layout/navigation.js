@@ -13,7 +13,10 @@ export const navigationGroups = [
   {
     label: 'Investments', labelKey: 'navigation.investments',
     items: [
-      { to: '/portfolio', label: 'Portfolio', labelKey: 'navigation.portfolio', Icon: Briefcase },
+      {
+        to: '/portfolio', label: 'Investments', labelKey: 'navigation.investments', Icon: Briefcase,
+        children: [{ to: '/portfolio', label: 'Overview', labelKey: 'navigation.investmentsOverview' }],
+      },
     ],
   },
   {
