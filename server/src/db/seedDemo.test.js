@@ -223,7 +223,7 @@ describe('demo backup, ownership and transaction ordering', () => {
     const harness = makeHarness();
     await execute(harness);
     const backup = harness.getBackup();
-    assert.deepEqual(Object.keys(backup).sort(), ['dailyReviewDetails', 'goals', 'importRunRows', 'importRuns', 'journalEntries', 'journalEntryTrades', 'metadata', 'ruleChecks', 'setups', 'strategies', 'trades', 'tradingAccounts', 'tradingRules'].sort());
+    assert.deepEqual(Object.keys(backup).sort(), ['dailyReviewDetails', 'goals', 'importRunRows', 'importRuns', 'investmentInstruments', 'investmentPortfolios', 'investmentPrices', 'investmentTransactions', 'journalEntries', 'journalEntryTrades', 'metadata', 'ruleChecks', 'setups', 'strategies', 'trades', 'tradingAccounts', 'tradingRules'].sort());
     const serialized = JSON.stringify(backup);
     assert.doesNotMatch(serialized, /password_hash|token_hash|JWT|DATABASE_URL/);
   });
@@ -238,13 +238,14 @@ describe('demo backup, ownership and transaction ordering', () => {
   test('selects, counts, backs up and deletes only with the target user ID', async () => {
     const harness = makeHarness();
     await execute(harness);
-    const ownedQueries = harness.events.filter((event) => /FROM (?:goals|rule_checks|trading_rules|journal_entry_trades|journal_entries|trades|trading_accounts)/.test(event.sql ?? ''));
+    const ownedQueries = harness.events.filter((event) => /FROM (?:investment_prices|investment_transactions|investment_instruments|investment_portfolios|goals|rule_checks|trading_rules|journal_entry_trades|journal_entries|trades|trading_accounts)/.test(event.sql ?? ''));
     assert.ok(ownedQueries.length > 0);
     assert.ok(ownedQueries.every((event) => /user_id = \$1/.test(event.sql) && event.params[0] === user.id));
   });
 
   test('uses the required foreign-key-safe reset order', () => {
     assert.deepEqual(RESET_STEPS.map((step) => step.table), [
+      'investment_prices', 'investment_transactions', 'investment_instruments', 'investment_portfolios',
       'import_run_rows', 'import_runs',
       'goals', 'rule_checks', 'trading_rules', 'journal_entry_trades',
       'daily_review_details', 'journal_entries', 'trades', 'setups', 'strategies', 'trading_accounts',

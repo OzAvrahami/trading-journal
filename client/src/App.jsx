@@ -21,6 +21,8 @@ import Goals from './pages/Goals.jsx';
 import DailyReview, { DailyReviewTodayRedirect } from './pages/DailyReview.jsx';
 import Strategies from './pages/Strategies.jsx';
 import Settings from './pages/Settings.jsx';
+import Portfolio from './pages/Portfolio.jsx';
+import PortfolioDetail from './pages/PortfolioDetail.jsx';
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -68,6 +70,8 @@ export function AppRoutes() {
       <Route path="/insights/rules" element={<ProtectedRoute><Rules /></ProtectedRoute>} />
       <Route path="/insights/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+      <Route path="/portfolio/:portfolioId" element={<ProtectedRoute><PortfolioDetail /></ProtectedRoute>} />
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

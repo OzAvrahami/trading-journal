@@ -1,4 +1,4 @@
-import { CalendarCheck, ChartBar, ChartLineUp, ListBullets, Bank, Notebook, UploadSimple, ListChecks, Target, TreeStructure, Gear } from '@phosphor-icons/react';
+import { CalendarCheck, ChartBar, ChartLineUp, ListBullets, Bank, Notebook, UploadSimple, ListChecks, Target, TreeStructure, Gear, Briefcase } from '@phosphor-icons/react';
 
 export const navigationGroups = [
   {
@@ -8,6 +8,12 @@ export const navigationGroups = [
       { to: '/trades', label: 'Trades', labelKey: 'navigation.trades', Icon: ListBullets },
       { to: '/strategies', label: 'Strategies & Setups', labelKey: 'navigation.strategies', Icon: TreeStructure },
       { to: '/daily-review', label: 'Daily Review', labelKey: 'navigation.dailyReview', Icon: CalendarCheck },
+    ],
+  },
+  {
+    label: 'Investments', labelKey: 'navigation.investments',
+    items: [
+      { to: '/portfolio', label: 'Portfolio', labelKey: 'navigation.portfolio', Icon: Briefcase },
     ],
   },
   {
@@ -36,4 +42,4 @@ export const navigationGroups = [
 
 export const navigationItems = navigationGroups.flatMap((group) => group.items);
 export const mobileNavigationItems = navigationItems.filter((item) => ['/dashboard', '/trades', '/accounts'].includes(item.to));
-export const mobileMoreItems = navigationItems.filter((item) => ['/strategies', '/daily-review', '/import', '/insights/analytics', '/insights/journal', '/insights/rules', '/insights/goals', '/settings'].includes(item.to));
+export const mobileMoreItems = navigationItems.filter((item) => ['/strategies', '/daily-review', '/portfolio', '/import', '/insights/analytics', '/insights/journal', '/insights/rules', '/insights/goals', '/settings'].includes(item.to));

@@ -23,6 +23,8 @@ vi.mock('./pages/DailyReview.jsx', () => ({
 vi.mock('./pages/TradeEditor.jsx', () => ({ default: () => <span>Trade Editor page</span> }));
 vi.mock('./pages/Strategies.jsx', () => ({ default: () => <span>Strategies page</span> }));
 vi.mock('./pages/Settings.jsx', () => ({ default: () => <span>Settings page</span> }));
+vi.mock('./pages/Portfolio.jsx', () => ({ default: () => <span>Portfolio page</span> }));
+vi.mock('./pages/PortfolioDetail.jsx', () => ({ default: () => <span>Portfolio detail page</span> }));
 vi.mock('./pages/Login.jsx', () => ({ default: () => <span>Login page</span> }));
 
 import { AppRoutes, ProtectedRoute, PublicRoute } from './App.jsx';
@@ -151,5 +153,17 @@ describe('route guards', () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/settings']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByTestId('app-shell')).toHaveTextContent('Settings page');
+  });
+
+  it('protects the Portfolio overview and detail routes', () => {
+    const anonymous = render(<MemoryRouter initialEntries={['/portfolio']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByText('Login page')).toBeInTheDocument();
+    anonymous.unmount();
+    authState.current = { user: { id: 'user-1' }, loading: false };
+    const overview = render(<MemoryRouter initialEntries={['/portfolio']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Portfolio page');
+    overview.unmount();
+    render(<MemoryRouter initialEntries={['/portfolio/11111111-1111-4111-8111-111111111111']}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByTestId('app-shell')).toHaveTextContent('Portfolio detail page');
   });
 });
