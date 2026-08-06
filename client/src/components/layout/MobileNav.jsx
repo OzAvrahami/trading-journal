@@ -3,7 +3,7 @@ import { DotsThree } from '@phosphor-icons/react';
 import { NavLink } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { Modal } from '../ui/Modal.jsx';
-import { mobileMoreItems, mobileNavigationItems } from './navigation.js';
+import { mobileMoreItems, mobileNavigationItems, preserveInvestmentScope } from './navigation.js';
 import { useTranslation } from 'react-i18next';
 
 export function MobileNav() {
@@ -46,8 +46,8 @@ export function MobileNav() {
         <nav aria-label={t('navigation.moreNavigation')} className="space-y-2">
           {mobileMoreItems.map(({ to, labelKey, Icon }) => (
             <NavLink
-              key={to}
-              to={to}
+              key={`${labelKey}:${to}`}
+              to={preserveInvestmentScope(to, location)}
               onClick={() => setMoreOpen(false)}
               className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-md border px-3 text-sm transition-colors ${isActive ? 'border-action bg-action-soft font-semibold text-action' : 'border-default bg-surface-raised text-secondary hover:border-strong hover:text-primary'}`}
             >

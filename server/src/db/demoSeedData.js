@@ -245,9 +245,13 @@ function buildInvestmentPortfolioData(userId, anchorDate, timezone, accounts) {
       currency: 'USD', notes, createdAt: timestamp, updatedAt: timestamp,
     };
   });
-  const priceDefinitions = [[0, 470], [1, 200], [2, 168], [3, 80], [5, 67]];
-  const investmentPrices = priceDefinitions.map(([instrumentIndex, price], index) => {
-    const priceDate = addDaysToDateKey(anchorDate, -1);
+  const priceDefinitions = [
+    [0, 470, -1], [1, 200, -1], [2, 168, -1], [3, 80, -1], [5, 67, -1],
+    [0, 415, -150], [1, 185, -150], [0, 440, -100], [1, 190, -100],
+    [2, 160, -120], [3, 77, -120], [2, 164, -60], [3, 79, -60],
+  ];
+  const investmentPrices = priceDefinitions.map(([instrumentIndex, price, offset], index) => {
+    const priceDate = addDaysToDateKey(anchorDate, offset);
     const timestamp = localDateTimeToInstant(priceDate, '18:00:00', timezone).toISOString();
     return { id: stableUuid('investment-price', userId, anchorDate, index), userId, instrumentId: investmentInstruments[instrumentIndex].id, priceDate, price, currency: 'USD', source: 'manual', createdAt: timestamp, updatedAt: timestamp };
   });
@@ -621,7 +625,7 @@ export function validateDemoDataset(dataset) {
     breakeven: 2, tradingDates: 22, pnlNet: 7486, totalFees: 346,
     journalEntries: 14, dailyReviewDetails: 4, rules: 8, goals: 7,
     managedStrategies: 5, managedSetups: 10, investmentPortfolios: 3,
-    investmentInstruments: 6, investmentTransactions: 17, investmentPrices: 5,
+    investmentInstruments: 6, investmentTransactions: 17, investmentPrices: 13,
   };
   Object.entries(expected).forEach(([key, value]) => {
     if (summary[key] !== value) throw new Error(`Demo dataset ${key} expected ${value}, received ${summary[key]}.`);

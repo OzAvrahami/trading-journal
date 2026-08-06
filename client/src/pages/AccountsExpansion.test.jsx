@@ -6,9 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n/index.js';
 import { ToastProvider } from '../components/ui/Toast.jsx';
 
-const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), link: vi.fn(), portfolioList: vi.fn(), trades: vi.fn() }));
+const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), link: vi.fn(), portfolioList: vi.fn(), investmentScope: vi.fn(), investmentOverview: vi.fn(), trades: vi.fn() }));
 vi.mock('../api/accounts.js', () => ({ accountsApi: { list: api.list, get: api.get, create: api.create, update: api.update, linkInvestmentPortfolio: api.link } }));
 vi.mock('../api/portfolio.js', () => ({ portfolioApi: { list: api.portfolioList } }));
+vi.mock('../api/investments.js', () => ({ investmentsApi: { scope: api.investmentScope, overview: api.investmentOverview } }));
 vi.mock('../api/trades.js', () => ({ tradesApi: { list: api.trades } }));
 
 import Accounts from './Accounts.jsx';
@@ -39,6 +40,8 @@ describe('Accounts expansion UI', () => {
     api.create.mockResolvedValue(account);
     api.update.mockResolvedValue(account);
     api.portfolioList.mockResolvedValue({ portfolios: [] });
+    api.investmentScope.mockResolvedValue({ scope: { mode: 'all', selectedAccount: null, accounts: [], historicalScope: false, unlinkedPortfolios: [] } });
+    api.investmentOverview.mockResolvedValue({ currencyGroups: [], topHoldings: [], recentTransactions: [], dividendSummary: { paymentCount: 0, currencies: [] }, allocationPreview: [], valueHistory: [] });
   });
 
   it('normalizes user-editable fields without changing internal account type keys', () => {
@@ -146,19 +149,23 @@ describe('Accounts expansion UI', () => {
       positionCount: 2, cashBalance: 100, marketValue: 900, totalValue: 1000, realizedPnl: 25, unrealizedPnl: 50,
       dividendIncome: 5, valuationAvailable: true, missingPriceCount: 0, lastTransactionDate: '2026-08-01',
     };
-    api.portfolioList.mockResolvedValue({ portfolios: [
-      linked,
-      { ...linked, id: 'portfolio-2', baseCurrency: 'ILS', tradingAccountId: archived.id, tradingAccount: { ...linked.tradingAccount, id: archived.id, accountName: 'Israel', accountNumber: 'ILS-002', baseCurrency: 'ILS' } },
-      { ...linked, id: 'legacy-portfolio', name: 'Historical ledger', tradingAccountId: null, tradingAccount: null },
-      { ...linked, id: 'disabled-portfolio', tradingAccountId: 'disabled-account', tradingAccount: { ...linked.tradingAccount, id: 'disabled-account', accountName: 'Disabled', includeInInvestmentValue: false } },
-    ] });
+    const mainScope = { accountId: account.id, accountName: 'Main', company: 'Interactive Brokers', accountNumber: 'IL-001', accountStatus: 'active', includeInInvestmentValue: true, baseCurrency: 'USD', portfolioId: linked.id, portfolioStatus: 'active' };
+    const israelScope = { ...mainScope, accountId: archived.id, accountName: 'Israel', accountNumber: 'ILS-002', baseCurrency: 'ILS', portfolioId: 'portfolio-2' };
+    api.investmentScope.mockResolvedValue({ scope: { mode: 'all', selectedAccount: null, accounts: [mainScope, israelScope], historicalScope: false, unlinkedPortfolios: [{ id: 'legacy-portfolio', name: 'Historical ledger', baseCurrency: 'USD', status: 'active' }] } });
+    api.investmentOverview.mockResolvedValue({
+      currencyGroups: [
+        { currency: 'USD', accountCount: 1, positionCount: 2, cashBalance: 100, totalCostBasis: 850, realizedPnl: 25, dividendIncome: 5, totalFees: 1, netContributions: 900, marketValue: 900, unrealizedPnl: 50, totalValue: 1000, missingPriceCount: 0, valuationAvailable: true },
+        { currency: 'ILS', accountCount: 1, positionCount: 1, cashBalance: 200, totalCostBasis: 500, realizedPnl: 10, dividendIncome: 0, totalFees: 0, netContributions: 600, marketValue: 550, unrealizedPnl: 50, totalValue: 750, missingPriceCount: 0, valuationAvailable: true },
+      ],
+      topHoldings: [], recentTransactions: [], dividendSummary: { paymentCount: 0, currencies: [] }, allocationPreview: [], valueHistory: [],
+    });
     providers(<Portfolio />, '/portfolio');
-    expect(await screen.findByRole('link', { name: 'Main' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Israel' })).toBeInTheDocument();
+    expect((await screen.findAllByText('Main')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Israel').length).toBeGreaterThan(0);
     expect(screen.queryByText('Disabled')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Investment data not linked to an Account' })).toBeInTheDocument();
     expect(screen.getByText('Historical ledger')).toBeInTheDocument();
-    expect(screen.getAllByText('No FX conversion').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('IL-001')).toHaveAttribute('dir', 'ltr');
+    expect(screen.getAllByText('No FX conversion').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/IL-001/).some((element) => element.matches('[dir="ltr"]'))).toBe(true);
   });
 });

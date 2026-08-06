@@ -5,6 +5,7 @@ import { Archive, ArrowCounterClockwise, CheckCircle, Eye, PencilSimple, Plus } 
 import { useTranslation } from 'react-i18next';
 import { accountsApi } from '../api/accounts.js';
 import { portfolioApi } from '../api/portfolio.js';
+import { invalidateInvestmentWorkspace } from '../components/portfolio/investmentQueryInvalidation.js';
 import { AccountForm } from '../components/accounts/AccountForm.jsx';
 import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
@@ -69,7 +70,7 @@ export default function Accounts() {
   const [form, setForm] = useState(null); const [confirm, setConfirm] = useState(null); const [linking, setLinking] = useState(null); const [linkAccountId, setLinkAccountId] = useState('');
   const query = useQuery({ queryKey: ['accounts', { includeArchived: true }], queryFn: () => accountsApi.list({ includeArchived: 'true' }) });
   const portfoliosQuery = useQuery({ queryKey: ['portfolios', { includeArchived: true }], queryFn: () => portfolioApi.list({ includeArchived: 'true' }) });
-  const invalidate = () => { qc.invalidateQueries({ queryKey: ['accounts'] }); qc.invalidateQueries({ queryKey: ['account'] }); qc.invalidateQueries({ queryKey: ['portfolios'] }); qc.invalidateQueries({ queryKey: ['portfolio'] }); qc.invalidateQueries({ queryKey: ['analytics'] }); };
+  const invalidate = () => { invalidateInvestmentWorkspace(qc, { participation: true }); qc.invalidateQueries({ queryKey: ['account'] }); qc.invalidateQueries({ queryKey: ['analytics'] }); };
   const save = useMutation({ mutationFn: ({ id, data }) => id ? accountsApi.update(id, data) : accountsApi.create(data), onSuccess: () => { invalidate(); setForm(null); toast.success(t('accounts.accountSaved')); }, onError: e => toast.error(t(`errors.${e.response?.data?.error?.code}`, { defaultValue: t('accounts.saveFailed') })) });
   const lifecycle = useMutation({ mutationFn: ({ account, data }) => accountsApi.update(account.id, data), onSuccess: () => { invalidate(); setConfirm(null); toast.success(t('accounts.accountUpdated')); }, onError: e => toast.error(t(`errors.${e.response?.data?.error?.code}`, { defaultValue: t('accounts.saveFailed') })) });
   const participation = useMutation({ mutationFn: ({ account, field, checked }) => accountsApi.update(account.id, { [field]: checked }), onSuccess: () => { invalidate(); setConfirm(null); toast.success(t('accounts.participationUpdated')); }, onError: e => toast.error(t(`errors.${e.response?.data?.error?.code}`, { defaultValue: t('accounts.participationFailed') })) });

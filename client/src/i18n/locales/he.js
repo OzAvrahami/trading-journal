@@ -301,12 +301,40 @@ Object.assign(he.portfolio, {
   accountScope: 'טווח חשבונות השקעה', allInvestmentAccounts: 'כל החשבונות שנכללים בהשקעות', archivedInvestmentAccounts: 'חשבונות השקעה בארכיון', noInvestmentAccounts: 'אין חשבונות שנכללים בהשקעות', noInvestmentAccountsDetail: 'יש להפעיל שווי תיק בחשבון כדי להתחיל להשתמש בהשקעות.',
 });
 Object.assign(he.portfolio.errors, { INVESTMENT_ACCOUNT_ARCHIVED: 'לא ניתן להוסיף פעילות השקעה לחשבון בארכיון.' });
+Object.assign(he.common, { viewAll: 'הצגת הכול' });
+Object.assign(he.navigation, {
+  investmentsHoldings: 'אחזקות', investmentsTransactions: 'תנועות', investmentsDividends: 'דיבידנדים',
+  investmentsPerformance: 'ביצועי התיק', investmentsAllocation: 'הקצאת נכסים',
+});
+Object.assign(he.routes, {
+  investmentsHoldings: { title: 'אחזקות', description: 'סקירת האחזקות המחושבות בכל חשבונות ההשקעה.' },
+  investmentsTransactions: { title: 'תנועות', description: 'סקירה וניהול של רישום פעולות ההשקעה.' },
+  investmentsDividends: { title: 'דיבידנדים', description: 'סקירת תשלומי דיבידנד שתועדו בחשבונות ההשקעה.' },
+  investmentsPerformance: { title: 'ביצועי התיק', description: 'סקירת היסטוריית השווי לפי פעולות ומחירים ידניים שתועדו.' },
+  investmentsAllocation: { title: 'הקצאת נכסים', description: 'סקירת הקצאה לפי חשבון, סוג נכס, נייר ערך, מטבע ומזומן.' },
+});
+he.investments = {
+  accountScope: 'טווח חשבונות השקעה', allAccounts: 'כל חשבונות ההשקעה', investmentAccount: 'חשבון השקעות', chooseAccount: 'בחירת חשבון השקעות', chooseAccountFirst: 'יש לבחור חשבון השקעות לפני הזנת פרטי הפעולה.',
+  scopeHelp: 'אפשר לבחור את כל החשבונות שנכללים או חשבון אחד. מזהי הרישום הפנימי אינם מוצגים.', workspaceNavigation: 'ניווט בסביבת ההשקעות', excluded: 'לא נכלל', historicalScope: 'חשבון השקעות היסטורי', historicalScopeDetail: 'החשבון בארכיון או אינו נכלל בסיכום ההשקעות. היסטוריית ההשקעות הקיימת נשארת זמינה.', historicalReadOnly: 'החשבון ההיסטורי זמין לקריאה בלבד ואי אפשר להוסיף לו פעולות חדשות.',
+  loadingScope: 'טעינת טווח חשבונות ההשקעה', invalidScope: 'חשבון השקעות לא תקין', scopeNotFound: 'חשבון ההשקעות לא נמצא', scopeFailed: 'לא ניתן לטעון את טווח ההשקעות', scopeFailedDetail: 'החשבון המבוקש אינו תקין, אינו זמין או שאין לו רישום השקעות מקושר.', noAccounts: 'אין חשבונות השקעה מקושרים', noAccountsDetail: 'יש להפעיל שווי תיק בחשבון ולהשלים את הגדרת ההשקעות כדי להשתמש בסביבה זו.',
+  loadingOverview: 'טעינת סקירת ההשקעות', overviewFailed: 'לא ניתן לטעון את סקירת ההשקעות', loadFailedDetail: 'נתוני ההשקעות השמורים אינם זמינים כעת. נתוני המסחר היומי נשארים נפרדים וללא שינוי.', noActivity: 'אין פעילות השקעה מתועדת', noActivityDetail: 'יש לתעד הפקדה ופעולות השקעה כדי להתחיל לבנות את התצוגה.',
+  totalValue: 'שווי כולל', cashBalance: 'יתרת מזומן', costBasis: 'בסיס עלות מושקע', marketValue: 'שווי שוק', realizedPnl: 'רווח והפסד ממומש', unrealizedPnl: 'רווח והפסד לא ממומש', dividendIncome: 'הכנסה מדיבידנדים', netContributions: 'הפקדות נטו', positions: 'אחזקות', accountCount: 'חשבונות השקעה', missingPrices: 'מחירים חסרים', valuationUnavailable: 'לא ניתן לחשב שווי', missingPrice: 'חסר מחיר', missingPriceDetail: 'לפחות לנייר ערך מוחזק אחד חסר מחיר ידני. השווי הכולל, שווי השוק, הרווח הלא ממומש ואחוזי ההקצאה אינם זמינים במקום להתייחס למחיר כאל אפס.',
+  overviewInsights: 'תצוגות מקדימות להשקעות', dividendSummary: 'סיכום דיבידנדים', payments: 'תשלומים', paymentCount: 'תשלום אחד', paymentCount_other: '{{count}} תשלומים', netDividends: 'דיבידנדים נטו', grossDividends: 'דיבידנדים ברוטו', recordedOnly: 'תשלומים שתועדו בלבד', recordedOnlyDetail: 'העמוד מציג פעולות דיבידנד שנשמרו. אין בו תחזית, לוח תשלומים או תשואת דיבידנד.', recordedPayments: 'תשלומים מתועדים', payingInstruments: 'ניירות ערך שחילקו דיבידנד', latestPayment: 'תשלום אחרון', topPaying: 'נייר הערך המוביל בתשלומים',
+  topHoldings: 'אחזקות מובילות', recentTransactions: 'תנועות אחרונות', allocationPreview: 'תצוגת הקצאה', completeValuation: 'שווי מלא', allocationUnavailable: 'לא ניתן לחשב הקצאה',
+  valueHistory: 'היסטוריית השווי הכולל', manualPriceBasis: 'מבוסס על מחירים שהוזנו ידנית', valueChartLabel: 'היסטוריית שווי כולל והפקדות נטו ב־{{currency}} לאורך {{count}} תאריכים מתועדים', latestRecordedPoint: 'נקודה מתועדת אחרונה', currentValuation: 'שווי נוכחי',
+  loadingHoldings: 'טעינת אחזקות', holdingsFailed: 'לא ניתן לטעון את האחזקות', holdingsFilters: 'מסנני אחזקות', searchHoldings: 'חיפוש לפי סימול או שם נייר ערך', priceAvailability: 'זמינות מחיר', priceAvailable: 'קיים מחיר ידני', currentHoldings: 'אחזקות נוכחיות', noHoldings: 'אין אחזקות נוכחיות', noHoldingsDetail: 'האחזקות הנוכחיות כוללות כמות חיובית בלבד. פעילות שנסגרה במלואה נשארת בתנועות.', openAccountLedger: 'פתיחת השקעות החשבון',
+  loadingTransactions: 'טעינת תנועות', transactionsFailed: 'לא ניתן לטעון את התנועות', transactionFilters: 'מסנני תנועות', searchTransactions: 'חיפוש בסימול, בנייר הערך או בהערות', fromDate: 'מתאריך', toDate: 'עד תאריך', recordedTransactions: 'תנועות מתועדות', account: 'חשבון', type: 'סוג', instrument: 'נייר ערך', value: 'ערך', fees: 'עמלות', notes: 'הערות', actions: 'פעולות',
+  loadingDividends: 'טעינת דיבידנדים', dividendsFailed: 'לא ניתן לטעון את הדיבידנדים', period: 'תקופת דיווח', noDividends: 'אין דיבידנדים מתועדים', noDividendsDetail: 'אין פעולות דיבידנד בטווח ובתקופה שנבחרו.', byMonth: 'לפי חודש', byInstrument: 'לפי נייר ערך', byAccount: 'לפי חשבון', dividendHistory: 'היסטוריית דיבידנדים', gross: 'ברוטו', net: 'נטו', symbol: 'סימול',
+  loadingPerformance: 'טעינת ביצועי התיק', performanceFailed: 'לא ניתן לטעון את ביצועי התיק', performanceBoundary: 'זהו דוח מוגבל ואינו TWR,‏ XIRR, השוואת מדד, חישוב מס או ביצועים בזמן אמת.', performanceHistory: 'היסטוריית ביצועים מתועדת', noPerformance: 'אין היסטוריית ביצועים', noPerformanceDetail: 'יש לתעד פעולות ומחירים ידניים בתאריכים שונים כדי לבנות את הסדרה ההיסטורית.',
+  loadingAllocation: 'טעינת הקצאת נכסים', allocationFailed: 'לא ניתן לטעון את הקצאת הנכסים', noAllocation: 'אין הקצאה נוכחית', allocationDimension: 'ממד הקצאה', allocationDimensions: { account: 'חשבון', assetType: 'סוג נכס', instrument: 'נייר ערך', cash: 'מזומן מול נכסים מושקעים' }, allocationMissingDetail: 'חישוב האחוזים דורש שווי מלא לכל נייר ערך מוחזק בקבוצת המטבע.', allocationChartLabel: 'תרשים הקצאה ב־{{currency}} עם רשימה טקסטואלית מקבילה', supportedAllocationOnly: 'ההקצאה משתמשת רק בנתוני חשבון, סוג נכס, נייר ערך, מטבע ומזומן.', cash: 'מזומן', invested: 'נכסים מושקעים',
+};
 Object.assign(he.errors, {
   ACCOUNT_GROUP_INVALID: 'יש לבחור קבוצת חשבון תקינה.', ACCOUNT_PARTICIPATION_INVALID: 'שילוב ההשתתפות אינו תקין עבור קבוצת החשבון.',
   INVESTMENT_PORTFOLIO_LINK_CONFLICT: 'החשבון או נתוני ההשקעות כבר מקושרים.', INVESTMENT_PORTFOLIO_CURRENCY_MISMATCH: 'החשבון ונתוני ההשקעות חייבים להשתמש באותו מטבע בסיס.',
   INVESTMENT_ACCOUNT_ARCHIVED: 'לא ניתן להוסיף פעילות השקעה לחשבון בארכיון.',
   ACCOUNT_GROUP_SCOPE_INVALID: 'חשבונות Prop Firm יכולים להשתתף בניתוח מסחר בלבד.', ACCOUNT_INVESTMENT_CURRENCY_MISMATCH: 'החשבון ונתוני ההשקעות חייבים להשתמש באותו מטבע בסיס.',
   ACCOUNT_INVESTMENT_ALREADY_LINKED: 'לחשבון הזה כבר מקושרים נתוני השקעות.', PORTFOLIO_ALREADY_LINKED: 'נתוני ההשקעות כבר מקושרים לחשבון אחר.', ACCOUNT_HAS_INVESTMENT_DATA: 'יש להעביר את החשבון לארכיון כדי לשמר את היסטוריית ההשקעות המקושרת.',
+  INVESTMENT_SCOPE_NOT_FOUND: 'חשבון ההשקעות המבוקש אינו זמין או שאין לו רישום השקעות מקושר.',
 });
 
 export default he;
