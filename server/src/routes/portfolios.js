@@ -12,7 +12,11 @@ const optionalText = z.preprocess((value) => typeof value === 'string' ? (value.
 const currency = z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/);
 const includeArchived = z.enum(['true', 'false']).optional().transform((value) => value === 'true');
 
-export const listPortfoliosSchema = z.object({ includeArchived });
+export const listPortfoliosSchema = z.object({
+  includeArchived,
+  investmentEnabledOnly: z.enum(['true', 'false']).optional().transform((value) => value === 'true'),
+  accountId: id.optional(),
+});
 export const createPortfolioSchema = z.object({
   name: z.string().trim().min(1).max(120), description: optionalText,
   baseCurrency: currency.default('USD'), isDefault: z.boolean().default(false),

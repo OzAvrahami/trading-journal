@@ -31,8 +31,9 @@ describe('AppShell', () => {
     expect(screen.getAllByRole('link', { name: 'Import' }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: 'Analytics' }).length).toBeGreaterThan(0);
     expect(screen.getByText('Insights')).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Portfolio' }).length).toBeGreaterThan(0);
-    expect(screen.getByText('Investments')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Investments' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/portfolio');
+    expect(screen.getAllByText('Investments').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /Journal & Reviews/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /Rules & Adherence/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /^Goals$/i }).length).toBeGreaterThan(0);
@@ -75,7 +76,7 @@ describe('AppShell', () => {
     expect(within(dialog).getByRole('option', { name: /^New Rule/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /^Record Rule Check/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /New journal entry/ })).toBeInTheDocument();
-    expect(within(dialog).getByRole('option', { name: /^Portfolio/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('option', { name: /^Investments/ })).toBeInTheDocument();
     expect(within(dialog).queryByText(/recent/i)).not.toBeInTheDocument();
 
     await user.keyboard('{Escape}');
@@ -102,7 +103,7 @@ describe('AppShell', () => {
     await userEvent.click(within(primary).getByRole('button', { name: 'More' }));
     const more = screen.getByRole('dialog', { name: 'More destinations' });
     expect(within(more).getByRole('link', { name: 'Import' })).toBeInTheDocument();
-    expect(within(more).getByRole('link', { name: 'Portfolio' })).toBeInTheDocument();
+    expect(within(more).getByRole('link', { name: 'Investments' })).toBeInTheDocument();
     await userEvent.click(within(more).getByRole('link', { name: 'Analytics' }));
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Analytics' })).toBeInTheDocument());
     expect(screen.getByText('Analytics', { selector: '[aria-current="page"]' })).toBeInTheDocument();

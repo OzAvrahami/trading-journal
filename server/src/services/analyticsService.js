@@ -24,7 +24,7 @@ function currencyResponse(metadata) {
  * accountId filter → direct column condition, no JOIN needed.
  * company filter   → JOIN trading_accounts ta needed.
  */
-export function buildQueryParts(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE) {
+export function buildQueryParts(userId, { from, to, accountId, company, includeExcludedAccounts = false }, timezone = DEFAULT_TIMEZONE) {
   const params = [userId];
   const conds  = ['t.user_id = $1'];
   let join     = '';
@@ -40,6 +40,10 @@ export function buildQueryParts(userId, { from, to, accountId, company }, timezo
     join = ' JOIN trading_accounts ta ON ta.id = t.account_id';
     params.push(company.toLowerCase().trim());
     conds.push(`ta.company = $${params.length}`);
+    if (!includeExcludedAccounts) conds.push('ta.include_in_trading_analytics = TRUE');
+  } else if (!includeExcludedAccounts) {
+    join = ' JOIN trading_accounts ta ON ta.id = t.account_id';
+    conds.push('ta.include_in_trading_analytics = TRUE');
   }
 
   return { params, where: conds.join(' AND '), join, timezonePlaceholder };
@@ -49,7 +53,7 @@ export function buildQueryParts(userId, { from, to, accountId, company }, timezo
  * Builds a simple COUNT+SUM query for a fixed date period (today/WTD/MTD).
  * Uses the same account/company filter as the main query but independent params.
  */
-function buildPeriodQuery(userId, { accountId, company }, from, to, timezone) {
+function buildPeriodQuery(userId, { accountId, company, includeExcludedAccounts = false }, from, to, timezone) {
   const params = [userId];
   const conds  = ["t.user_id = $1", "t.status = 'closed'"];
   let join     = '';
@@ -61,6 +65,10 @@ function buildPeriodQuery(userId, { accountId, company }, from, to, timezone) {
     join = ' JOIN trading_accounts ta ON ta.id = t.account_id';
     params.push(company.toLowerCase().trim());
     conds.push(`ta.company = $${params.length}`);
+    if (!includeExcludedAccounts) conds.push('ta.include_in_trading_analytics = TRUE');
+  } else if (!includeExcludedAccounts) {
+    join = ' JOIN trading_accounts ta ON ta.id = t.account_id';
+    conds.push('ta.include_in_trading_analytics = TRUE');
   }
 
   addTimestampDateRange({ conditions: conds, params, column: 't.entry_datetime', from, to, timezone });
@@ -106,7 +114,7 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
     queryable.query(wtdQ.sql,   wtdQ.params),
     queryable.query(mtdQ.sql,   mtdQ.params),
   ]);
-  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
   const r = mainRes.rows[0];
   const closed  = parseInt(r.closed)  || 0;
@@ -158,7 +166,7 @@ export function calculateExpectancy(totalNetPnl, closedTrades) {
 }
 
 export async function getDaySummary(userId, date, timezone = DEFAULT_TIMEZONE, queryable = pool) {
-  const { params, where } = buildQueryParts(userId, { from: date, to: date }, timezone);
+  const { params, where } = buildQueryParts(userId, { from: date, to: date, includeExcludedAccounts: true }, timezone);
   const result = await queryable.query(`
     WITH day_trades AS (
       SELECT t.id, t.symbol, t.direction, t.account_id, t.entry_datetime,
@@ -222,7 +230,7 @@ export async function getEquityCurve(userId, { from, to, accountId, company }, t
     GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
-  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
   let cumulative = 0;
   return {
@@ -253,7 +261,7 @@ export async function getCalendar(userId, { from, to, accountId, company }, time
     GROUP BY ${dateExpression}
     ORDER BY date ASC
   `, params);
-  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
   return {
     ...currencyResponse(currencyMeta),
@@ -275,7 +283,7 @@ export async function getDistribution(userId, { from, to, accountId, company }, 
     WHERE ${where} AND t.status = 'closed' AND t.pnl_net IS NOT NULL
     ORDER BY t.pnl_net
   `, params);
-  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
   const values = result.rows.map(r => parseFloat(r.pnl_net));
   return { ...currencyResponse(currencyMeta), buckets: currencyMeta.monetaryTotalsAvailable ? bucketPnlValues(values) : [] };
@@ -419,7 +427,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
     GROUP BY ${col}
     ORDER BY ${dim.ordered ? `${col} ASC` : 'pnl_net DESC'}
   `, params);
-  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company }, queryable);
+  const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
   return {
     by,

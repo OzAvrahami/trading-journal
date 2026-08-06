@@ -274,4 +274,39 @@ Object.assign(he.errors, {
   IMPORT_FILE_TOO_LARGE: 'קובץ CSV חייב להיות בגודל של עד 5 MB.',
 });
 
+Object.assign(he.navigation, { investments: 'השקעות', investmentsOverview: 'סקירת התיק' });
+Object.assign(he.routes, {
+  portfolio: { title: 'השקעות', description: 'סקירת חשבונות שנכללים בהשקעות והשווי שלהם המבוסס על מחירים ידניים.' },
+  portfolioDetail: { title: 'פרטי חשבון השקעות', description: 'סקירת אחזקות, מזומן, פעולות ושווי ידני בחשבון ההשקעות.' },
+});
+Object.assign(he.accounts, {
+  accountGroup: 'קבוצת חשבון', companyBroker: 'חברה או ברוקר', accountName: 'שם החשבון', participation: 'השתתפות', participationHelp: 'בחרו בכל התחומים שבהם החשבון ישתתף.',
+  portfolioValue: 'שווי תיק', personalNetWorth: 'שווי אישי', tradingAnalytics: 'ניתוח מסחר', activeAccounts: 'חשבונות פעילים', closedOpen: 'עסקאות סגורות / פתוחות',
+  groups: { personal_investment: 'השקעות אישיות', active_trading: 'מסחר פעיל', prop_firm: 'Prop Firm' },
+  groupNotes: { personal_investment: 'חשבונות ברוקר ופרישה', active_trading: 'חשבונות למסחר פעיל', prop_firm: 'חשבונות ממומנים וחשבונות הערכה' },
+  groupHelp: { personal_investment: 'מתאים לחשבונות השקעה ופרישה לטווח ארוך.', active_trading: 'מתאים לחשבונות אישיים המשמשים למסחר פעיל.', prop_firm: 'חשבונות Prop Firm משתתפים בניתוח מסחר בלבד.' },
+  propFirmScopeHelp: 'חשבונות Prop Firm יכולים להשתתף בניתוח מסחר בלבד.', includedInInvestments: 'נכלל בהשקעות', excludedFromInvestments: 'לא נכלל בהשקעות', investmentSetupIncomplete: 'הגדרת ההשקעות אינה מלאה', investmentSetupIncompleteDetail: 'יש ליצור או לקשר את נתוני ההשקעות לפני תיעוד פעילות השקעה.',
+  openInvestments: 'מעבר להשקעות', investmentDisplayName: 'שם תצוגה להשקעות', investmentDisplayNameHelp: 'אופציונלי. אם השדה ריק ייעשה שימוש בשם החשבון.',
+  unlinkedInvestmentData: 'נתוני השקעות שטרם קושרו לחשבון', unlinkedInvestmentDataDetail: 'נתוני ההשקעות הקיימים נשארים זמינים במלואם עד לקישור יזום לחשבון בבעלותך.',
+  existingInvestmentPreserved: 'נתוני ההשקעות הקיימים יישמרו.', linkToAccount: 'קישור לחשבון', createAndLink: 'יצירת חשבון וקישור', noCompatibleAccount: 'אין חשבון לא מקושר עם אותו מטבע בסיס.',
+  linkExistingDetail: 'יש לבחור את החשבון שאליו שייכים „{{name}}”. הבעלות והמטבע נבדקים לפני הקישור.', noAutomaticMatching: 'לא מתבצע שיוך אוטומטי.', linkCurrencyLocked: 'המטבע נקבע לפי נתוני ההשקעות הקיימים.',
+  disableInvestmentConfirm: 'להוציא את החשבון מהשקעות? נתוני ההשקעות הקיימים יישמרו ויישארו זמינים.', confirmParticipation: 'שינוי השתתפות בהשקעות',
+  participationUpdated: 'השתתפות החשבון עודכנה.', participationFailed: 'לא ניתן לעדכן את השתתפות החשבון.', investmentLinked: 'נתוני ההשקעות קושרו לחשבון.', linkFailed: 'לא ניתן לקשר את נתוני ההשקעות.', accountSaved: 'החשבון נשמר.',
+  investmentDataLoadFailed: 'לא ניתן לטעון את נתוני ההשקעות', investmentDataLoadFailedDetail: 'ניהול החשבונות עדיין זמין. אפשר לנסות שוב כדי לטעון את מצב הקישור ואת נתוני ההשקעות ההיסטוריים.',
+});
+Object.assign(he.accounts.validation, { propScope: 'חשבונות Prop Firm יכולים להשתתף בניתוח מסחר בלבד.' });
+Object.assign(he.portfolio, {
+  summary: 'סיכום השקעות', back: 'חזרה להשקעות', loading: 'טעינת השקעות', loadFailed: 'לא ניתן לטעון את ההשקעות', valuationUnavailable: 'שווי ההשקעות אינו מלא',
+  investmentAccounts: 'חשבונות השקעות', investmentAccount: 'חשבון השקעות', viewAccount: 'צפייה בחשבון', accountOrientedHelp: 'הנתונים מגיעים מרישום ההשקעות המקושר לכל חשבון שנכלל. מחירים ידניים אינם נתוני שוק חיים.',
+  accountScope: 'טווח חשבונות השקעה', allInvestmentAccounts: 'כל החשבונות שנכללים בהשקעות', archivedInvestmentAccounts: 'חשבונות השקעה בארכיון', noInvestmentAccounts: 'אין חשבונות שנכללים בהשקעות', noInvestmentAccountsDetail: 'יש להפעיל שווי תיק בחשבון כדי להתחיל להשתמש בהשקעות.',
+});
+Object.assign(he.portfolio.errors, { INVESTMENT_ACCOUNT_ARCHIVED: 'לא ניתן להוסיף פעילות השקעה לחשבון בארכיון.' });
+Object.assign(he.errors, {
+  ACCOUNT_GROUP_INVALID: 'יש לבחור קבוצת חשבון תקינה.', ACCOUNT_PARTICIPATION_INVALID: 'שילוב ההשתתפות אינו תקין עבור קבוצת החשבון.',
+  INVESTMENT_PORTFOLIO_LINK_CONFLICT: 'החשבון או נתוני ההשקעות כבר מקושרים.', INVESTMENT_PORTFOLIO_CURRENCY_MISMATCH: 'החשבון ונתוני ההשקעות חייבים להשתמש באותו מטבע בסיס.',
+  INVESTMENT_ACCOUNT_ARCHIVED: 'לא ניתן להוסיף פעילות השקעה לחשבון בארכיון.',
+  ACCOUNT_GROUP_SCOPE_INVALID: 'חשבונות Prop Firm יכולים להשתתף בניתוח מסחר בלבד.', ACCOUNT_INVESTMENT_CURRENCY_MISMATCH: 'החשבון ונתוני ההשקעות חייבים להשתמש באותו מטבע בסיס.',
+  ACCOUNT_INVESTMENT_ALREADY_LINKED: 'לחשבון הזה כבר מקושרים נתוני השקעות.', PORTFOLIO_ALREADY_LINKED: 'נתוני ההשקעות כבר מקושרים לחשבון אחר.', ACCOUNT_HAS_INVESTMENT_DATA: 'יש להעביר את החשבון לארכיון כדי לשמר את היסטוריית ההשקעות המקושרת.',
+});
+
 export default he;

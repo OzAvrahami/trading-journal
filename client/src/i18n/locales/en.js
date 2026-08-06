@@ -252,4 +252,39 @@ en.portfolio = {
   validation: { nameRequired: 'Portfolio name is required.', currency: 'Enter a three-letter ISO currency code.', symbol: 'Enter a valid uppercase market symbol.', instrumentRequired: 'Choose an Instrument.', positive: 'Enter a value greater than zero.' },
 };
 
+Object.assign(en.navigation, { investments: 'Investments', investmentsOverview: 'Overview' });
+Object.assign(en.routes, {
+  portfolio: { title: 'Investments', description: 'Review investment-enabled Accounts and their manually tracked value.' },
+  portfolioDetail: { title: 'Investment account details', description: 'Review holdings, cash, Transactions, and manual valuations for this investment Account.' },
+});
+Object.assign(en.accounts, {
+  accountGroup: 'Account group', companyBroker: 'Company or broker', accountName: 'Account name', participation: 'Participation', participationHelp: 'Choose every area where this Account should participate.',
+  portfolioValue: 'Portfolio value', personalNetWorth: 'Personal net worth', tradingAnalytics: 'Trading analytics', activeAccounts: 'Active Accounts', closedOpen: 'Closed / open Trades',
+  groups: { personal_investment: 'Personal Investments', active_trading: 'Active Trading', prop_firm: 'Prop Firm' },
+  groupNotes: { personal_investment: 'Brokerage and retirement Accounts', active_trading: 'Accounts used for active trading', prop_firm: 'Funded and evaluation Accounts' },
+  groupHelp: { personal_investment: 'Suggested for long-term brokerage and retirement Accounts.', active_trading: 'Suggested for personal Accounts used for active trading.', prop_firm: 'Prop Firm Accounts participate only in Trading Analytics.' },
+  propFirmScopeHelp: 'Prop Firm Accounts can participate only in Trading Analytics.', includedInInvestments: 'Included in Investments', excludedFromInvestments: 'Excluded from Investments', investmentSetupIncomplete: 'Investment setup incomplete', investmentSetupIncompleteDetail: 'Enable or link the investment ledger before recording investment activity.',
+  openInvestments: 'Open Investments', investmentDisplayName: 'Investment display name', investmentDisplayNameHelp: 'Optional. The Account name is used when this is left blank.',
+  unlinkedInvestmentData: 'Investment data not linked to an Account', unlinkedInvestmentDataDetail: 'Existing investment data remains fully available until you deliberately connect it to an owned Account.',
+  existingInvestmentPreserved: 'Existing investment data will be preserved.', linkToAccount: 'Link to Account', createAndLink: 'Create and link Account', noCompatibleAccount: 'No unlinked Account with the same base currency is available.',
+  linkExistingDetail: 'Choose the Account that owns “{{name}}”. Currency and ownership are verified before linking.', noAutomaticMatching: 'No automatic matching is performed.', linkCurrencyLocked: 'This currency is fixed by the existing investment data.',
+  disableInvestmentConfirm: 'Exclude this Account from Investments? Existing investment data will be preserved and remain readable.', confirmParticipation: 'Change investment participation',
+  participationUpdated: 'Account participation updated.', participationFailed: 'Account participation could not be updated.', investmentLinked: 'Investment data linked to the Account.', linkFailed: 'Investment data could not be linked.', accountSaved: 'Account saved.',
+  investmentDataLoadFailed: 'Investment data could not be loaded', investmentDataLoadFailedDetail: 'Account management remains available. Retry to load linking status and historical investment data.',
+});
+Object.assign(en.accounts.validation, { propScope: 'Prop Firm Accounts can participate only in Trading Analytics.' });
+Object.assign(en.portfolio, {
+  summary: 'Investment summary', back: 'Back to Investments', loading: 'Loading Investments', loadFailed: 'Investments could not be loaded', valuationUnavailable: 'Investment valuation is incomplete',
+  investmentAccounts: 'Investment Accounts', investmentAccount: 'Investment Account', viewAccount: 'View Account', accountOrientedHelp: 'Values come from the investment ledger linked to each enabled Account. Manual prices are not live market data.',
+  accountScope: 'Investment Account scope', allInvestmentAccounts: 'All investment-enabled Accounts', archivedInvestmentAccounts: 'Archived Investment Accounts', noInvestmentAccounts: 'No investment-enabled Accounts', noInvestmentAccountsDetail: 'Enable Portfolio value on an Account to begin using Investments.',
+});
+Object.assign(en.portfolio.errors, { INVESTMENT_ACCOUNT_ARCHIVED: 'Archived Accounts cannot receive new investment activity.' });
+Object.assign(en.errors, {
+  ACCOUNT_GROUP_INVALID: 'Choose a valid Account group.', ACCOUNT_PARTICIPATION_INVALID: 'This participation combination is not valid for the Account group.',
+  INVESTMENT_PORTFOLIO_LINK_CONFLICT: 'This Account or investment ledger is already linked.', INVESTMENT_PORTFOLIO_CURRENCY_MISMATCH: 'The Account and investment data must use the same base currency.',
+  INVESTMENT_ACCOUNT_ARCHIVED: 'Archived Accounts cannot receive new investment activity.',
+  ACCOUNT_GROUP_SCOPE_INVALID: 'Prop Firm Accounts can participate only in Trading Analytics.', ACCOUNT_INVESTMENT_CURRENCY_MISMATCH: 'The Account and investment data must use the same base currency.',
+  ACCOUNT_INVESTMENT_ALREADY_LINKED: 'This Account already has linked investment data.', PORTFOLIO_ALREADY_LINKED: 'This investment data is already linked to another Account.', ACCOUNT_HAS_INVESTMENT_DATA: 'Archive this Account because linked investment history must be preserved.',
+});
+
 export default en;

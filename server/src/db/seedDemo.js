@@ -206,11 +206,14 @@ async function insertAccounts(client, accounts) {
     await client.query(
       `INSERT INTO trading_accounts
          (id, user_id, company, account_number, account_name, account_type, status,
-          base_currency, opening_balance, is_default, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          base_currency, opening_balance, is_default, account_group,
+          include_in_investment_value, include_in_net_worth, include_in_trading_analytics,
+          created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
       [account.id, account.userId, account.company, account.accountNumber, account.accountName,
         account.accountType, account.status, account.baseCurrency, account.openingBalance, account.isDefault,
-        account.createdAt, account.updatedAt],
+        account.accountGroup, account.includeInInvestmentValue, account.includeInNetWorth,
+        account.includeInTradingAnalytics, account.createdAt, account.updatedAt],
     );
   }
 }
@@ -219,9 +222,9 @@ async function insertInvestments(client, portfolios, instruments, transactions, 
   for (const row of portfolios) {
     await client.query(
       `INSERT INTO investment_portfolios
-       (id,user_id,name,description,base_currency,status,is_default,created_at,updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [row.id,row.userId,row.name,row.description,row.baseCurrency,row.status,row.isDefault,row.createdAt,row.updatedAt],
+       (id,user_id,name,description,base_currency,status,is_default,trading_account_id,created_at,updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [row.id,row.userId,row.name,row.description,row.baseCurrency,row.status,row.isDefault,row.tradingAccountId,row.createdAt,row.updatedAt],
     );
   }
   for (const row of instruments) {
@@ -395,6 +398,10 @@ const INTEGRITY_SQL = `SELECT
   (SELECT COUNT(*)::int FROM investment_prices WHERE user_id = $1) AS investment_prices,
   (SELECT COUNT(*)::int FROM investment_portfolios WHERE user_id = $1 AND is_default) AS default_investment_portfolios,
   (SELECT COUNT(*)::int FROM investment_portfolios WHERE user_id = $1 AND is_default AND status <> 'active') AS invalid_investment_defaults,
+  (SELECT COUNT(*)::int FROM investment_portfolios p
+    LEFT JOIN trading_accounts a ON a.id=p.trading_account_id AND a.user_id=p.user_id
+    WHERE p.user_id=$1 AND (a.id IS NULL OR a.base_currency<>p.base_currency OR a.include_in_investment_value=FALSE)) AS invalid_investment_account_links,
+  (SELECT COUNT(*)::int FROM investment_portfolios WHERE user_id=$1 AND trading_account_id IS NOT NULL) AS linked_investment_portfolios,
   (SELECT COUNT(*)::int FROM investment_transactions tx
     LEFT JOIN investment_portfolios p ON p.id=tx.portfolio_id AND p.user_id=tx.user_id
     LEFT JOIN investment_instruments i ON i.id=tx.instrument_id AND i.user_id=tx.user_id
@@ -407,6 +414,9 @@ const INTEGRITY_SQL = `SELECT
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND is_default) AS default_accounts,
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND is_default AND status <> 'active') AS invalid_defaults,
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND base_currency !~ '^[A-Z]{3}$') AS invalid_currencies,
+  (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id=$1 AND account_group='prop_firm'
+    AND (include_in_investment_value OR include_in_net_worth)) AS invalid_prop_participation,
+  (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id=$1 AND include_in_trading_analytics) AS trading_analytics_accounts,
   (SELECT COUNT(*)::int FROM trading_accounts a WHERE a.user_id = $1 AND a.status = 'archived' AND EXISTS (
     SELECT 1 FROM trades t WHERE t.user_id = $1 AND t.account_id = a.id
   )) AS archived_accounts_with_trades,
@@ -509,11 +519,13 @@ export async function validatePersistedDemo(client, dataset) {
   for (const key of ['accounts', 'managedStrategies', 'managedSetups', 'trades', 'importRuns', 'importRunRows', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals', 'investmentPortfolios', 'investmentInstruments', 'investmentTransactions', 'investmentPrices']) {
     expectCount(row, key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), expected[key]);
   }
-  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_import_counts', 'invalid_import_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links', 'invalid_investment_defaults', 'invalid_investment_links', 'invalid_investment_prices']) {
+  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_import_counts', 'invalid_import_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links', 'invalid_investment_defaults', 'invalid_investment_links', 'invalid_investment_prices', 'invalid_investment_account_links', 'invalid_prop_participation']) {
     expectCount(row, key, 0);
   }
   expectCount(row, 'default_accounts', 1);
   expectCount(row, 'default_investment_portfolios', 1);
+  expectCount(row, 'linked_investment_portfolios', dataset.investmentPortfolios.length);
+  expectCount(row, 'trading_analytics_accounts', dataset.accounts.length);
   expectCount(row, 'invalid_defaults', 0);
   expectCount(row, 'invalid_currencies', 0);
   if (Number(row.archived_accounts_with_trades) < 1) throw new Error('Post-seed archived Account history is missing.');

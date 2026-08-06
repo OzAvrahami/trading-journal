@@ -123,10 +123,10 @@ describe('route metadata', () => {
   });
   it('resolves Portfolio overview and detail inside the Investments scope', () => {
     expect(resolveRouteMetadata('/portfolio')).toMatchObject({
-      title: 'Portfolio', routeKey: 'portfolio', nav: '/portfolio', breadcrumbs: ['Investments', 'Portfolio'],
+      title: 'Investments', routeKey: 'portfolio', nav: '/portfolio', breadcrumbs: ['Investments', 'Overview'],
     });
     expect(resolveRouteMetadata('/portfolio/11111111-1111-4111-8111-111111111111')).toMatchObject({
-      title: 'Portfolio details', routeKey: 'portfolioDetail', nav: '/portfolio', breadcrumbs: ['Investments', 'Portfolio', 'Portfolio details'],
+      title: 'Investment account details', routeKey: 'portfolioDetail', nav: '/portfolio', breadcrumbs: ['Investments', 'Overview', 'Investment account details'],
     });
   });
 });

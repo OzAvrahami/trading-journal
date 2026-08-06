@@ -174,12 +174,12 @@ describe('owned Portfolio read paths', () => {
     assert.deepEqual(await listInstruments(userId,{includeInactive:true,search:'VOO'},queryable),{instruments:[]});
     assert.equal(calls[0].params[0],userId);
     assert.equal(calls[1].params[0],userId);
-    assert.match(calls[0].sql,/WHERE user_id = \$1/);
+    assert.match(calls[0].sql,/WHERE p\.user_id = \$1/);
     assert.match(calls[1].sql,/symbol ILIKE \$2/);
   });
 
   test('foreign Portfolio detail is indistinguishable from missing', async () => {
-    const queryable={query:async(sql,params)=>{assert.match(sql,/id = \$1 AND user_id = \$2/);assert.equal(params[1],userId);return{rows:[]};}};
+    const queryable={query:async(sql,params)=>{assert.match(sql,/p\.id = \$1 AND p\.user_id = \$2/);assert.equal(params[1],userId);return{rows:[]};}};
     await assert.rejects(getPortfolio(userId,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',queryable),(error)=>error.code==='PORTFOLIO_NOT_FOUND'&&error.statusCode===404);
   });
 

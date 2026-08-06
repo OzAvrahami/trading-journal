@@ -48,6 +48,7 @@ describe('account deletion ownership ordering', () => {
     pool.query = async (sql, params) => {
       calls.push({ sql, params });
       if (/FROM trading_accounts/.test(sql)) return { rows: [ownedAccountRow()] };
+      if (/FROM investment_portfolios/.test(sql)) return { rows: [] };
       if (/COUNT/.test(sql)) return { rows: [{ cnt: 2 }] };
       throw new Error('Unexpected query');
     };
@@ -56,7 +57,7 @@ describe('account deletion ownership ordering', () => {
       () => deleteAccount(userId, accountId),
       error => error.code === 'ACCOUNT_HAS_TRADES' && error.statusCode === 409
     );
-    assert.equal(calls.length, 2);
+    assert.equal(calls.length, 3);
     assert.doesNotMatch(calls.map(call => call.sql).join('\n'), /DELETE FROM/);
   });
 
@@ -65,13 +66,14 @@ describe('account deletion ownership ordering', () => {
     pool.query = async (sql, params) => {
       calls.push({ sql, params });
       if (/SELECT \* FROM trading_accounts/.test(sql)) return { rows: [ownedAccountRow()] };
+      if (/FROM investment_portfolios/.test(sql)) return { rows: [] };
       if (/COUNT/.test(sql)) return { rows: [{ cnt: 0 }] };
       if (/DELETE FROM trading_accounts/.test(sql)) return { rows: [{ id: accountId }] };
       throw new Error('Unexpected query');
     };
 
     assert.deepEqual(await deleteAccount(userId, accountId), { deleted: true, id: accountId });
-    assert.equal(calls.length, 3);
-    assert.match(calls[2].sql, /WHERE id = \$1 AND user_id = \$2/);
+    assert.equal(calls.length, 4);
+    assert.match(calls[3].sql, /WHERE id = \$1 AND user_id = \$2/);
   });
 });
