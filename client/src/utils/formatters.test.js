@@ -8,6 +8,8 @@ import {
   formatSignedCurrency,
   isolateLtr,
   rawCurrency,
+  rawDate,
+  rawDatetime,
 } from './formatters.js';
 
 const stripIsolation = (value) => value.replace(/[\u2066\u2068\u2069]/g, '');
@@ -45,5 +47,13 @@ describe('display formatters', () => {
     expect(formatR(1.7)).toBe('\u2066+1.70R\u2069');
     expect(formatDuration(75)).toBe('\u20661h 15m\u2069');
     expect(isolateLtr('A / B')).toBe('\u2066A / B\u2069');
+  });
+
+  it('formats instants in the authenticated user timezone while leaving DATE values exact', () => {
+    const instant = '2026-01-01T00:30:00.000Z';
+    expect(rawDatetime(instant, { locale: 'en', timezone: 'America/New_York' })).toMatch(/Dec 31, 2025/);
+    expect(rawDatetime(instant, { locale: 'en', timezone: 'Asia\/Jerusalem' })).toMatch(/Jan 1, 2026/);
+    expect(rawDate(instant, { locale: 'en', timezone: 'America/New_York' })).toBe('Dec 31, 2025');
+    expect(rawDate('2026-01-01', { locale: 'en', timezone: 'America/New_York' })).toBe('Jan 1, 2026');
   });
 });

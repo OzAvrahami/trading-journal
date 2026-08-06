@@ -50,32 +50,34 @@ export function formatSignedCurrency(value, opts = {}) {
   });
 }
 
-export function rawDate(value, locale = activeLocale()) {
+export function rawDate(value, { locale = activeLocale(), timezone } = {}) {
   if (!value) return EMPTY_VALUE;
   const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? normalizeDateKey(value) : null;
   if (dateKey) return formatDateKey(dateKey, { month: 'short', day: 'numeric', year: 'numeric' }, locale);
   return new Date(value).toLocaleDateString(formattingLocale(locale), {
     month: 'short', day: 'numeric', year: 'numeric',
+    ...(timezone ? { timeZone: timezone } : {}),
   });
 }
 
 /** Format a date while allowing the full mixed-direction expression to remain intact. */
-export function formatDate(value) {
-  const formatted = rawDate(value);
+export function formatDate(value, options = {}) {
+  const formatted = rawDate(value, options);
   return formatted === EMPTY_VALUE ? formatted : isolateAuto(formatted);
 }
 
-export function rawDatetime(value, locale = activeLocale()) {
+export function rawDatetime(value, { locale = activeLocale(), timezone } = {}) {
   if (!value) return EMPTY_VALUE;
   return new Date(value).toLocaleString(formattingLocale(locale), {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
+    ...(timezone ? { timeZone: timezone } : {}),
   });
 }
 
 /** Format a date and time as one directionally isolated expression. */
-export function formatDatetime(value) {
-  const formatted = rawDatetime(value);
+export function formatDatetime(value, options = {}) {
+  const formatted = rawDatetime(value, options);
   return formatted === EMPTY_VALUE ? formatted : isolateAuto(formatted);
 }
 

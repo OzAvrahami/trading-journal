@@ -97,6 +97,18 @@ export const updateSchema = z.object({
 });
 
 const filterDate = z.string().refine(isValidDateKey, 'Expected a valid YYYY-MM-DD date.');
+const tradeIdSchema = z.string().uuid();
+
+export function validateTradeId(req, res, next) {
+  const parsed = tradeIdSchema.safeParse(req.params.id);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: { code: 'VALIDATION_ERROR', message: 'Route parameter validation failed.', details: { id: ['Expected a UUID.'] } },
+    });
+  }
+  req.params.id = parsed.data;
+  next();
+}
 
 export const filtersSchema = z.object({
   from:      filterDate.optional(),
@@ -173,7 +185,7 @@ router.post('/', validateBody(createSchema), async (req, res, next) => {
 });
 
 // GET /api/trades/:id
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', validateTradeId, async (req, res, next) => {
   try {
     const trade = await tradeService.getTrade(req.user.id, req.params.id);
     res.json(trade);
@@ -181,7 +193,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // PATCH /api/trades/:id
-router.patch('/:id', validateBody(updateSchema), async (req, res, next) => {
+router.patch('/:id', validateTradeId, validateBody(updateSchema), async (req, res, next) => {
   try {
     const trade = await tradeService.updateTrade(req.user.id, req.params.id, req.body);
     res.json(trade);
@@ -189,7 +201,7 @@ router.patch('/:id', validateBody(updateSchema), async (req, res, next) => {
 });
 
 // DELETE /api/trades/:id
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', validateTradeId, async (req, res, next) => {
   try {
     const result = await tradeService.deleteTrade(req.user.id, req.params.id);
     res.json(result);

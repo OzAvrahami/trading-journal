@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/auth.js';
 import { setAccessToken, clearAccessToken } from '../api/client.js';
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   // Prevent double-fire in React StrictMode
@@ -47,8 +49,9 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try { await authApi.logout(); } catch {}
     clearAccessToken();
+    queryClient.clear();
     setUser(null);
-  }, []);
+  }, [queryClient]);
 
   const updateProfile = useCallback(async (data) => {
     const updated = await authApi.updateMe(data);

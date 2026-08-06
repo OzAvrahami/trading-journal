@@ -17,14 +17,21 @@ export function createError(code, message, statusCode = 500, details = null) {
  * Express global error handler — must be last middleware.
  */
 export function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
-  const statusCode = err.statusCode || 500;
-  const code = err.code || 'INTERNAL_ERROR';
-  const message = statusCode === 500
+  const fileTooLarge = err?.code === 'LIMIT_FILE_SIZE';
+  const statusCode = fileTooLarge ? 413 : (err.statusCode || 500);
+  const code = fileTooLarge ? 'IMPORT_FILE_TOO_LARGE' : (err.code || 'INTERNAL_ERROR');
+  const message = fileTooLarge
+    ? 'CSV files must be 5 MB or smaller.'
+    : statusCode === 500
     ? 'An unexpected error occurred.'
     : err.message;
 
   if (statusCode === 500) {
-    console.error(`[ERROR] ${err.message}`, err.stack);
+    console.error('Unhandled API error.', {
+      code,
+      method: req?.method ?? 'UNKNOWN',
+      path: req?.originalUrl ?? req?.path ?? 'UNKNOWN',
+    });
   }
 
   res.status(statusCode).json({

@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import { PreferencesProvider } from './context/PreferencesContext.jsx';
@@ -6,31 +8,45 @@ import { AppShell } from './components/layout/AppShell.jsx';
 import { Spinner } from './components/ui/Spinner.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import Trades from './pages/Trades.jsx';
-import TradeDetail from './pages/TradeDetail.jsx';
-import TradeEditor from './pages/TradeEditor.jsx';
-import Import from './pages/Import.jsx';
-import ImportRunDetail from './pages/ImportRunDetail.jsx';
-import Accounts from './pages/Accounts.jsx';
-import AccountDetail from './pages/AccountDetail.jsx';
-import Analytics from './pages/Analytics.jsx';
-import Journal from './pages/Journal.jsx';
-import Rules from './pages/Rules.jsx';
-import Goals from './pages/Goals.jsx';
-import DailyReview, { DailyReviewTodayRedirect } from './pages/DailyReview.jsx';
-import Strategies from './pages/Strategies.jsx';
-import Settings from './pages/Settings.jsx';
-import Portfolio from './pages/Portfolio.jsx';
-import PortfolioDetail from './pages/PortfolioDetail.jsx';
+
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const Trades = lazy(() => import('./pages/Trades.jsx'));
+const TradeDetail = lazy(() => import('./pages/TradeDetail.jsx'));
+const TradeEditor = lazy(() => import('./pages/TradeEditor.jsx'));
+const Import = lazy(() => import('./pages/Import.jsx'));
+const ImportRunDetail = lazy(() => import('./pages/ImportRunDetail.jsx'));
+const Accounts = lazy(() => import('./pages/Accounts.jsx'));
+const AccountDetail = lazy(() => import('./pages/AccountDetail.jsx'));
+const Analytics = lazy(() => import('./pages/Analytics.jsx'));
+const Journal = lazy(() => import('./pages/Journal.jsx'));
+const Rules = lazy(() => import('./pages/Rules.jsx'));
+const Goals = lazy(() => import('./pages/Goals.jsx'));
+const DailyReview = lazy(() => import('./pages/DailyReview.jsx'));
+const DailyReviewTodayRedirect = lazy(() => import('./pages/DailyReview.jsx').then((module) => ({
+  default: module.DailyReviewTodayRedirect,
+})));
+const Strategies = lazy(() => import('./pages/Strategies.jsx'));
+const Settings = lazy(() => import('./pages/Settings.jsx'));
+const Portfolio = lazy(() => import('./pages/Portfolio.jsx'));
+const PortfolioDetail = lazy(() => import('./pages/PortfolioDetail.jsx'));
+
+function FullPageLoading() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-canvas" role="status">
+      <Spinner className="h-8 w-8" label={t('common.loading')} />
+    </div>
+  );
+}
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas">
-        <Spinner className="w-8 h-8" />
+        <Spinner className="h-8 w-8" label={t('common.loading')} />
       </div>
     );
   }
@@ -42,14 +58,15 @@ export function ProtectedRoute({ children }) {
 
 export function PublicRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <FullPageLoading />;
   if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
 export function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<FullPageLoading />}>
+      <Routes>
       <Route path="/login"  element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
@@ -75,7 +92,8 @@ export function AppRoutes() {
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 

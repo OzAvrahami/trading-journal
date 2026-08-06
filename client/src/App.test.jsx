@@ -52,6 +52,14 @@ describe('route guards', () => {
     expect(screen.getByTestId('app-shell')).toHaveTextContent('Private');
   });
 
+  it('does not render protected content before session restoration resolves', () => {
+    authState.current = { user: null, loading: true };
+    render(<MemoryRouter><ProtectedRoute><span>Private account data</span></ProtectedRoute></MemoryRouter>);
+    expect(screen.getByRole('status', { name: /Loading/ })).toBeInTheDocument();
+    expect(screen.queryByText('Private account data')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('app-shell')).not.toBeInTheDocument();
+  });
+
   it('redirects an authenticated public route to dashboard', () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(
@@ -70,16 +78,16 @@ describe('route guards', () => {
     expect(screen.getByText('Login form')).toBeInTheDocument();
   });
 
-  it('renders Analytics as an authenticated protected route', () => {
+  it('renders Analytics as an authenticated protected route', async () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/insights/analytics']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Analytics page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Analytics page');
   });
 
-  it('renders Journal as an authenticated protected route', () => {
+  it('renders Journal as an authenticated protected route', async () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/insights/journal']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Journal page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Journal page');
   });
 
   it('protects the Journal route from unauthenticated access', () => {
@@ -88,10 +96,10 @@ describe('route guards', () => {
     expect(screen.queryByText('Journal page')).not.toBeInTheDocument();
   });
 
-  it('renders Rules as an authenticated protected route', () => {
+  it('renders Rules as an authenticated protected route', async () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/insights/rules']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Rules page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Rules page');
   });
 
   it('protects the Rules route from unauthenticated access', () => {
@@ -100,10 +108,10 @@ describe('route guards', () => {
     expect(screen.queryByText('Rules page')).not.toBeInTheDocument();
   });
 
-  it('renders Goals as an authenticated protected route', () => {
+  it('renders Goals as an authenticated protected route', async () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/insights/goals']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Goals page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Goals page');
   });
 
   it('protects the Goals route from unauthenticated access', () => {
@@ -112,10 +120,10 @@ describe('route guards', () => {
     expect(screen.queryByText('Goals page')).not.toBeInTheDocument();
   });
 
-  it('renders the selected-date Daily Review as a protected route', () => {
+  it('renders the selected-date Daily Review as a protected route', async () => {
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/daily-review/2026-08-04']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Daily Review page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Daily Review page');
   });
 
   it('protects both Daily Review route forms', () => {
@@ -124,46 +132,46 @@ describe('route guards', () => {
     expect(screen.queryByText('Daily Review today redirect')).not.toBeInTheDocument();
   });
 
-  it('protects both Trade Editor routes and does not treat new as a trade ID', () => {
+  it('protects both Trade Editor routes and does not treat new as a trade ID', async () => {
     const protectedView = render(<MemoryRouter initialEntries={['/trades/new']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Login page')).toBeInTheDocument();
     protectedView.unmount();
     authState.current = { user: { id: 'user-1' }, loading: false };
     const view = render(<MemoryRouter initialEntries={['/trades/new']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Trade Editor page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Trade Editor page');
     view.unmount();
     render(<MemoryRouter initialEntries={['/trades/550e8400-e29b-41d4-a716-446655440000/edit']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Trade Editor page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Trade Editor page');
   });
 
-  it('protects the managed Strategies and Setups route', () => {
+  it('protects the managed Strategies and Setups route', async () => {
     const anonymous = render(<MemoryRouter initialEntries={['/strategies']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Login page')).toBeInTheDocument();
     expect(screen.queryByText('Strategies page')).not.toBeInTheDocument();
     anonymous.unmount();
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/strategies']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Strategies page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Strategies page');
   });
 
-  it('protects the Settings route', () => {
+  it('protects the Settings route', async () => {
     const anonymous = render(<MemoryRouter initialEntries={['/settings']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Login page')).toBeInTheDocument();
     anonymous.unmount();
     authState.current = { user: { id: 'user-1' }, loading: false };
     render(<MemoryRouter initialEntries={['/settings']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Settings page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Settings page');
   });
 
-  it('protects the Portfolio overview and detail routes', () => {
+  it('protects the Portfolio overview and detail routes', async () => {
     const anonymous = render(<MemoryRouter initialEntries={['/portfolio']}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Login page')).toBeInTheDocument();
     anonymous.unmount();
     authState.current = { user: { id: 'user-1' }, loading: false };
     const overview = render(<MemoryRouter initialEntries={['/portfolio']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Portfolio page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Portfolio page');
     overview.unmount();
     render(<MemoryRouter initialEntries={['/portfolio/11111111-1111-4111-8111-111111111111']}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByTestId('app-shell')).toHaveTextContent('Portfolio detail page');
+    expect(await screen.findByTestId('app-shell')).toHaveTextContent('Portfolio detail page');
   });
 });
