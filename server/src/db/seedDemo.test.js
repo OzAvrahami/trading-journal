@@ -223,7 +223,7 @@ describe('demo backup, ownership and transaction ordering', () => {
     const harness = makeHarness();
     await execute(harness);
     const backup = harness.getBackup();
-    assert.deepEqual(Object.keys(backup).sort(), ['dailyReviewDetails', 'goals', 'journalEntries', 'journalEntryTrades', 'metadata', 'ruleChecks', 'setups', 'strategies', 'trades', 'tradingAccounts', 'tradingRules'].sort());
+    assert.deepEqual(Object.keys(backup).sort(), ['dailyReviewDetails', 'goals', 'importRunRows', 'importRuns', 'journalEntries', 'journalEntryTrades', 'metadata', 'ruleChecks', 'setups', 'strategies', 'trades', 'tradingAccounts', 'tradingRules'].sort());
     const serialized = JSON.stringify(backup);
     assert.doesNotMatch(serialized, /password_hash|token_hash|JWT|DATABASE_URL/);
   });
@@ -245,6 +245,7 @@ describe('demo backup, ownership and transaction ordering', () => {
 
   test('uses the required foreign-key-safe reset order', () => {
     assert.deepEqual(RESET_STEPS.map((step) => step.table), [
+      'import_run_rows', 'import_runs',
       'goals', 'rule_checks', 'trading_rules', 'journal_entry_trades',
       'daily_review_details', 'journal_entries', 'trades', 'setups', 'strategies', 'trading_accounts',
     ]);

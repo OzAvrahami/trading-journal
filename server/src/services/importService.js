@@ -31,9 +31,13 @@ export async function parseImport(broker, csvBuffer) {
     const key = buildDedupKey(row);
     if (seen.has(key)) {
       inFileDups.push(row._rowIndex);
+      row._dedupKey = key;
+      row._withinFileDuplicate = true;
     } else {
       seen.add(key);
-      unique.push({ ...row, _dedupKey: key });
+      row._dedupKey = key;
+      row._withinFileDuplicate = false;
+      unique.push(row);
     }
   }
 
@@ -45,6 +49,7 @@ export async function parseImport(broker, csvBuffer) {
       inFileDuplicates: inFileDups.length,
     },
     rows: unique,
+    sourceRows: allRows,
   };
 }
 
@@ -54,11 +59,11 @@ export async function parseImport(broker, csvBuffer) {
  *   2. Filter out already-imported rows.
  *   3. Batch-insert the new rows under the given accountId.
  */
-export async function commitImport(userId, rows, accountId) {
+export async function commitImport(userId, rows, accountId, queryable = pool) {
   // Level 2: check which keys already exist in the DB for this account
   const incomingKeys = rows.map(r => r._dedupKey);
 
-  const { rows: existing } = await pool.query(
+  const { rows: existing } = await queryable.query(
     'SELECT dedup_key FROM trades WHERE account_id = $1 AND dedup_key = ANY($2::text[])',
     [accountId, incomingKeys]
   );
@@ -68,11 +73,12 @@ export async function commitImport(userId, rows, accountId) {
   const dbDuplicates = rows.length - toInsert.length;
 
   if (toInsert.length === 0) {
-    return { inserted: 0, dbDuplicates };
+    return { inserted: 0, dbDuplicates, insertedTrades: [], duplicateKeys: [...existingKeys] };
   }
 
   // Batch insert using parameterized VALUES
   let insertedCount = 0;
+  const insertedTrades = [];
   for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
     const batch = toInsert.slice(i, i + BATCH_SIZE);
     const values = [];
@@ -96,12 +102,13 @@ export async function commitImport(userId, rows, accountId) {
       return `(${INSERT_COLS.map((_, j) => `$${base + j + 1}`).join(', ')})`;
     });
 
-    await pool.query(
-      `INSERT INTO trades (${INSERT_COLS.join(', ')}) VALUES ${placeholders.join(', ')}`,
+    const result = await queryable.query(
+      `INSERT INTO trades (${INSERT_COLS.join(', ')}) VALUES ${placeholders.join(', ')} RETURNING id, dedup_key`,
       values
     );
+    insertedTrades.push(...result.rows.map(row => ({ id: row.id, dedupKey: row.dedup_key })));
     insertedCount += batch.length;
   }
 
-  return { inserted: insertedCount, dbDuplicates };
+  return { inserted: insertedCount, dbDuplicates, insertedTrades, duplicateKeys: [...existingKeys] };
 }

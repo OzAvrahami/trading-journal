@@ -24,6 +24,8 @@ export const REQUIRED_CONFIRMATION = 'RESET_MY_DEMO_DATA';
 export const DEFAULT_BACKUP_DIRECTORY = fileURLToPath(new URL('../../.local/demo-seed-backups/', import.meta.url));
 
 export const RESET_STEPS = Object.freeze([
+  { table: 'import_run_rows', sql: 'DELETE FROM import_run_rows WHERE user_id = $1' },
+  { table: 'import_runs', sql: 'DELETE FROM import_runs WHERE user_id = $1' },
   { table: 'goals', sql: 'DELETE FROM goals WHERE user_id = $1' },
   { table: 'rule_checks', sql: 'DELETE FROM rule_checks WHERE user_id = $1' },
   { table: 'trading_rules', sql: 'DELETE FROM trading_rules WHERE user_id = $1' },
@@ -41,6 +43,8 @@ export const BACKUP_SELECTS = Object.freeze([
   { key: 'strategies', table: 'strategies', sql: 'SELECT * FROM strategies WHERE user_id = $1 ORDER BY created_at, id' },
   { key: 'setups', table: 'setups', sql: 'SELECT * FROM setups WHERE user_id = $1 ORDER BY created_at, id' },
   { key: 'trades', table: 'trades', sql: 'SELECT * FROM trades WHERE user_id = $1 ORDER BY entry_datetime, id' },
+  { key: 'importRuns', table: 'import_runs', sql: 'SELECT * FROM import_runs WHERE user_id = $1 ORDER BY created_at, id' },
+  { key: 'importRunRows', table: 'import_run_rows', sql: 'SELECT * FROM import_run_rows WHERE user_id = $1 ORDER BY import_run_id, row_number' },
   { key: 'journalEntries', table: 'journal_entries', sql: 'SELECT * FROM journal_entries WHERE user_id = $1 ORDER BY entry_date, created_at, id' },
   { key: 'journalEntryTrades', table: 'journal_entry_trades', sql: 'SELECT * FROM journal_entry_trades WHERE user_id = $1 ORDER BY journal_entry_id, trade_id' },
   { key: 'dailyReviewDetails', table: 'daily_review_details', sql: 'SELECT * FROM daily_review_details WHERE user_id = $1 ORDER BY review_date, journal_entry_id' },
@@ -244,6 +248,29 @@ async function insertManagedClassifications(client, strategies, setups) {
   }
 }
 
+async function insertImportHistory(client, runs, rows) {
+  for (const run of runs) {
+    await client.query(
+      `INSERT INTO import_runs
+       (id,user_id,account_id,original_filename,file_size_bytes,file_sha256,source_type,status,total_rows,
+        imported_rows,skipped_rows,failed_rows,mapping,failure_code,failure_detail,started_at,completed_at,created_at,updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,$16,$17,$18,$19)`,
+      [run.id, run.userId, run.accountId, run.originalFilename, run.fileSizeBytes, run.fileSha256, run.sourceType,
+        run.status, run.totalRows, run.importedRows, run.skippedRows, run.failedRows, JSON.stringify(run.mapping),
+        run.failureCode, run.failureDetail, run.startedAt, run.completedAt, run.createdAt, run.updatedAt],
+    );
+  }
+  for (const row of rows) {
+    await client.query(
+      `INSERT INTO import_run_rows
+       (id,import_run_id,user_id,row_number,status,trade_id,symbol,source_identifier,error_code,error_detail,created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [row.id, row.importRunId, row.userId, row.rowNumber, row.status, row.tradeId, row.symbol,
+        row.sourceIdentifier, row.errorCode, row.errorDetail, row.createdAt],
+    );
+  }
+}
+
 async function insertJournal(client, entries, links, details) {
   for (const entry of entries) {
     await client.query(
@@ -311,6 +338,7 @@ export async function insertDemoDataset(client, dataset) {
   await insertAccounts(client, dataset.accounts);
   await insertManagedClassifications(client, dataset.managedStrategies, dataset.managedSetups);
   await insertTrades(client, dataset.trades);
+  await insertImportHistory(client, dataset.importRuns, dataset.importRunRows);
   await insertJournal(client, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails);
   await insertRules(client, dataset.rules, dataset.ruleChecks);
   await insertGoals(client, dataset.goals);
@@ -327,6 +355,17 @@ const INTEGRITY_SQL = `SELECT
   (SELECT COUNT(*)::int FROM strategies WHERE user_id = $1) AS managed_strategies,
   (SELECT COUNT(*)::int FROM setups WHERE user_id = $1) AS managed_setups,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1) AS trades,
+  (SELECT COUNT(*)::int FROM import_runs WHERE user_id = $1) AS import_runs,
+  (SELECT COUNT(*)::int FROM import_run_rows WHERE user_id = $1) AS import_run_rows,
+  (SELECT COUNT(*)::int FROM import_runs r WHERE r.user_id = $1 AND (
+    r.total_rows <> (SELECT COUNT(*) FROM import_run_rows rr WHERE rr.user_id = $1 AND rr.import_run_id = r.id)
+    OR r.imported_rows <> (SELECT COUNT(*) FROM import_run_rows rr WHERE rr.user_id = $1 AND rr.import_run_id = r.id AND rr.status = 'imported')
+    OR r.skipped_rows <> (SELECT COUNT(*) FROM import_run_rows rr WHERE rr.user_id = $1 AND rr.import_run_id = r.id AND rr.status = 'skipped_duplicate')
+    OR r.failed_rows <> (SELECT COUNT(*) FROM import_run_rows rr WHERE rr.user_id = $1 AND rr.import_run_id = r.id AND rr.status IN ('failed_validation','failed_insert'))
+  )) AS invalid_import_counts,
+  (SELECT COUNT(*)::int FROM import_run_rows rr LEFT JOIN import_runs r ON r.id = rr.import_run_id AND r.user_id = rr.user_id
+    LEFT JOIN trades t ON t.id = rr.trade_id AND t.user_id = rr.user_id
+    WHERE rr.user_id = $1 AND (r.id IS NULL OR (rr.trade_id IS NOT NULL AND t.id IS NULL))) AS invalid_import_links,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1 AND status = 'closed') AS closed,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1 AND status = 'open') AS open,
   (SELECT COUNT(*)::int FROM trades WHERE user_id = $1 AND status = 'closed' AND pnl_net > 0) AS winners,
@@ -409,10 +448,10 @@ export async function validatePersistedDemo(client, dataset) {
   const expected = summarizeDemoDataset(dataset);
   const integrity = await client.query(INTEGRITY_SQL, [dataset.userId, dataset.timezone]);
   const row = integrity.rows[0] ?? {};
-  for (const key of ['accounts', 'managedStrategies', 'managedSetups', 'trades', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals']) {
+  for (const key of ['accounts', 'managedStrategies', 'managedSetups', 'trades', 'importRuns', 'importRunRows', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals']) {
     expectCount(row, key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), expected[key]);
   }
-  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links']) {
+  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_import_counts', 'invalid_import_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links']) {
     expectCount(row, key, 0);
   }
   expectCount(row, 'default_accounts', 1);

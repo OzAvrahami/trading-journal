@@ -29,3 +29,13 @@ export async function commitImport(sessionId, accountId) {
   const { data } = await api.post('/api/imports/commit', { sessionId, accountId });
   return data;
 }
+
+export async function listImportRuns(params = {}) {
+  const { data } = await api.get('/api/imports/runs', { params });
+  return data;
+}
+
+export async function getImportRun(runId, params = {}) {
+  const { data } = await api.get(`/api/imports/runs/${runId}`, { params });
+  return data;
+}

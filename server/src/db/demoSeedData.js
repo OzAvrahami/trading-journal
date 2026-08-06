@@ -61,6 +61,7 @@ const MANAGED_SETUP_DEFINITIONS = Object.freeze([
 ]);
 
 const HEBREW_TEXT = Object.freeze({
+  importFilenames: ['עסקאות-יולי.csv', 'בדיקת-אוגוסט.csv', 'קובץ-לא-תקין.csv'],
   managedStrategies: ['פריצת טווח פתיחה', 'חזרה לממוצע', 'המשך מגמה', 'פריצה וחזרה לרמה', 'מסחר סביב VWAP'],
   managedSetups: ['פריצה עם אישור', 'בדיקה חוזרת של הרמה', 'כשל פריצה', 'חזרה ל־VWAP', 'שפל גבוה במגמה עולה', 'שיא נמוך במגמה יורדת', 'מהלך פתיחה', 'דעיכת טווח', 'המשך לאחר פולבק', 'שמירת מומנטום'],
   accountNames: ['חשבון מסחר אישי', 'חשבון רוט IRA', 'חשבון אירופה', 'חשבון מסחר IBKR', 'חשבון מסחר חי', 'חשבון ממומן 150K', 'חשבון הערכה 50K', 'חשבון תרגול'],
@@ -158,6 +159,7 @@ function localizeDatasetText(dataset, locale) {
     rules: dataset.rules.map((row, index) => ({ ...row, name: HEBREW_TEXT.rules[index][0], description: HEBREW_TEXT.rules[index][1] })),
     ruleChecks: dataset.ruleChecks.map((row) => ({ ...row, notes: row.notes === 'No prior break required review.' ? HEBREW_TEXT.checkNotes.noPrior : HEBREW_TEXT.checkNotes[row.outcome] })),
     goals: dataset.goals.map((row, index) => ({ ...row, name: HEBREW_TEXT.goals[index][0], description: HEBREW_TEXT.goals[index][1] })),
+    importRuns: dataset.importRuns.map((row, index) => ({ ...row, originalFilename: HEBREW_TEXT.importFilenames[index] })),
   };
 }
 
@@ -168,6 +170,44 @@ function stableUuid(namespace, userId, anchorDate, index) {
     .slice(0, 32);
   const variant = ['8', '9', 'a', 'b'][Number.parseInt(hex[16], 16) % 4];
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
+function buildImportHistory(userId, anchorDate, timezone, accounts, trades) {
+  const definitions = [
+    ['july-trades.csv', 'completed', 3, 3, 0, 0, -10],
+    ['august-review.csv', 'completed_with_errors', 3, 1, 1, 1, -2],
+    ['invalid-file.csv', 'failed', 2, 0, 0, 2, -1],
+  ];
+  const importRuns = definitions.map(([originalFilename, status, totalRows, importedRows, skippedRows, failedRows, offset], index) => {
+    const startedAt = localDateTimeToInstant(addDaysToDateKey(anchorDate, offset), '18:00:00', timezone).toISOString();
+    const completedAt = localDateTimeToInstant(addDaysToDateKey(anchorDate, offset), '18:00:08', timezone).toISOString();
+    return {
+      id: stableUuid('import-run', userId, anchorDate, index), userId, accountId: accounts[index].id,
+      originalFilename, fileSizeBytes: 2048 + (index * 317),
+      fileSha256: createHash('sha256').update(`demo-import:${userId}:${anchorDate}:${index}`).digest('hex'),
+      sourceType: index === 1 ? 'tradovate' : 'topstepx', status, totalRows, importedRows, skippedRows, failedRows,
+      mapping: { importer: index === 1 ? 'tradovate' : 'topstepx' },
+      failureCode: status === 'failed' ? 'IMPORT_INVALID_FILE' : null,
+      failureDetail: status === 'failed' ? 'The demo source file did not contain valid Trade rows.' : null,
+      startedAt, completedAt, createdAt: startedAt, updatedAt: completedAt,
+    };
+  });
+  const rowDefinitions = [
+    [0, 2, 'imported', 0, null], [0, 3, 'imported', 1, null], [0, 4, 'imported', 2, null],
+    [1, 2, 'imported', 3, null], [1, 3, 'skipped_duplicate', null, 'IMPORT_ROW_DUPLICATE'],
+    [1, 4, 'failed_validation', null, 'IMPORT_ROW_VALIDATION_FAILED'],
+    [2, 2, 'failed_validation', null, 'IMPORT_ROW_VALIDATION_FAILED'],
+    [2, 3, 'failed_validation', null, 'IMPORT_ROW_VALIDATION_FAILED'],
+  ];
+  const importRunRows = rowDefinitions.map(([runIndex, rowNumber, status, tradeIndex, errorCode], index) => ({
+    id: stableUuid('import-run-row', userId, anchorDate, index), importRunId: importRuns[runIndex].id, userId,
+    rowNumber, status, tradeId: tradeIndex == null ? null : trades[tradeIndex].id,
+    symbol: tradeIndex == null ? (index % 2 ? 'NQ' : 'MNQ') : trades[tradeIndex].symbol,
+    sourceIdentifier: `DEMO-ROW-${runIndex + 1}-${rowNumber}`, errorCode,
+    errorDetail: errorCode ? 'Bounded deterministic demo diagnostic.' : null,
+    createdAt: importRuns[runIndex].completedAt,
+  }));
+  return { importRuns, importRunRows };
 }
 
 function zonedParts(instant, timezone) {
@@ -483,6 +523,8 @@ export function summarizeDemoDataset(dataset) {
     managedSetups: dataset.managedSetups.length,
     managedTrades: dataset.trades.filter((trade) => trade.strategyId != null).length,
     unlinkedTrades: dataset.trades.filter((trade) => trade.strategyId == null).length,
+    importRuns: dataset.importRuns.length,
+    importRunRows: dataset.importRunRows.length,
   };
 }
 
@@ -500,7 +542,7 @@ export function validateDemoDataset(dataset) {
   if (Math.abs(summary.expectancy - 141.25) > 0.01 || Math.abs(summary.profitFactor - 1.699) > 0.001) {
     throw new Error('Demo headline calculations are inconsistent.');
   }
-  const ownedCollections = [dataset.accounts, dataset.managedStrategies, dataset.managedSetups, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails, dataset.rules, dataset.ruleChecks, dataset.goals];
+  const ownedCollections = [dataset.accounts, dataset.managedStrategies, dataset.managedSetups, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails, dataset.rules, dataset.ruleChecks, dataset.goals, dataset.importRuns, dataset.importRunRows];
   if (ownedCollections.some((rows) => rows.some((row) => row.userId !== dataset.userId))) {
     throw new Error('Demo dataset contains a foreign user row.');
   }
@@ -534,6 +576,21 @@ export function validateDemoDataset(dataset) {
     throw new Error('Demo Trades must include managed and intentionally unlinked classifications.');
   }
   const tradeIds = new Set(dataset.trades.map((trade) => trade.id));
+  const runIds = new Set(dataset.importRuns.map((run) => run.id));
+  if (dataset.importRuns.length !== 3 || dataset.importRunRows.length !== 8
+    || dataset.importRunRows.some((row) => !runIds.has(row.importRunId) || (row.tradeId && !tradeIds.has(row.tradeId)))) {
+    throw new Error('Demo Import History is invalid.');
+  }
+  for (const run of dataset.importRuns) {
+    const rows = dataset.importRunRows.filter((row) => row.importRunId === run.id);
+    const imported = rows.filter((row) => row.status === 'imported').length;
+    const skipped = rows.filter((row) => row.status === 'skipped_duplicate').length;
+    const failed = rows.length - imported - skipped;
+    if (!/^[0-9a-f]{64}$/.test(run.fileSha256) || rows.length !== run.totalRows
+      || imported !== run.importedRows || skipped !== run.skippedRows || failed !== run.failedRows) {
+      throw new Error('Demo Import History counts or hash are invalid.');
+    }
+  }
   const journalIds = new Set(dataset.journalEntries.map((entry) => entry.id));
   if (dataset.journalEntryTrades.some((link) => !journalIds.has(link.journalEntryId) || !tradeIds.has(link.tradeId))) {
     throw new Error('Demo Journal link is invalid.');
@@ -583,10 +640,11 @@ export function generateDemoDataset({ userId, timezone, anchorDate, locale = 'en
   const journal = buildJournal(userId, anchorDate, timezone, trades);
   const ruleData = buildRules(userId, anchorDate, timezone, trades, journal.entries, tradingDates);
   const goals = buildGoals(userId, anchorDate, timezone, tradingDates);
+  const imports = buildImportHistory(userId, anchorDate, timezone, accounts, trades);
   const dataset = {
     userId, timezone, anchorDate, tradingDates, accounts, managedStrategies: managed.strategies, managedSetups: managed.setups, trades,
     journalEntries: journal.entries, journalEntryTrades: journal.links, dailyReviewDetails: journal.details,
-    rules: ruleData.rules, ruleChecks: ruleData.checks, goals,
+    rules: ruleData.rules, ruleChecks: ruleData.checks, goals, importRuns: imports.importRuns, importRunRows: imports.importRunRows,
   };
   const localizedDataset = localizeDatasetText(dataset, normalizeDemoLocale(locale));
   validateDemoDataset(localizedDataset);

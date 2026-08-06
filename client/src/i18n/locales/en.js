@@ -190,4 +190,24 @@ Object.assign(en.analytics, {
 });
 Object.assign(en.errors, { ACCOUNT_NOT_ACTIVE: 'Choose an active account.', ACCOUNT_STATE_INVALID: 'The account lifecycle or currency is invalid.', ACCOUNT_EXISTS: 'An account with this company and number already exists.' });
 
+Object.assign(en.routes, { importRunDetail: { title: 'Import Run', description: 'Review durable results for a confirmed Trade import.' } });
+en.importHistory = {
+  title: 'Import history', privacy: 'Confirmed imports retain bounded results only. The original file and complete raw rows are not stored.',
+  hashing: 'Hashing and parsing…',
+  loading: 'Loading Import History', loadFailed: 'Import History could not be loaded.', empty: 'No import history yet.',
+  viewDetails: 'View details', viewPrevious: 'View previous import', duplicateTitle: 'Exact file duplicate',
+  duplicateDetail: 'This exact file was imported previously. Trade insertion has been blocked.',
+  imported: 'Imported', skipped: 'Skipped', failed: 'Failed', importedRows: 'Imported rows', skippedRows: 'Skipped rows', failedRows: 'Failed rows',
+  loadingDetail: 'Loading Import Run', notFound: 'Import Run not found', notFoundDetail: 'This Import Run is unavailable or belongs to another user.', back: 'Back to Import',
+  noRawFile: 'The original file is not stored in TradingLog.', sourceType: 'Source type', fileSize: 'File size', started: 'Started', completedAt: 'Completed', totalRows: 'Total rows',
+  mapping: 'Safe mapping metadata', rowResults: 'Row results', rowFilters: 'Filter row results', linkedTrade: 'View linked Trade', tradeUnavailable: 'The linked Trade is no longer available.', unknownFailure: 'The import could not be completed.',
+  rowPagination: 'Import row pagination', previousRows: 'Previous rows', nextRows: 'Next rows',
+  noMatchingRows: 'No row results match this filter.',
+  status: { processing: 'Processing', completed: 'Completed', completed_with_errors: 'Completed with errors', failed: 'Failed' },
+  rowStatus: { imported: 'Imported', skipped_duplicate: 'Skipped duplicate', failed_validation: 'Validation failed', failed_insert: 'Insert failed' },
+  filters: { all: 'All', imported: 'Imported', skipped: 'Skipped', failed: 'Failed' },
+  errors: { IMPORT_INVALID_FILE: 'The source file is invalid.', IMPORT_INVALID_MAPPING: 'The import mapping is invalid.', IMPORT_FATAL_ERROR: 'The import failed and Trade changes were rolled back.', IMPORT_NO_ROWS_IMPORTED: 'No source row produced a new Trade.', IMPORT_ROW_DUPLICATE: 'This row matched another row or an existing Trade.', IMPORT_ROW_VALIDATION_FAILED: 'This row did not pass Trade validation.', IMPORT_ROW_INSERT_FAILED: 'This row was not inserted because the transaction was rolled back.' },
+};
+Object.assign(en.errors, { IMPORT_DUPLICATE_FILE: 'This exact file has already been imported.', IMPORT_INVALID_FILE: 'The selected file is invalid.', IMPORT_INVALID_MAPPING: 'The import mapping is invalid.', IMPORT_FATAL_ERROR: 'The import failed and no Trade changes were committed.', IMPORT_ACCOUNT_NOT_FOUND: 'The selected Account was not found.', IMPORT_ACCOUNT_ARCHIVED: 'Choose an active Account for this import.' });
+
 export default en;

@@ -26,6 +26,7 @@ export function parseTopstepX(csvBuffer) {
 
     return {
       _rowIndex: index + 2, // +2 because index 0 = header row, index 1 = first data row
+      _sourceIdentifier: String(row.Id || '').trim().slice(0, 255) || null,
       symbol: (row.ContractName || '').trim().toUpperCase(),
       market: 'futures',
       direction: normalizeDirection(row.Type),

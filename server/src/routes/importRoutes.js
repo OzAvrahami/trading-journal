@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import multer from 'multer';
+import { createHash, randomUUID } from 'node:crypto';
+import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
-import { parseImport, commitImport } from '../services/importService.js';
-import { validateAccountOwnership } from '../services/accountService.js';
+import { parseImport } from '../services/importService.js';
+import { executeImportRun, findSuccessfulDuplicate, getImportRun, listImportRuns } from '../services/importHistoryService.js';
 import { IMPORTERS } from '../importers/index.js';
 import { createError } from '../middleware/errorHandler.js';
 
@@ -26,9 +28,9 @@ const upload = multer({
 const parseSessions = new Map();
 const SESSION_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-function storeSession(userId, sessionId, rows) {
+function storeSession(userId, sessionId, session) {
   parseSessions.set(`${userId}:${sessionId}`, {
-    rows,
+    session,
     expiresAt: Date.now() + SESSION_TTL_MS,
   });
 }
@@ -40,7 +42,7 @@ function getSession(userId, sessionId) {
     parseSessions.delete(`${userId}:${sessionId}`);
     return null;
   }
-  return entry.rows;
+  return entry.session;
 }
 
 function deleteSession(userId, sessionId) {
@@ -48,12 +50,13 @@ function deleteSession(userId, sessionId) {
 }
 
 // Periodically clean up expired sessions
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of parseSessions) {
     if (now > entry.expiresAt) parseSessions.delete(key);
   }
 }, 60_000);
+cleanupTimer.unref?.();
 
 /**
  * POST /api/imports/parse
@@ -75,13 +78,23 @@ router.post('/parse', requireAuth, upload.single('file'), async (req, res, next)
       throw createError('VALIDATION_ERROR', 'No file uploaded.', 400);
     }
 
-    const { preview, stats, rows } = await parseImport(broker, req.file.buffer);
+    const originalFilename = req.file.originalname.trim();
+    if (!originalFilename || originalFilename.length > 255) {
+      throw createError('IMPORT_INVALID_FILE', 'The uploaded filename must contain 1 to 255 characters.', 400);
+    }
+
+    const { preview, stats, rows, sourceRows } = await parseImport(broker, req.file.buffer);
+    const fileSha256 = createHash('sha256').update(req.file.buffer).digest('hex');
+    const duplicateRun = await findSuccessfulDuplicate(req.user.id, fileSha256);
 
     // Store full row set for the commit step
-    const sessionId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    storeSession(req.user.id, sessionId, rows);
+    const sessionId = randomUUID();
+    storeSession(req.user.id, sessionId, {
+      rows, sourceRows, fileSha256, originalFilename, fileSizeBytes: req.file.size,
+      sourceType: broker, mapping: { importer: broker },
+    });
 
-    res.json({ sessionId, preview, stats });
+    res.json({ sessionId, preview, stats, file: { originalFilename, fileSizeBytes: req.file.size }, duplicateRun });
   } catch (err) {
     next(err);
   }
@@ -103,21 +116,48 @@ router.post('/commit', requireAuth, async (req, res, next) => {
       throw createError('VALIDATION_ERROR', '"accountId" is required.', 400);
     }
 
-    const rows = getSession(req.user.id, sessionId);
-    if (!rows) {
+    const session = getSession(req.user.id, sessionId);
+    if (!session) {
       throw createError('SESSION_EXPIRED', 'Import session not found or expired. Please re-upload the file.', 410);
     }
 
-    // Verify the account belongs to this user before writing any trades
-    await validateAccountOwnership(req.user.id, accountId);
-
-    const result = await commitImport(req.user.id, rows, accountId);
+    const result = await executeImportRun(req.user.id, session, accountId);
     deleteSession(req.user.id, sessionId);
 
     res.json(result);
   } catch (err) {
     next(err);
   }
+});
+
+const runStatuses = ['processing', 'completed', 'completed_with_errors', 'failed'];
+const listSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+  status: z.enum(runStatuses).optional(),
+  accountId: z.string().uuid().optional(),
+});
+
+router.get('/runs', requireAuth, async (req, res, next) => {
+  try {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) throw createError('VALIDATION_ERROR', 'Invalid Import History filters.', 400, parsed.error.flatten().fieldErrors);
+    res.json(await listImportRuns(req.user.id, parsed.data));
+  } catch (error) { next(error); }
+});
+
+router.get('/runs/:runId', requireAuth, async (req, res, next) => {
+  try {
+    const parsed = z.string().uuid().safeParse(req.params.runId);
+    if (!parsed.success) throw createError('VALIDATION_ERROR', 'Invalid Import Run ID.', 400);
+    const options = z.object({
+      rowLimit: z.coerce.number().int().min(1).max(500).default(100),
+      rowOffset: z.coerce.number().int().min(0).default(0),
+      rowStatus: z.enum(['imported', 'skipped_duplicate', 'failed_validation', 'failed_insert', 'failed']).optional(),
+    }).safeParse(req.query);
+    if (!options.success) throw createError('VALIDATION_ERROR', 'Invalid Import row filters.', 400, options.error.flatten().fieldErrors);
+    res.json(await getImportRun(req.user.id, parsed.data, options.data));
+  } catch (error) { next(error); }
 });
 
 export default router;
