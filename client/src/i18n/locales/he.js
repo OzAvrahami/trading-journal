@@ -225,4 +225,23 @@ he.importHistory = {
 };
 Object.assign(he.errors, { IMPORT_DUPLICATE_FILE: 'הקובץ הזה כבר יובא בעבר.', IMPORT_INVALID_FILE: 'הקובץ שנבחר אינו תקין.', IMPORT_INVALID_MAPPING: 'מיפוי הייבוא אינו תקין.', IMPORT_FATAL_ERROR: 'הייבוא נכשל ולא נשמרו שינויים בעסקאות.', IMPORT_ACCOUNT_NOT_FOUND: 'החשבון שנבחר לא נמצא.', IMPORT_ACCOUNT_ARCHIVED: 'יש לבחור חשבון פעיל לייבוא.' });
 
+Object.assign(he.navigation, { system: 'מערכת', settings: 'הגדרות' });
+Object.assign(he.routes, {
+  settings: { title: 'הגדרות', description: 'ניהול שפה, מראה, אזור זמן וברירות מחדל למסחר.' },
+});
+he.settings = {
+  language: 'שפה', languageDirection: 'שפה וכיוון', languageHelp: 'השינוי חל מיד בלי לטעון מחדש את העמוד.',
+  appearance: 'מראה', appearanceHelp: 'אפשר להשתמש בהגדרת המכשיר או לבחור מראה בהיר או כהה.', theme: 'ערכת נושא',
+  themeOptions: { system: 'לפי הגדרות המערכת', light: 'בהיר', dark: 'כהה' },
+  timezone: 'אזור זמן', timezoneHelp: 'אזור הזמן קובע לאיזה יום משויכות עסקאות, רשומות יומן, בדיקות כללים, יעדים וסיכומים יומיים.',
+  saveTimezone: 'שמירת אזור הזמן', timezoneUpdated: 'אזור הזמן עודכן.', invalidTimezone: 'יש להזין אזור זמן תקין מסוג IANA.', timezoneSaveFailed: 'לא ניתן לשמור את אזור הזמן.',
+  tradingDefaults: 'ברירות מחדל למסחר', tradingDefaultsHelp: 'בחירות אלה משפיעות על פתיחות עתידיות של טופס העסקה ועל בחירת החשבון לעסקה חדשה.',
+  defaultAccount: 'חשבון ברירת מחדל', applyDefaultAccount: 'החלת חשבון ברירת המחדל', defaultAccountUpdated: 'חשבון ברירת המחדל עודכן.', defaultAccountSaveFailed: 'לא ניתן לעדכן את חשבון ברירת המחדל.',
+  accountsLoadFailed: 'לא ניתן לטעון את החשבונות.', noActiveAccounts: 'אין חשבונות פעילים', noActiveAccountsDetail: 'יש ליצור או לשחזר חשבון לפני בחירת ברירת מחדל.', manageAccounts: 'ניהול חשבונות',
+  defaultTradeMode: 'מצב ברירת המחדל של טופס העסקה', tradeModeHelp: 'השינוי משפיע רק על הצגת השדות; נתוני העסקה והבדיקות אינם משתנים.',
+  syncStatus: 'סנכרון העדפות', syncFailedDeviceOnly: 'שמירת ההעדפה בחשבון נכשלה. הבחירה נשמרה במכשיר הזה בלבד.',
+  syncStates: { local: 'נעשה שימוש בהעדפות שנשמרו במכשיר הזה.', saving: 'ההעדפה נשמרת בחשבון…', synced: 'נשמר בכל המכשירים.', 'local-only': 'נשמר במכשיר הזה בלבד.' },
+  loadFailed: 'לא ניתן לטעון את ההגדרות.', loadFailedDetail: 'העדפות החשבון אינן זמינות כרגע. השפה והמראה המקומיים נשארים זמינים.',
+};
+
 export default he;

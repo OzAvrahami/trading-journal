@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ToastProvider } from './components/ui/Toast.jsx';
+import { PreferencesProvider } from './context/PreferencesContext.jsx';
 import { AppShell } from './components/layout/AppShell.jsx';
 import { Spinner } from './components/ui/Spinner.jsx';
 import Login from './pages/Login.jsx';
@@ -19,6 +20,7 @@ import Rules from './pages/Rules.jsx';
 import Goals from './pages/Goals.jsx';
 import DailyReview, { DailyReviewTodayRedirect } from './pages/DailyReview.jsx';
 import Strategies from './pages/Strategies.jsx';
+import Settings from './pages/Settings.jsx';
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -65,6 +67,7 @@ export function AppRoutes() {
       <Route path="/insights/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
       <Route path="/insights/rules" element={<ProtectedRoute><Rules /></ProtectedRoute>} />
       <Route path="/insights/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -77,7 +80,9 @@ export default function App() {
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <ToastProvider>
-          <AppRoutes />
+          <PreferencesProvider>
+            <AppRoutes />
+          </PreferencesProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

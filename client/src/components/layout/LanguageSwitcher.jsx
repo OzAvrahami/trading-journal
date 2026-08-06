@@ -1,12 +1,18 @@
 import { useTranslation } from 'react-i18next';
 import { applyDocumentLocale, SUPPORTED_LOCALES } from '../../i18n/index.js';
+import { useOptionalPreferences } from '../../context/PreferencesContext.jsx';
 
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
+  const preferences = useOptionalPreferences();
   const current = i18n.resolvedLanguage === 'he' ? 'he' : 'en';
 
   async function selectLocale(locale) {
     if (locale === current) return;
+    if (preferences) {
+      try { await preferences.updatePreference('locale', locale); } catch {}
+      return;
+    }
     applyDocumentLocale(locale);
     await i18n.changeLanguage(locale);
   }

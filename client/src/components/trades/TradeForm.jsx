@@ -7,8 +7,9 @@ import { Button } from '../ui/Button.jsx';
 import { Card } from '../ui/Card.jsx';
 import {
   accountDisplayLabel, createTradeFormValues, DIRECTIONS, MARKETS, normalizeTradePayload,
-  TIMEFRAMES, TRADE_FORM_MODE_KEY, validateTradeForm,
+  applyTradeFormMode, readTradeFormMode, TIMEFRAMES, TRADE_FORM_MODE_EVENT, validateTradeForm,
 } from './tradeFormModel.js';
+import { useOptionalPreferences } from '../../context/PreferencesContext.jsx';
 
 function Field({ id, label, required, error, help, children }) {
   const errorId = error ? `${id}-error` : undefined;
@@ -35,13 +36,6 @@ function Section({ id, title, detail, children }) {
   );
 }
 
-function storedMode() {
-  try {
-    const value = localStorage.getItem(TRADE_FORM_MODE_KEY);
-    return value === 'advanced' || value === 'simple' ? value : 'advanced';
-  } catch { return 'advanced'; }
-}
-
 export function TradeForm({
   defaultValues,
   accounts = [],
@@ -60,12 +54,13 @@ export function TradeForm({
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const preferences = useOptionalPreferences();
   const formId = useId().replace(/:/g, '');
   const initialValues = useMemo(
     () => defaultValues || createTradeFormValues({ user, timezone, accountId: preservedAccountId }),
     [defaultValues, preservedAccountId, timezone, user],
   );
-  const [mode, setMode] = useState(variant === 'quick' ? 'simple' : storedMode);
+  const [mode, setMode] = useState(variant === 'quick' ? 'simple' : readTradeFormMode);
   const symbolRef = useRef(null);
   const mountedRef = useRef(false);
   const {
@@ -78,6 +73,12 @@ export function TradeForm({
 
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
   useEffect(() => {
+    if (variant === 'quick') return undefined;
+    const handleModeChange = (event) => setMode(event.detail);
+    window.addEventListener(TRADE_FORM_MODE_EVENT, handleModeChange);
+    return () => window.removeEventListener(TRADE_FORM_MODE_EVENT, handleModeChange);
+  }, [variant]);
+  useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
       return;
@@ -87,8 +88,11 @@ export function TradeForm({
   }, [resetVersion]); // resetVersion intentionally owns the add-another reset
 
   function changeMode(next) {
-    setMode(next);
-    try { localStorage.setItem(TRADE_FORM_MODE_KEY, next); } catch {}
+    if (preferences) {
+      preferences.updatePreference('tradeFormMode', next).catch(() => {});
+    } else {
+      applyTradeFormMode(next);
+    }
   }
 
   async function submit(values, event) {

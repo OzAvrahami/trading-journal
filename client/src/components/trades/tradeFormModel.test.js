@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapTradeToFormValues, normalizeTradePayload, validateTradeForm } from './tradeFormModel.js';
+import { applyTradeFormMode, mapTradeToFormValues, normalizeTradePayload, readTradeFormMode, TRADE_FORM_MODE_EVENT, validateTradeForm } from './tradeFormModel.js';
 
 const base = {
   accountId: 'account-1', symbol: ' mnq ', market: 'futures', direction: 'long', status: 'closed',
@@ -10,6 +10,14 @@ const base = {
 };
 
 describe('canonical trade form model', () => {
+  it('persists and announces the shared presentation preference without changing Trade data', () => {
+    const events = [];
+    window.addEventListener(TRADE_FORM_MODE_EVENT, (event) => events.push(event.detail), { once: true });
+    expect(applyTradeFormMode('simple')).toBe('simple');
+    expect(readTradeFormMode()).toBe('simple');
+    expect(localStorage.getItem('trading-log.trade-form.mode')).toBe('simple');
+    expect(events).toEqual(['simple']);
+  });
   it('normalizes create payloads without translating internal keys or calculating PnL', () => {
     const payload = normalizeTradePayload(base, { timezone: 'Asia/Jerusalem' });
     expect(payload).toMatchObject({
