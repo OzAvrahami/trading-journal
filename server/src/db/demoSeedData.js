@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { computeFields } from '../services/tradeService.js';
 import { METRIC_CONFIG, validateGoalDefinition } from '../services/goalsService.js';
+import { applyManualPrices, replayInvestmentTransactions } from '../services/portfolioCalculationService.js';
 import {
   addDaysToDateKey,
   assertTimezone,
@@ -160,6 +161,27 @@ function localizeDatasetText(dataset, locale) {
     ruleChecks: dataset.ruleChecks.map((row) => ({ ...row, notes: row.notes === 'No prior break required review.' ? HEBREW_TEXT.checkNotes.noPrior : HEBREW_TEXT.checkNotes[row.outcome] })),
     goals: dataset.goals.map((row, index) => ({ ...row, name: HEBREW_TEXT.goals[index][0], description: HEBREW_TEXT.goals[index][1] })),
     importRuns: dataset.importRuns.map((row, index) => ({ ...row, originalFilename: HEBREW_TEXT.importFilenames[index] })),
+    investmentPortfolios: dataset.investmentPortfolios.map((row, index) => ({
+      ...row,
+      name: ['תיק השקעות ארוך טווח', 'תיק דיבידנדים', 'תיק השקעות בארכיון'][index],
+      description: ['השקעות מתוכננות לטווח ארוך בעלות ממוצעת משוקללת.', 'מעקב ידני אחר אחזקות והכנסה מדיבידנדים.', 'תיק היסטורי סגור שנשמר לצורך תיעוד.'][index],
+    })),
+    investmentInstruments: dataset.investmentInstruments.map((row, index) => ({
+      ...row,
+      name: ['קרן סל על מדד S&P 500', 'אפל', 'ג׳ונסון אנד ג׳ונסון', 'קרן סל דיבידנדים', 'מיקרוסופט', 'קוקה־קולה'][index],
+    })),
+    investmentTransactions: dataset.investmentTransactions.map((row) => ({
+      ...row,
+      notes: ({
+        'Initial Portfolio deposit.': 'הפקדה ראשונית לתיק.',
+        'Planned monthly purchase.': 'קנייה חודשית מתוכננת.',
+        'Quarterly dividend.': 'דיבידנד רבעוני.',
+        'Partial realization after appreciation.': 'מימוש חלקי לאחר עלייה.',
+        'Portfolio administration fee.': 'עמלת ניהול שתועדה ידנית.',
+        'Planned cash withdrawal.': 'משיכת מזומן מתוכננת.',
+        'Final historical closure.': 'סגירה היסטורית מלאה.',
+      })[row.notes] ?? row.notes,
+    })),
   };
 }
 
@@ -170,6 +192,64 @@ function stableUuid(namespace, userId, anchorDate, index) {
     .slice(0, 32);
   const variant = ['8', '9', 'a', 'b'][Number.parseInt(hex[16], 16) % 4];
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
+function buildInvestmentPortfolioData(userId, anchorDate, timezone) {
+  const createdAt = localDateTimeToInstant(addDaysToDateKey(anchorDate, -240), '12:00:00', timezone).toISOString();
+  const portfolioDefinitions = [
+    ['Long-term Investments', 'Planned long-term investments tracked with moving average cost.', 'active', true],
+    ['Dividend Portfolio', 'Manual tracking for income-oriented holdings and dividends.', 'active', false],
+    ['Archived Investments', 'Closed historical Portfolio retained for review.', 'archived', false],
+  ];
+  const investmentPortfolios = portfolioDefinitions.map(([name, description, status, isDefault], index) => ({
+    id: stableUuid('investment-portfolio', userId, anchorDate, index), userId, name, description,
+    baseCurrency: 'USD', status, isDefault, createdAt, updatedAt: createdAt,
+  }));
+  const instrumentDefinitions = [
+    ['VOO', 'Vanguard S&P 500 ETF', 'NYSEARCA', 'etf'], ['AAPL', 'Apple Inc.', 'NASDAQ', 'stock'],
+    ['JNJ', 'Johnson & Johnson', 'NYSE', 'stock'], ['SCHD', 'Schwab U.S. Dividend Equity ETF', 'NYSEARCA', 'etf'],
+    ['MSFT', 'Microsoft Corporation', 'NASDAQ', 'stock'], ['KO', 'The Coca-Cola Company', 'NYSE', 'stock'],
+  ];
+  const investmentInstruments = instrumentDefinitions.map(([symbolValue, name, exchange, assetType], index) => ({
+    id: stableUuid('investment-instrument', userId, anchorDate, index), userId, symbol: symbolValue, name, exchange,
+    assetType, currency: 'USD', isActive: true, createdAt, updatedAt: createdAt,
+  }));
+  const transactionDefinitions = [
+    [0, null, 'deposit', -180, null, null, 50000, 0, 'Initial Portfolio deposit.'],
+    [0, 0, 'buy', -170, 100, 400, null, 5, 'Planned monthly purchase.'],
+    [0, 1, 'buy', -160, 50, 180, null, 2, 'Planned monthly purchase.'],
+    [0, 0, 'sell', -90, 20, 450, null, 3, 'Partial realization after appreciation.'],
+    [0, 0, 'dividend', -60, null, null, 150, 0, 'Quarterly dividend.'],
+    [0, null, 'fee', -50, null, null, 10, 0, 'Portfolio administration fee.'],
+    [0, 4, 'buy', -40, 10, 350, null, 1, 'Planned monthly purchase.'],
+    [0, null, 'withdrawal', -20, null, null, 1000, 0, 'Planned cash withdrawal.'],
+    [1, null, 'deposit', -150, null, null, 30000, 0, 'Initial Portfolio deposit.'],
+    [1, 3, 'buy', -140, 200, 75, null, 4, 'Planned monthly purchase.'],
+    [1, 2, 'buy', -130, 50, 155, null, 2, 'Planned monthly purchase.'],
+    [1, 3, 'dividend', -45, null, null, 120, 0, 'Quarterly dividend.'],
+    [1, 2, 'sell', -30, 50, 165, null, 3, 'Final historical closure.'],
+    [2, null, 'deposit', -220, null, null, 10000, 0, 'Initial Portfolio deposit.'],
+    [2, 5, 'buy', -210, 100, 60, null, 1, 'Planned monthly purchase.'],
+    [2, 5, 'sell', -200, 100, 65, null, 2, 'Final historical closure.'],
+    [2, null, 'withdrawal', -190, null, null, 10000, 0, 'Planned cash withdrawal.'],
+  ];
+  const investmentTransactions = transactionDefinitions.map(([portfolioIndex, instrumentIndex, transactionType, offset, quantity, price, amount, fees, notes], index) => {
+    const timestamp = localDateTimeToInstant(addDaysToDateKey(anchorDate, offset), '12:00:00', timezone).toISOString();
+    return {
+      id: stableUuid('investment-transaction', userId, anchorDate, index), userId,
+      portfolioId: investmentPortfolios[portfolioIndex].id,
+      instrumentId: instrumentIndex == null ? null : investmentInstruments[instrumentIndex].id,
+      transactionType, transactionDate: addDaysToDateKey(anchorDate, offset), quantity, price, amount, fees,
+      currency: 'USD', notes, createdAt: timestamp, updatedAt: timestamp,
+    };
+  });
+  const priceDefinitions = [[0, 470], [1, 200], [2, 168], [3, 80], [5, 67]];
+  const investmentPrices = priceDefinitions.map(([instrumentIndex, price], index) => {
+    const priceDate = addDaysToDateKey(anchorDate, -1);
+    const timestamp = localDateTimeToInstant(priceDate, '18:00:00', timezone).toISOString();
+    return { id: stableUuid('investment-price', userId, anchorDate, index), userId, instrumentId: investmentInstruments[instrumentIndex].id, priceDate, price, currency: 'USD', source: 'manual', createdAt: timestamp, updatedAt: timestamp };
+  });
+  return { investmentPortfolios, investmentInstruments, investmentTransactions, investmentPrices };
 }
 
 function buildImportHistory(userId, anchorDate, timezone, accounts, trades) {
@@ -525,6 +605,10 @@ export function summarizeDemoDataset(dataset) {
     unlinkedTrades: dataset.trades.filter((trade) => trade.strategyId == null).length,
     importRuns: dataset.importRuns.length,
     importRunRows: dataset.importRunRows.length,
+    investmentPortfolios: dataset.investmentPortfolios.length,
+    investmentInstruments: dataset.investmentInstruments.length,
+    investmentTransactions: dataset.investmentTransactions.length,
+    investmentPrices: dataset.investmentPrices.length,
   };
 }
 
@@ -534,7 +618,8 @@ export function validateDemoDataset(dataset) {
     accounts: 8, trades: 57, closed: 53, open: 4, winners: 31, losers: 20,
     breakeven: 2, tradingDates: 22, pnlNet: 7486, totalFees: 346,
     journalEntries: 14, dailyReviewDetails: 4, rules: 8, goals: 7,
-    managedStrategies: 5, managedSetups: 10,
+    managedStrategies: 5, managedSetups: 10, investmentPortfolios: 3,
+    investmentInstruments: 6, investmentTransactions: 17, investmentPrices: 5,
   };
   Object.entries(expected).forEach(([key, value]) => {
     if (summary[key] !== value) throw new Error(`Demo dataset ${key} expected ${value}, received ${summary[key]}.`);
@@ -542,7 +627,7 @@ export function validateDemoDataset(dataset) {
   if (Math.abs(summary.expectancy - 141.25) > 0.01 || Math.abs(summary.profitFactor - 1.699) > 0.001) {
     throw new Error('Demo headline calculations are inconsistent.');
   }
-  const ownedCollections = [dataset.accounts, dataset.managedStrategies, dataset.managedSetups, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails, dataset.rules, dataset.ruleChecks, dataset.goals, dataset.importRuns, dataset.importRunRows];
+  const ownedCollections = [dataset.accounts, dataset.managedStrategies, dataset.managedSetups, dataset.trades, dataset.journalEntries, dataset.journalEntryTrades, dataset.dailyReviewDetails, dataset.rules, dataset.ruleChecks, dataset.goals, dataset.importRuns, dataset.importRunRows, dataset.investmentPortfolios, dataset.investmentInstruments, dataset.investmentTransactions, dataset.investmentPrices];
   if (ownedCollections.some((rows) => rows.some((row) => row.userId !== dataset.userId))) {
     throw new Error('Demo dataset contains a foreign user row.');
   }
@@ -576,6 +661,24 @@ export function validateDemoDataset(dataset) {
     throw new Error('Demo Trades must include managed and intentionally unlinked classifications.');
   }
   const tradeIds = new Set(dataset.trades.map((trade) => trade.id));
+  const portfolioIds = new Set(dataset.investmentPortfolios.map((row) => row.id));
+  const instrumentIds = new Set(dataset.investmentInstruments.map((row) => row.id));
+  if (dataset.investmentPortfolios.filter((row) => row.isDefault).length !== 1
+    || dataset.investmentPortfolios.find((row) => row.isDefault)?.status !== 'active'
+    || dataset.investmentTransactions.some((row) => !portfolioIds.has(row.portfolioId) || (row.instrumentId && !instrumentIds.has(row.instrumentId)))
+    || dataset.investmentPrices.some((row) => !instrumentIds.has(row.instrumentId))) {
+    throw new Error('Demo investment Portfolio relationships are invalid.');
+  }
+  for (const portfolio of dataset.investmentPortfolios) {
+    const rows = dataset.investmentTransactions.filter((row) => row.portfolioId === portfolio.id).map((row) => {
+      const instrument = dataset.investmentInstruments.find((item) => item.id === row.instrumentId);
+      return { ...row, instrumentSymbol: instrument?.symbol, instrumentName: instrument?.name, instrumentExchange: instrument?.exchange, instrumentAssetType: instrument?.assetType };
+    });
+    const replay = replayInvestmentTransactions(rows);
+    const priceMap = new Map(dataset.investmentPrices.map((row) => [row.instrumentId, { price: row.price, priceDate: row.priceDate }]));
+    const valued = applyManualPrices(replay, priceMap);
+    if (!Number.isFinite(valued.cashBalance) || valued.positions.some((position) => position.quantity < 0)) throw new Error('Demo investment Portfolio replay is invalid.');
+  }
   const runIds = new Set(dataset.importRuns.map((run) => run.id));
   if (dataset.importRuns.length !== 3 || dataset.importRunRows.length !== 8
     || dataset.importRunRows.some((row) => !runIds.has(row.importRunId) || (row.tradeId && !tradeIds.has(row.tradeId)))) {
@@ -641,10 +744,12 @@ export function generateDemoDataset({ userId, timezone, anchorDate, locale = 'en
   const ruleData = buildRules(userId, anchorDate, timezone, trades, journal.entries, tradingDates);
   const goals = buildGoals(userId, anchorDate, timezone, tradingDates);
   const imports = buildImportHistory(userId, anchorDate, timezone, accounts, trades);
+  const investments = buildInvestmentPortfolioData(userId, anchorDate, timezone);
   const dataset = {
     userId, timezone, anchorDate, tradingDates, accounts, managedStrategies: managed.strategies, managedSetups: managed.setups, trades,
     journalEntries: journal.entries, journalEntryTrades: journal.links, dailyReviewDetails: journal.details,
     rules: ruleData.rules, ruleChecks: ruleData.checks, goals, importRuns: imports.importRuns, importRunRows: imports.importRunRows,
+    ...investments,
   };
   const localizedDataset = localizeDatasetText(dataset, normalizeDemoLocale(locale));
   validateDemoDataset(localizedDataset);

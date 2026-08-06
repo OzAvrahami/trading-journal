@@ -321,6 +321,10 @@ describe('deterministic demo fixture generation', () => {
       rules: dataset.rules.map(({ id, userId, scope, isActive }) => ({ id, userId, scope, isActive })),
       checks: dataset.ruleChecks.map(({ id, userId, ruleId, outcome, checkDate, tradeId, journalEntryId }) => ({ id, userId, ruleId, outcome, checkDate, tradeId, journalEntryId })),
       goals: dataset.goals.map(({ id, userId, metricKey, comparison, targetValue, startDate, endDate, status }) => ({ id, userId, metricKey, comparison, targetValue, startDate, endDate, status })),
+      portfolios: dataset.investmentPortfolios.map(({ id, userId, baseCurrency, status, isDefault }) => ({ id, userId, baseCurrency, status, isDefault })),
+      instruments: dataset.investmentInstruments.map(({ id, userId, symbol, exchange, assetType, currency, isActive }) => ({ id, userId, symbol, exchange, assetType, currency, isActive })),
+      investmentTransactions: dataset.investmentTransactions.map(({ id, userId, portfolioId, instrumentId, transactionType, transactionDate, quantity, price, amount, fees, currency, createdAt }) => ({ id, userId, portfolioId, instrumentId, transactionType, transactionDate, quantity, price, amount, fees, currency, createdAt })),
+      investmentPrices: dataset.investmentPrices.map(({ id, userId, instrumentId, priceDate, price, currency, source }) => ({ id, userId, instrumentId, priceDate, price, currency, source })),
     });
 
     assert.deepEqual(structure(hebrew), structure(english));
@@ -358,5 +362,26 @@ describe('deterministic demo fixture generation', () => {
     assert.deepEqual(hebrew.trades.map(({ id, strategyId, setupId, pnlNet }) => ({ id, strategyId, setupId, pnlNet })), english.trades.map(({ id, strategyId, setupId, pnlNet }) => ({ id, strategyId, setupId, pnlNet })));
     assert.match(hebrew.managedStrategies[0].name, /[\u0590-\u05ff]/);
     assert.match(hebrew.managedSetups[0].name, /[\u0590-\u05ff]/);
+  });
+
+  test('creates deterministic Portfolio fixtures without changing day-trading KPIs', () => {
+    const dataset = generateDemoDataset(options);
+    assert.equal(dataset.investmentPortfolios.length, 3);
+    assert.equal(dataset.investmentPortfolios.filter((item) => item.status === 'active').length, 2);
+    assert.equal(dataset.investmentPortfolios.filter((item) => item.isDefault).length, 1);
+    assert.equal(dataset.investmentPortfolios.find((item) => item.isDefault).status, 'active');
+    assert.equal(dataset.investmentInstruments.length, 6);
+    assert.equal(dataset.investmentTransactions.length, 17);
+    assert.equal(dataset.investmentPrices.length, 5);
+    assert.ok(dataset.investmentTransactions.some((item) => item.transactionType === 'sell'));
+    assert.ok(dataset.investmentTransactions.some((item) => item.transactionType === 'dividend'));
+    assert.ok(dataset.investmentTransactions.some((item) => item.transactionType === 'withdrawal'));
+    assert.equal(dataset.trades.length, 57);
+    const summary = summarizeDemoDataset(dataset);
+    assert.equal(summary.winners, 31);
+    assert.equal(summary.losers, 20);
+    assert.equal(summary.breakeven, 2);
+    assert.equal(summary.pnlNet, 7486);
+    assert.equal(summary.totalFees, 346);
   });
 });

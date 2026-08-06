@@ -24,6 +24,10 @@ export const REQUIRED_CONFIRMATION = 'RESET_MY_DEMO_DATA';
 export const DEFAULT_BACKUP_DIRECTORY = fileURLToPath(new URL('../../.local/demo-seed-backups/', import.meta.url));
 
 export const RESET_STEPS = Object.freeze([
+  { table: 'investment_prices', sql: 'DELETE FROM investment_prices WHERE user_id = $1' },
+  { table: 'investment_transactions', sql: 'DELETE FROM investment_transactions WHERE user_id = $1' },
+  { table: 'investment_instruments', sql: 'DELETE FROM investment_instruments WHERE user_id = $1' },
+  { table: 'investment_portfolios', sql: 'DELETE FROM investment_portfolios WHERE user_id = $1' },
   { table: 'import_run_rows', sql: 'DELETE FROM import_run_rows WHERE user_id = $1' },
   { table: 'import_runs', sql: 'DELETE FROM import_runs WHERE user_id = $1' },
   { table: 'goals', sql: 'DELETE FROM goals WHERE user_id = $1' },
@@ -39,6 +43,10 @@ export const RESET_STEPS = Object.freeze([
 ]);
 
 export const BACKUP_SELECTS = Object.freeze([
+  { key: 'investmentPortfolios', table: 'investment_portfolios', sql: 'SELECT * FROM investment_portfolios WHERE user_id = $1 ORDER BY created_at, id' },
+  { key: 'investmentInstruments', table: 'investment_instruments', sql: 'SELECT * FROM investment_instruments WHERE user_id = $1 ORDER BY created_at, id' },
+  { key: 'investmentTransactions', table: 'investment_transactions', sql: 'SELECT * FROM investment_transactions WHERE user_id = $1 ORDER BY transaction_date, created_at, id' },
+  { key: 'investmentPrices', table: 'investment_prices', sql: 'SELECT * FROM investment_prices WHERE user_id = $1 ORDER BY price_date, created_at, id' },
   { key: 'tradingAccounts', table: 'trading_accounts', sql: 'SELECT * FROM trading_accounts WHERE user_id = $1 ORDER BY created_at, id' },
   { key: 'strategies', table: 'strategies', sql: 'SELECT * FROM strategies WHERE user_id = $1 ORDER BY created_at, id' },
   { key: 'setups', table: 'setups', sql: 'SELECT * FROM setups WHERE user_id = $1 ORDER BY created_at, id' },
@@ -207,6 +215,41 @@ async function insertAccounts(client, accounts) {
   }
 }
 
+async function insertInvestments(client, portfolios, instruments, transactions, prices) {
+  for (const row of portfolios) {
+    await client.query(
+      `INSERT INTO investment_portfolios
+       (id,user_id,name,description,base_currency,status,is_default,created_at,updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [row.id,row.userId,row.name,row.description,row.baseCurrency,row.status,row.isDefault,row.createdAt,row.updatedAt],
+    );
+  }
+  for (const row of instruments) {
+    await client.query(
+      `INSERT INTO investment_instruments
+       (id,user_id,symbol,name,exchange,asset_type,currency,is_active,created_at,updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [row.id,row.userId,row.symbol,row.name,row.exchange,row.assetType,row.currency,row.isActive,row.createdAt,row.updatedAt],
+    );
+  }
+  for (const row of transactions) {
+    await client.query(
+      `INSERT INTO investment_transactions
+       (id,user_id,portfolio_id,instrument_id,transaction_type,transaction_date,quantity,price,amount,fees,currency,notes,created_at,updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [row.id,row.userId,row.portfolioId,row.instrumentId,row.transactionType,row.transactionDate,row.quantity,row.price,row.amount,row.fees,row.currency,row.notes,row.createdAt,row.updatedAt],
+    );
+  }
+  for (const row of prices) {
+    await client.query(
+      `INSERT INTO investment_prices
+       (id,user_id,instrument_id,price_date,price,currency,source,created_at,updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [row.id,row.userId,row.instrumentId,row.priceDate,row.price,row.currency,row.source,row.createdAt,row.updatedAt],
+    );
+  }
+}
+
 async function insertTrades(client, trades) {
   for (const trade of trades) {
     await client.query(
@@ -336,6 +379,7 @@ async function insertGoals(client, goals) {
 
 export async function insertDemoDataset(client, dataset) {
   await insertAccounts(client, dataset.accounts);
+  await insertInvestments(client, dataset.investmentPortfolios, dataset.investmentInstruments, dataset.investmentTransactions, dataset.investmentPrices);
   await insertManagedClassifications(client, dataset.managedStrategies, dataset.managedSetups);
   await insertTrades(client, dataset.trades);
   await insertImportHistory(client, dataset.importRuns, dataset.importRunRows);
@@ -345,6 +389,20 @@ export async function insertDemoDataset(client, dataset) {
 }
 
 const INTEGRITY_SQL = `SELECT
+  (SELECT COUNT(*)::int FROM investment_portfolios WHERE user_id = $1) AS investment_portfolios,
+  (SELECT COUNT(*)::int FROM investment_instruments WHERE user_id = $1) AS investment_instruments,
+  (SELECT COUNT(*)::int FROM investment_transactions WHERE user_id = $1) AS investment_transactions,
+  (SELECT COUNT(*)::int FROM investment_prices WHERE user_id = $1) AS investment_prices,
+  (SELECT COUNT(*)::int FROM investment_portfolios WHERE user_id = $1 AND is_default) AS default_investment_portfolios,
+  (SELECT COUNT(*)::int FROM investment_portfolios WHERE user_id = $1 AND is_default AND status <> 'active') AS invalid_investment_defaults,
+  (SELECT COUNT(*)::int FROM investment_transactions tx
+    LEFT JOIN investment_portfolios p ON p.id=tx.portfolio_id AND p.user_id=tx.user_id
+    LEFT JOIN investment_instruments i ON i.id=tx.instrument_id AND i.user_id=tx.user_id
+    WHERE tx.user_id=$1 AND (p.id IS NULL OR tx.currency<>p.base_currency OR
+      (tx.instrument_id IS NOT NULL AND (i.id IS NULL OR i.currency<>p.base_currency)))) AS invalid_investment_links,
+  (SELECT COUNT(*)::int FROM investment_prices pr
+    LEFT JOIN investment_instruments i ON i.id=pr.instrument_id AND i.user_id=pr.user_id
+    WHERE pr.user_id=$1 AND (i.id IS NULL OR pr.currency<>i.currency)) AS invalid_investment_prices,
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1) AS accounts,
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND is_default) AS default_accounts,
   (SELECT COUNT(*)::int FROM trading_accounts WHERE user_id = $1 AND is_default AND status <> 'active') AS invalid_defaults,
@@ -448,13 +506,14 @@ export async function validatePersistedDemo(client, dataset) {
   const expected = summarizeDemoDataset(dataset);
   const integrity = await client.query(INTEGRITY_SQL, [dataset.userId, dataset.timezone]);
   const row = integrity.rows[0] ?? {};
-  for (const key of ['accounts', 'managedStrategies', 'managedSetups', 'trades', 'importRuns', 'importRunRows', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals']) {
+  for (const key of ['accounts', 'managedStrategies', 'managedSetups', 'trades', 'importRuns', 'importRunRows', 'closed', 'open', 'winners', 'losers', 'breakeven', 'tradingDates', 'journalEntries', 'journalLinks', 'dailyReviewDetails', 'rules', 'ruleChecks', 'goals', 'investmentPortfolios', 'investmentInstruments', 'investmentTransactions', 'investmentPrices']) {
     expectCount(row, key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), expected[key]);
   }
-  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_import_counts', 'invalid_import_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links']) {
+  for (const key of ['invalid_exit_pairs', 'negative_durations', 'foreign_accounts', 'invalid_setup_owners', 'invalid_managed_links', 'invalid_import_counts', 'invalid_import_links', 'invalid_journal_links', 'invalid_daily_review_details', 'invalid_rule_links', 'invalid_investment_defaults', 'invalid_investment_links', 'invalid_investment_prices']) {
     expectCount(row, key, 0);
   }
   expectCount(row, 'default_accounts', 1);
+  expectCount(row, 'default_investment_portfolios', 1);
   expectCount(row, 'invalid_defaults', 0);
   expectCount(row, 'invalid_currencies', 0);
   if (Number(row.archived_accounts_with_trades) < 1) throw new Error('Post-seed archived Account history is missing.');
@@ -547,7 +606,7 @@ export async function runDemoSeed({
     await client.query('COMMIT');
     began = false;
     const summary = summarizeDemoDataset(dataset);
-    logger.info(`Demo seed committed for ${user.email}: ${summary.accounts} accounts, ${summary.managedStrategies} Strategies, ${summary.managedSetups} Setups, ${summary.closed} closed trades, ${summary.open} open trades, ${summary.journalEntries} Journal entries, ${summary.rules} rules, ${summary.goals} goals.`);
+    logger.info(`Demo seed committed for ${user.email}: ${summary.accounts} accounts, ${summary.managedStrategies} Strategies, ${summary.managedSetups} Setups, ${summary.closed} closed trades, ${summary.open} open trades, ${summary.investmentPortfolios} investment Portfolios, ${summary.investmentTransactions} investment Transactions, ${summary.journalEntries} Journal entries, ${summary.rules} rules, ${summary.goals} goals.`);
     logger.info(`Backup: ${backupPath}`);
     return { user: { id: user.id, email: user.email, timezone: user.timezone }, anchorDate, locale: config.locale, backupPath, deleted, summary, validation };
   } catch (error) {

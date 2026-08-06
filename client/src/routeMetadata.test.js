@@ -121,4 +121,12 @@ describe('route metadata', () => {
     }[key] || key));
     expect(localized).toMatchObject({ title: 'הגדרות', breadcrumbs: ['מערכת', 'הגדרות'] });
   });
+  it('resolves Portfolio overview and detail inside the Investments scope', () => {
+    expect(resolveRouteMetadata('/portfolio')).toMatchObject({
+      title: 'Portfolio', routeKey: 'portfolio', nav: '/portfolio', breadcrumbs: ['Investments', 'Portfolio'],
+    });
+    expect(resolveRouteMetadata('/portfolio/11111111-1111-4111-8111-111111111111')).toMatchObject({
+      title: 'Portfolio details', routeKey: 'portfolioDetail', nav: '/portfolio', breadcrumbs: ['Investments', 'Portfolio', 'Portfolio details'],
+    });
+  });
 });

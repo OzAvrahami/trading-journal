@@ -1,5 +1,19 @@
 const ROUTES = [
   {
+    match: (pathname) => /^\/portfolio\/[^/]+$/.test(pathname),
+    title: 'Portfolio details',
+    description: 'Review derived holdings, cash, transactions, and manual valuations.',
+    breadcrumbs: ['Investments', 'Portfolio', 'Portfolio details'],
+    nav: '/portfolio', routeKey: 'portfolioDetail', headerControls: [], commandActions: [],
+  },
+  {
+    match: (pathname) => pathname === '/portfolio',
+    title: 'Portfolio',
+    description: 'Manage separate long-term investment portfolios and their derived value.',
+    breadcrumbs: ['Investments', 'Portfolio'],
+    nav: '/portfolio', routeKey: 'portfolio', headerControls: [], commandActions: [],
+  },
+  {
     match: (pathname) => pathname === '/settings',
     title: 'Settings',
     description: 'Manage language, appearance, timezone, and trading defaults.',
@@ -159,6 +173,7 @@ const ROUTE_KEYS = new Map([
   ['/accounts', 'accounts'], ['/import', 'import'], ['/insights/analytics', 'analytics'],
   ['/insights/journal', 'journal'], ['/insights/rules', 'rules'], ['/insights/goals', 'goals'],
   ['/settings', 'settings'],
+  ['/portfolio', 'portfolio'],
 ]);
 
 export function localizeRouteMetadata(metadata, t) {
@@ -168,7 +183,7 @@ export function localizeRouteMetadata(metadata, t) {
   if (!routeKey) return metadata;
   const breadcrumbMap = {
     Journal: 'navigation.journal', Trading: 'navigation.trading', Manage: 'navigation.manage',
-    Insights: 'navigation.insights', System: 'navigation.system', Settings: 'navigation.settings', Dashboard: 'navigation.dashboard', Trades: 'navigation.trades',
+    Insights: 'navigation.insights', Investments: 'navigation.investments', Portfolio: 'navigation.portfolio', 'Portfolio details': 'routes.portfolioDetail.title', System: 'navigation.system', Settings: 'navigation.settings', Dashboard: 'navigation.dashboard', Trades: 'navigation.trades',
     'Strategies & Setups': 'navigation.strategies',
     'Daily Review': 'navigation.dailyReview', 'Trade details': 'routes.tradeDetail.title',
     'New Trade': 'routes.tradeNew.title', 'Edit Trade': 'routes.tradeEdit.title',
