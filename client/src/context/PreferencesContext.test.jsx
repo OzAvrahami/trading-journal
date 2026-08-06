@@ -24,7 +24,7 @@ function Probe() {
 
 function renderProvider() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  return render(<QueryClientProvider client={queryClient}><PreferencesProvider><Probe /></PreferencesProvider></QueryClientProvider>);
+  return { queryClient, ...render(<QueryClientProvider client={queryClient}><PreferencesProvider><Probe /></PreferencesProvider></QueryClientProvider>) };
 }
 
 describe('preference bootstrap and synchronization', () => {
@@ -68,10 +68,13 @@ describe('preference bootstrap and synchronization', () => {
   });
 
   it('updates canonical timezone and merges only the returned user timezone', async () => {
-    renderProvider();
+    const { queryClient } = renderProvider();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     await waitFor(() => expect(screen.getByTestId('sync')).toHaveTextContent('synced'));
     await userEvent.click(screen.getByRole('button', { name: 'Timezone' }));
     await waitFor(() => expect(mocks.update).toHaveBeenCalledWith({ timezone: 'America/New_York' }));
     expect(mocks.applyUserUpdate).toHaveBeenCalledWith({ timezone: 'America/New_York' });
+    await waitFor(() => expect(invalidate.mock.calls.some(([options]) => options.queryKey?.[0] === 'portfolio')).toBe(true));
+    expect(invalidate.mock.calls.some(([options]) => options.queryKey?.[0] === 'portfolios')).toBe(true);
   });
 });

@@ -14,6 +14,8 @@ import { useToast } from '../components/ui/Toast.jsx';
 import { formatCurrency, formatDatetime, formatDuration, formatR, formatSignedCurrency } from '../utils/formatters.js';
 import { RouteHeaderControls } from '../components/layout/HeaderControls.jsx';
 import { useTranslation } from 'react-i18next';
+import { invalidateTradeQueries } from '../components/trades/tradeQueryInvalidation.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 function accountLabel(accountId, accounts) {
   const account = accounts.find((item) => item.id === accountId);
@@ -114,6 +116,7 @@ export default function TradeDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const timezone = useUserTimezone();
 
   const tradeQuery = useQuery({
     queryKey: ['trade', id],
@@ -127,9 +130,8 @@ export default function TradeDetail() {
 
   const deleteMutation = useMutation({
     mutationFn: () => tradesApi.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trades'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+    onSuccess: async () => {
+      await invalidateTradeQueries(queryClient, id);
       navigate('/trades');
       toast.success(t('trades.tradeDeleted'));
     },
@@ -211,8 +213,8 @@ export default function TradeDetail() {
         <Card aria-labelledby="entry-exit-heading">
           <h2 id="entry-exit-heading" className="mb-4 text-sm font-semibold text-primary">{t('trades.entryExit')}</h2>
           <dl className="grid grid-cols-2 gap-x-5 gap-y-4">
-            <DataPoint label={t('trades.entryTime')} numeric value={formatDatetime(trade.entryDatetime)} />
-            <DataPoint label={t('trades.exitTime')} numeric value={formatDatetime(trade.exitDatetime)} />
+            <DataPoint label={t('trades.entryTime')} numeric value={formatDatetime(trade.entryDatetime, { timezone })} />
+            <DataPoint label={t('trades.exitTime')} numeric value={formatDatetime(trade.exitDatetime, { timezone })} />
             <DataPoint label={t('common.entryPrice')} numeric value={formatCurrency(trade.entryPrice)} />
             <DataPoint label={t('common.exitPrice')} numeric value={formatCurrency(trade.exitPrice)} />
             <DataPoint label={t('common.quantity')} numeric value={trade.quantity} />

@@ -14,10 +14,12 @@ import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { EmptyState, ErrorState } from '../components/ui/States.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { formatDate, formatNumber, formatPct, formatR, formatSignedCurrency, formatCurrency } from '../utils/formatters.js';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 function money(value, account, signed = false) { return (signed ? formatSignedCurrency : formatCurrency)(value, { currency: account.baseCurrency }); }
 function AccountCard({ account, onView, onEdit, onLifecycle, onDefault }) {
   const { t } = useTranslation();
+  const timezone = useUserTimezone();
   return <Card className="min-w-0 space-y-4">
     <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-base font-semibold text-primary" dir="auto">{account.accountName || account.company}</h3><p className="mt-1 truncate text-xs text-muted" dir="auto">{account.company}</p><p className="mt-1 font-mono text-xs text-secondary" dir="ltr">{account.accountNumber}</p></div><div className="flex flex-wrap justify-end gap-1"><Badge>{t(`status.${account.status}`)}</Badge>{account.isDefault && <Badge variant="positive"><CheckCircle size={13} aria-hidden="true" />{t('accounts.defaultAccount')}</Badge>}</div></div>
     <dl className="grid grid-cols-2 gap-3 text-sm adaptive:grid-cols-3">
@@ -28,7 +30,7 @@ function AccountCard({ account, onView, onEdit, onLifecycle, onDefault }) {
       <div><dt className="text-xs text-muted">{t('common.winRate')}</dt><dd className="mt-1 font-mono" dir="ltr">{formatPct(account.winRate)}</dd></div>
       <div><dt className="text-xs text-muted">{t('common.averageR')}</dt><dd className="mt-1 font-mono" dir="ltr">{formatR(account.averageR)}</dd></div>
       <div><dt className="text-xs text-muted">{t('common.profitFactor')}</dt><dd className="mt-1 font-mono" dir="ltr">{account.profitFactor == null ? '—' : formatNumber(account.profitFactor, { maximumFractionDigits: 2 })}</dd></div>
-      <div><dt className="text-xs text-muted">{t('accounts.lastTrade')}</dt><dd className="mt-1 font-mono text-xs" dir="ltr">{formatDate(account.lastTradeAt)}</dd></div>
+      <div><dt className="text-xs text-muted">{t('accounts.lastTrade')}</dt><dd className="mt-1 font-mono text-xs" dir="ltr">{formatDate(account.lastTradeAt, { timezone })}</dd></div>
       <div><dt className="text-xs text-muted">{t('accounts.baseCurrency')}</dt><dd className="mt-1 font-mono" dir="ltr">{account.baseCurrency}</dd></div>
     </dl>
     <div className="flex flex-wrap gap-2 border-t border-default pt-3"><Button type="button" variant="secondary" size="mobile" leadingIcon={<Eye size={16} aria-hidden="true" />} onClick={() => onView(account)}>{t('common.view')}</Button><Button type="button" variant="tertiary" size="mobile" leadingIcon={<PencilSimple size={16} aria-hidden="true" />} onClick={() => onEdit(account)}>{t('common.edit')}</Button>{account.status === 'archived' ? <Button type="button" variant="tertiary" size="mobile" leadingIcon={<ArrowCounterClockwise size={16} aria-hidden="true" />} onClick={() => onLifecycle(account, 'active')}>{t('accounts.restore')}</Button> : <><Button type="button" variant="tertiary" size="mobile" leadingIcon={<Archive size={16} aria-hidden="true" />} onClick={() => onLifecycle(account, 'archived')}>{t('accounts.archive')}</Button>{!account.isDefault && <Button type="button" variant="tertiary" size="mobile" onClick={() => onDefault(account)}>{t('accounts.setDefault')}</Button>}</>}</div>

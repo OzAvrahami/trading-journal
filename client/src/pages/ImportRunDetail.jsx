@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getImportRun } from '../api/imports.js';
 import { formatDatetime, formatNumber } from '../utils/formatters.js';
 import { Spinner } from '../components/ui/Spinner.jsx';
+import { useUserTimezone } from '../hooks/useUserTimezone.js';
 
 const FILTERS = ['all', 'imported', 'skipped', 'failed'];
 const ROW_PAGE_SIZE = 50;
@@ -18,11 +19,12 @@ function statusClass(status) {
 export default function ImportRunDetail() {
   const { runId } = useParams();
   const { t } = useTranslation();
+  const timezone = useUserTimezone();
   const [filter, setFilter] = useState('all');
   const [rowOffset, setRowOffset] = useState(0);
   const rowStatus = filter === 'all' ? undefined : filter === 'skipped' ? 'skipped_duplicate' : filter;
   const query = useQuery({ queryKey: ['import-runs', runId, rowStatus, rowOffset], queryFn: () => getImportRun(runId, { rowLimit: ROW_PAGE_SIZE, rowOffset, rowStatus }), retry: false });
-  if (query.isLoading) return <div className="flex min-h-48 items-center justify-center" role="status"><Spinner className="h-7 w-7" /><span className="sr-only">{t('importHistory.loadingDetail')}</span></div>;
+  if (query.isLoading) return <div className="flex min-h-48 items-center justify-center"><Spinner className="h-7 w-7" label={t('importHistory.loadingDetail')} /></div>;
   if (query.isError) return <div className="card space-y-3" role="alert"><h2 className="text-lg font-semibold">{t('importHistory.notFound')}</h2><p className="text-muted">{t('importHistory.notFoundDetail')}</p><Link className="btn-secondary inline-flex min-h-11 items-center" to="/import">{t('importHistory.back')}</Link></div>;
   const run = query.data;
   const rows = run.rows;
@@ -31,7 +33,7 @@ export default function ImportRunDetail() {
     <section className="card space-y-4" aria-labelledby="run-summary"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 id="run-summary" className="text-lg font-semibold" dir="auto">{run.originalFilename}</h2><p className="text-sm text-muted">{t('importHistory.noRawFile')}</p></div><span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(run.status)}`}>{t(`importHistory.status.${run.status}`)}</span></div>
       <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">{[
         [t('importHistory.sourceType'), run.sourceType], [t('importHistory.fileSize'), `${formatNumber(run.fileSizeBytes)} B`],
-        [t('importHistory.started'), formatDatetime(run.startedAt)], [t('importHistory.completedAt'), formatDatetime(run.completedAt)],
+        [t('importHistory.started'), formatDatetime(run.startedAt, { timezone })], [t('importHistory.completedAt'), formatDatetime(run.completedAt, { timezone })],
         [t('importHistory.totalRows'), formatNumber(run.totalRows)], [t('importHistory.importedRows'), formatNumber(run.importedRows)],
         [t('importHistory.skippedRows'), formatNumber(run.skippedRows)], [t('importHistory.failedRows'), formatNumber(run.failedRows)],
       ].map(([label, value]) => <div key={label}><dt className="text-xs text-muted">{label}</dt><dd className="mt-1 font-medium" dir="auto">{value}</dd></div>)}</dl>

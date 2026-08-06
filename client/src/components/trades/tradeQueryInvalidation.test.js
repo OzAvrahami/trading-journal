@@ -6,8 +6,8 @@ describe('trade query invalidation', () => {
     const queryClient = { invalidateQueries: vi.fn().mockResolvedValue() };
     await invalidateTradeQueries(queryClient, 'trade-1');
     expect(queryClient.invalidateQueries.mock.calls.map(([value]) => value.queryKey)).toEqual([
-      ['trades'], ['analytics'], ['daily-review'], ['accounts'], ['strategies'], ['setups'], ['trade', 'trade-1'],
+      ['trades'], ['analytics'], ['daily-review'], ['accounts'], ['account'], ['strategies'], ['setups'], ['trade', 'trade-1'],
     ]);
-    expect(queryClient.invalidateQueries).toHaveBeenCalledTimes(7);
+    expect(queryClient.invalidateQueries).toHaveBeenCalledTimes(8);
   });
 });

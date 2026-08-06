@@ -267,4 +267,11 @@ he.portfolio = {
   validation: { nameRequired: 'יש להזין שם לתיק.', currency: 'יש להזין קוד מטבע ISO בן שלוש אותיות.', symbol: 'יש להזין סימול שוק תקין.', instrumentRequired: 'יש לבחור נייר ערך.', positive: 'יש להזין ערך גדול מאפס.' },
 };
 
+Object.assign(he.errors, {
+  unexpectedTitle: 'לא ניתן להציג את העמוד ב־TradingLog',
+  unexpectedDetail: 'אירעה שגיאת תצוגה בלתי צפויה. אפשר לטעון מחדש את העמוד כדי להתאושש בבטחה.',
+  reloadPage: 'טעינה מחדש של העמוד',
+  IMPORT_FILE_TOO_LARGE: 'קובץ CSV חייב להיות בגודל של עד 5 MB.',
+});
+
 export default he;

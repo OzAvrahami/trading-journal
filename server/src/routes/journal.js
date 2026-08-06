@@ -42,6 +42,7 @@ function uniqueIds(value) {
 
 const tagsSchema = z.preprocess(normalizeTags, z.array(z.string().max(32)).max(10));
 const tradeIdsSchema = z.preprocess(uniqueIds, z.array(z.string().uuid()).max(20));
+const entryIdSchema = z.string().uuid();
 const trimmedRequired = (maximum) => z.string().trim().min(1).max(maximum);
 
 const entryFields = {
@@ -86,6 +87,17 @@ export const calendarSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM.'),
 });
 
+export function validateEntryId(req, res, next) {
+  const parsed = entryIdSchema.safeParse(req.params.id);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: { code: 'VALIDATION_ERROR', message: 'Route parameter validation failed.', details: { id: ['Expected a UUID.'] } },
+    });
+  }
+  req.params.id = parsed.data;
+  next();
+}
+
 router.get('/', validateQuery(listJournalSchema), async (req, res, next) => {
   try {
     res.json(await journalService.listJournalEntries(req.user.id, req.query));
@@ -98,7 +110,7 @@ router.get('/calendar', validateQuery(calendarSchema), async (req, res, next) =>
   } catch (error) { next(error); }
 });
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', validateEntryId, async (req, res, next) => {
   try {
     res.json(await journalService.getJournalEntry(req.user.id, req.params.id));
   } catch (error) { next(error); }
@@ -110,13 +122,13 @@ router.post('/', validateBody(createEntrySchema), async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.patch('/:id', validateBody(updateEntrySchema), async (req, res, next) => {
+router.patch('/:id', validateEntryId, validateBody(updateEntrySchema), async (req, res, next) => {
   try {
     res.json(await journalService.updateJournalEntry(req.user.id, req.params.id, req.body));
   } catch (error) { next(error); }
 });
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', validateEntryId, async (req, res, next) => {
   try {
     res.json(await journalService.deleteJournalEntry(req.user.id, req.params.id));
   } catch (error) { next(error); }

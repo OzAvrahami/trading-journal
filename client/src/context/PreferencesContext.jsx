@@ -25,6 +25,7 @@ export function applyLocalPreference(field, value) {
 
 const timezoneQueryRoots = [
   'analytics', 'dashboard', 'trades', 'journal', 'rules', 'goals', 'daily-review', 'import-runs',
+  'portfolios', 'portfolio',
 ];
 
 export function PreferencesProvider({ children }) {

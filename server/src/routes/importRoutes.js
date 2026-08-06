@@ -13,9 +13,15 @@ const router = Router();
 // In-memory storage — no files written to disk
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB max
+    files: 1,
+    fields: 5,
+    parts: 6,
+    fieldSize: 10 * 1024,
+  },
   fileFilter(_req, file, cb) {
-    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+    if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) {
       cb(null, true);
     } else {
       cb(createError('INVALID_FILE', 'Only CSV files are accepted.', 400));
@@ -27,15 +33,33 @@ const upload = multer({
 // Sufficient for a single-server setup; swap for Redis in a multi-instance deploy.
 const parseSessions = new Map();
 const SESSION_TTL_MS = 10 * 60 * 1000; // 10 minutes
+export const MAX_PARSE_SESSIONS_PER_USER = 3;
+export const MAX_PARSE_SESSIONS_TOTAL = 20;
 
-function storeSession(userId, sessionId, session) {
+function pruneExpiredSessions(now = Date.now()) {
+  for (const [key, entry] of parseSessions) {
+    if (now > entry.expiresAt) parseSessions.delete(key);
+  }
+}
+
+function removeOldestSession(keys) {
+  const key = keys[0];
+  if (key) parseSessions.delete(key);
+}
+
+export function storeSession(userId, sessionId, session) {
+  pruneExpiredSessions();
+  const userPrefix = `${userId}:`;
+  const userKeys = [...parseSessions.keys()].filter((key) => key.startsWith(userPrefix));
+  while (userKeys.length >= MAX_PARSE_SESSIONS_PER_USER) removeOldestSession(userKeys.splice(0, 1));
+  while (parseSessions.size >= MAX_PARSE_SESSIONS_TOTAL) removeOldestSession([...parseSessions.keys()]);
   parseSessions.set(`${userId}:${sessionId}`, {
     session,
     expiresAt: Date.now() + SESSION_TTL_MS,
   });
 }
 
-function getSession(userId, sessionId) {
+export function getSession(userId, sessionId) {
   const entry = parseSessions.get(`${userId}:${sessionId}`);
   if (!entry) return null;
   if (Date.now() > entry.expiresAt) {
@@ -51,12 +75,13 @@ function deleteSession(userId, sessionId) {
 
 // Periodically clean up expired sessions
 const cleanupTimer = setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of parseSessions) {
-    if (now > entry.expiresAt) parseSessions.delete(key);
-  }
+  pruneExpiredSessions();
 }, 60_000);
 cleanupTimer.unref?.();
+
+export function clearParseSessions() {
+  parseSessions.clear();
+}
 
 /**
  * POST /api/imports/parse
@@ -107,14 +132,12 @@ router.post('/parse', requireAuth, upload.single('file'), async (req, res, next)
  */
 router.post('/commit', requireAuth, async (req, res, next) => {
   try {
-    const { sessionId, accountId } = req.body;
-
-    if (!sessionId) {
-      throw createError('VALIDATION_ERROR', '"sessionId" is required.', 400);
-    }
-    if (!accountId) {
-      throw createError('VALIDATION_ERROR', '"accountId" is required.', 400);
-    }
+    const parsed = z.object({
+      sessionId: z.string().uuid(),
+      accountId: z.string().uuid(),
+    }).strict().safeParse(req.body);
+    if (!parsed.success) throw createError('VALIDATION_ERROR', 'Invalid Import commit request.', 400, parsed.error.flatten().fieldErrors);
+    const { sessionId, accountId } = parsed.data;
 
     const session = getSession(req.user.id, sessionId);
     if (!session) {
