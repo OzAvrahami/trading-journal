@@ -9,6 +9,7 @@ import { navigationItems } from './navigation.js';
 import { CommandPalette } from './CommandPalette.jsx';
 import { useHeaderControlsRuntime } from './HeaderControls.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
+import { useOptionalPreferences } from '../../context/PreferencesContext.jsx';
 
 function platformShortcut() {
   return typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
@@ -19,6 +20,7 @@ export function Header({ metadata }) {
   const { t } = useTranslation();
   const { isRtl } = useDirection();
   const { theme, toggleTheme } = useTheme();
+  const preferences = useOptionalPreferences();
   const { setTarget, getRouteCommands } = useHeaderControlsRuntime();
   const [commandOpen, setCommandOpen] = useState(false);
   const CrumbIcon = isRtl ? CaretLeft : CaretRight;
@@ -123,7 +125,10 @@ export function Header({ metadata }) {
             <span className="hidden rounded-sm border border-default px-1 py-0.5 font-mono text-[10px] text-muted compact:inline" dir="ltr">{shortcut}</span>
           </button>
           <LanguageSwitcher />
-          <IconButton label={themeLabel} size="mobile" className="adaptive:h-9 adaptive:w-9" onClick={toggleTheme}>
+          <IconButton label={themeLabel} size="mobile" className="adaptive:h-9 adaptive:w-9" onClick={() => {
+            if (preferences) preferences.updatePreference('theme', theme === 'dark' ? 'light' : 'dark').catch(() => {});
+            else toggleTheme();
+          }}>
             <ThemeIcon size={17} aria-hidden="true" />
           </IconButton>
         </div>

@@ -1,6 +1,22 @@
 import { currentLocalDateTime, instantToLocalDateTime, localDateTimeToInstant } from '../../utils/zonedDateTime.js';
 
 export const TRADE_FORM_MODE_KEY = 'trading-log.trade-form.mode';
+export const TRADE_FORM_MODE_EVENT = 'trading-log-trade-form-mode-change';
+export const TRADE_FORM_MODES = Object.freeze(['simple', 'advanced']);
+
+export function readTradeFormMode() {
+  try {
+    const value = globalThis.localStorage?.getItem(TRADE_FORM_MODE_KEY);
+    return TRADE_FORM_MODES.includes(value) ? value : 'advanced';
+  } catch { return 'advanced'; }
+}
+
+export function applyTradeFormMode(mode) {
+  const next = TRADE_FORM_MODES.includes(mode) ? mode : 'advanced';
+  try { globalThis.localStorage?.setItem(TRADE_FORM_MODE_KEY, next); } catch {}
+  globalThis.window?.dispatchEvent(new CustomEvent(TRADE_FORM_MODE_EVENT, { detail: next }));
+  return next;
+}
 export const MARKETS = ['stocks', 'crypto', 'futures', 'forex'];
 export const DIRECTIONS = ['long', 'short'];
 export const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'];

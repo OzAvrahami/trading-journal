@@ -1,5 +1,12 @@
 const ROUTES = [
   {
+    match: (pathname) => pathname === '/settings',
+    title: 'Settings',
+    description: 'Manage language, appearance, timezone, and trading defaults.',
+    breadcrumbs: ['System', 'Settings'],
+    nav: '/settings', routeKey: 'settings', headerControls: [], commandActions: [],
+  },
+  {
     match: (pathname) => /^\/import\/history\/[^/]+$/.test(pathname),
     title: 'Import Run',
     description: 'Review durable results for a confirmed Trade import.',
@@ -151,6 +158,7 @@ const ROUTE_KEYS = new Map([
   ['/dashboard', 'dashboard'], ['/trades', 'trades'], ['/strategies', 'strategies'], ['/daily-review', 'dailyReview'],
   ['/accounts', 'accounts'], ['/import', 'import'], ['/insights/analytics', 'analytics'],
   ['/insights/journal', 'journal'], ['/insights/rules', 'rules'], ['/insights/goals', 'goals'],
+  ['/settings', 'settings'],
 ]);
 
 export function localizeRouteMetadata(metadata, t) {
@@ -160,7 +168,7 @@ export function localizeRouteMetadata(metadata, t) {
   if (!routeKey) return metadata;
   const breadcrumbMap = {
     Journal: 'navigation.journal', Trading: 'navigation.trading', Manage: 'navigation.manage',
-    Insights: 'navigation.insights', Dashboard: 'navigation.dashboard', Trades: 'navigation.trades',
+    Insights: 'navigation.insights', System: 'navigation.system', Settings: 'navigation.settings', Dashboard: 'navigation.dashboard', Trades: 'navigation.trades',
     'Strategies & Setups': 'navigation.strategies',
     'Daily Review': 'navigation.dailyReview', 'Trade details': 'routes.tradeDetail.title',
     'New Trade': 'routes.tradeNew.title', 'Edit Trade': 'routes.tradeEdit.title',

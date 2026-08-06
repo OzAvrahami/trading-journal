@@ -108,4 +108,18 @@ describe('localized production labels and formatting', () => {
       expect(path.reduce((value, key) => value?.[key], hebrew)).toBeTruthy();
     });
   });
+
+  it('provides matching bilingual Settings navigation, metadata, controls, and feedback', () => {
+    const english = i18n.getResourceBundle('en', 'translation');
+    const hebrew = i18n.getResourceBundle('he', 'translation');
+    const paths = [
+      ['navigation', 'settings'], ['routes', 'settings', 'title'], ['settings', 'languageDirection'],
+      ['settings', 'themeOptions', 'system'], ['settings', 'timezone'], ['settings', 'defaultAccount'],
+      ['settings', 'defaultTradeMode'], ['settings', 'syncFailedDeviceOnly'],
+    ];
+    paths.forEach((path) => {
+      expect(path.reduce((value, key) => value?.[key], english)).toBeTruthy();
+      expect(path.reduce((value, key) => value?.[key], hebrew)).toBeTruthy();
+    });
+  });
 });

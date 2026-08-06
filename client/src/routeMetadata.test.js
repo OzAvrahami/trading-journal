@@ -111,4 +111,14 @@ describe('route metadata', () => {
       title: 'Import Run', routeKey: 'importRunDetail', nav: '/import', breadcrumbs: ['Manage', 'Import', 'Import Run'],
     });
   });
+
+  it('resolves and localizes Settings in the system scope', () => {
+    const metadata = resolveRouteMetadata('/settings');
+    expect(metadata).toMatchObject({ title: 'Settings', nav: '/settings', breadcrumbs: ['System', 'Settings'] });
+    const localized = localizeRouteMetadata(metadata, (key) => ({
+      'routes.settings.title': 'הגדרות', 'routes.settings.description': 'ניהול העדפות',
+      'navigation.system': 'מערכת', 'navigation.settings': 'הגדרות',
+    }[key] || key));
+    expect(localized).toMatchObject({ title: 'הגדרות', breadcrumbs: ['מערכת', 'הגדרות'] });
+  });
 });

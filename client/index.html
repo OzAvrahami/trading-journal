@@ -9,7 +9,8 @@
       (() => {
         try {
           const saved = localStorage.getItem('tradinglog-theme');
-          document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
+          const system = saved === 'system' && matchMedia('(prefers-color-scheme: light)').matches;
+          document.documentElement.dataset.theme = saved === 'light' || system ? 'light' : 'dark';
         } catch {
           document.documentElement.dataset.theme = 'dark';
         }

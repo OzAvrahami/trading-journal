@@ -210,4 +210,23 @@ en.importHistory = {
 };
 Object.assign(en.errors, { IMPORT_DUPLICATE_FILE: 'This exact file has already been imported.', IMPORT_INVALID_FILE: 'The selected file is invalid.', IMPORT_INVALID_MAPPING: 'The import mapping is invalid.', IMPORT_FATAL_ERROR: 'The import failed and no Trade changes were committed.', IMPORT_ACCOUNT_NOT_FOUND: 'The selected Account was not found.', IMPORT_ACCOUNT_ARCHIVED: 'Choose an active Account for this import.' });
 
+Object.assign(en.navigation, { system: 'System', settings: 'Settings' });
+Object.assign(en.routes, {
+  settings: { title: 'Settings', description: 'Manage language, appearance, timezone, and trading defaults.' },
+});
+en.settings = {
+  language: 'Language', languageDirection: 'Language and direction', languageHelp: 'Changes apply immediately without reloading this page.',
+  appearance: 'Appearance', appearanceHelp: 'Use the device setting or choose a fixed light or dark appearance.', theme: 'Theme',
+  themeOptions: { system: 'Follow system', light: 'Light', dark: 'Dark' },
+  timezone: 'Timezone', timezoneHelp: 'Calendar attribution for trades, Journal entries, Rule checks, Goals, and Daily Reviews uses this IANA timezone.',
+  saveTimezone: 'Save timezone', timezoneUpdated: 'Timezone updated.', invalidTimezone: 'Enter a valid IANA timezone.', timezoneSaveFailed: 'The timezone could not be saved.',
+  tradingDefaults: 'Trading defaults', tradingDefaultsHelp: 'These choices affect future Trade Editor visits and new Trade account selection.',
+  defaultAccount: 'Default Account', applyDefaultAccount: 'Apply default Account', defaultAccountUpdated: 'Default Account updated.', defaultAccountSaveFailed: 'The default Account could not be updated.',
+  accountsLoadFailed: 'Accounts could not be loaded.', noActiveAccounts: 'No active Accounts', noActiveAccountsDetail: 'Create or restore an Account before selecting a default.', manageAccounts: 'Manage Accounts',
+  defaultTradeMode: 'Default Trade Editor mode', tradeModeHelp: 'This changes visual disclosure only; Trade data and validation are unchanged.',
+  syncStatus: 'Preference synchronization', syncFailedDeviceOnly: 'Preference sync failed. Your choice is saved on this device only.',
+  syncStates: { local: 'Using preferences saved on this device.', saving: 'Saving preference to your account…', synced: 'Saved across devices.', 'local-only': 'Saved on this device only.' },
+  loadFailed: 'Settings could not be loaded.', loadFailedDetail: 'Your account preferences are unavailable right now. Local appearance and language remain available.',
+};
+
 export default en;
