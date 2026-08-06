@@ -33,6 +33,11 @@ describe('AppShell', () => {
     expect(screen.getByText('Insights')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/portfolio');
+    expect(screen.getByRole('link', { name: 'Holdings' })).toHaveAttribute('href', '/portfolio/holdings');
+    expect(screen.getByRole('link', { name: 'Transactions' })).toHaveAttribute('href', '/portfolio/transactions');
+    expect(screen.getByRole('link', { name: 'Dividends' })).toHaveAttribute('href', '/portfolio/dividends');
+    expect(screen.getByRole('link', { name: 'Portfolio Performance' })).toHaveAttribute('href', '/portfolio/performance');
+    expect(screen.getByRole('link', { name: 'Asset Allocation' })).toHaveAttribute('href', '/portfolio/allocation');
     expect(screen.getAllByText('Investments').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /Journal & Reviews/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /Rules & Adherence/i }).length).toBeGreaterThan(0);
@@ -77,6 +82,8 @@ describe('AppShell', () => {
     expect(within(dialog).getByRole('option', { name: /^Record Rule Check/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /New journal entry/ })).toBeInTheDocument();
     expect(within(dialog).getByRole('option', { name: /^Investments/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('option', { name: /^Holdings/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('option', { name: /^Transactions/ })).toBeInTheDocument();
     expect(within(dialog).queryByText(/recent/i)).not.toBeInTheDocument();
 
     await user.keyboard('{Escape}');

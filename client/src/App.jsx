@@ -29,6 +29,11 @@ const Strategies = lazy(() => import('./pages/Strategies.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const Portfolio = lazy(() => import('./pages/Portfolio.jsx'));
 const PortfolioDetail = lazy(() => import('./pages/PortfolioDetail.jsx'));
+const InvestmentHoldings = lazy(() => import('./pages/InvestmentHoldings.jsx'));
+const InvestmentTransactions = lazy(() => import('./pages/InvestmentTransactions.jsx'));
+const InvestmentDividends = lazy(() => import('./pages/InvestmentDividends.jsx'));
+const InvestmentPerformance = lazy(() => import('./pages/InvestmentPerformance.jsx'));
+const InvestmentAllocation = lazy(() => import('./pages/InvestmentAllocation.jsx'));
 
 function FullPageLoading() {
   const { t } = useTranslation();
@@ -88,6 +93,11 @@ export function AppRoutes() {
       <Route path="/insights/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+      <Route path="/portfolio/holdings" element={<ProtectedRoute><InvestmentHoldings /></ProtectedRoute>} />
+      <Route path="/portfolio/transactions" element={<ProtectedRoute><InvestmentTransactions /></ProtectedRoute>} />
+      <Route path="/portfolio/dividends" element={<ProtectedRoute><InvestmentDividends /></ProtectedRoute>} />
+      <Route path="/portfolio/performance" element={<ProtectedRoute><InvestmentPerformance /></ProtectedRoute>} />
+      <Route path="/portfolio/allocation" element={<ProtectedRoute><InvestmentAllocation /></ProtectedRoute>} />
       <Route path="/portfolio/:portfolioId" element={<ProtectedRoute><PortfolioDetail /></ProtectedRoute>} />
 
       {/* Default redirect */}

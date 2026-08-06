@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CaretLeft, CaretRight, ListChecks, MagnifyingGlass, Moon, Notebook, Plus, Sun, Target } from '@phosphor-icons/react';
 import { IconButton } from '../ui/IconButton.jsx';
 import { useDirection } from '../../hooks/useDirection.js';
 import { useTheme } from '../../hooks/useTheme.js';
-import { navigationItems } from './navigation.js';
+import { commandNavigationItems, preserveInvestmentScope } from './navigation.js';
 import { CommandPalette } from './CommandPalette.jsx';
 import { useHeaderControlsRuntime } from './HeaderControls.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
@@ -17,6 +17,7 @@ function platformShortcut() {
 
 export function Header({ metadata }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { isRtl } = useDirection();
   const { theme, toggleTheme } = useTheme();
@@ -40,13 +41,13 @@ export function Header({ metadata }) {
   }, []);
 
   const commands = useMemo(() => [
-    ...navigationItems.map(({ to, labelKey, Icon }) => ({
-      id: `navigate:${to}`,
+    ...commandNavigationItems.map(({ to, labelKey, Icon }) => ({
+      id: `navigate:${labelKey}:${to}`,
       label: t(labelKey),
       description: t('shell.goTo', { label: t(labelKey) }),
       keywords: 'navigation route',
       Icon,
-      action: () => navigate(to),
+      action: () => navigate(preserveInvestmentScope(to, location)),
     })),
     {
       id: 'newTrade',
@@ -89,7 +90,7 @@ export function Header({ metadata }) {
       action: () => navigate('/insights/goals?action=new-goal'),
     },
     ...getRouteCommands(),
-  ], [getRouteCommands, navigate, commandOpen, t]);
+  ], [getRouteCommands, navigate, commandOpen, location, t]);
 
   return (
     <header className="z-20 shrink-0 border-b border-default bg-surface">

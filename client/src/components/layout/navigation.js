@@ -1,4 +1,4 @@
-import { CalendarCheck, ChartBar, ChartLineUp, ListBullets, Bank, Notebook, UploadSimple, ListChecks, Target, TreeStructure, Gear, Briefcase } from '@phosphor-icons/react';
+import { CalendarCheck, ChartBar, ChartDonut, ChartLine, ChartLineUp, Coins, ListBullets, ListDashes, Bank, Notebook, Receipt, UploadSimple, ListChecks, Target, TreeStructure, Gear, Briefcase } from '@phosphor-icons/react';
 
 export const navigationGroups = [
   {
@@ -15,7 +15,14 @@ export const navigationGroups = [
     items: [
       {
         to: '/portfolio', label: 'Investments', labelKey: 'navigation.investments', Icon: Briefcase,
-        children: [{ to: '/portfolio', label: 'Overview', labelKey: 'navigation.investmentsOverview' }],
+        children: [
+          { to: '/portfolio', label: 'Overview', labelKey: 'navigation.investmentsOverview', Icon: Briefcase },
+          { to: '/portfolio/holdings', label: 'Holdings', labelKey: 'navigation.investmentsHoldings', Icon: ListDashes },
+          { to: '/portfolio/transactions', label: 'Transactions', labelKey: 'navigation.investmentsTransactions', Icon: Receipt },
+          { to: '/portfolio/dividends', label: 'Dividends', labelKey: 'navigation.investmentsDividends', Icon: Coins },
+          { to: '/portfolio/performance', label: 'Portfolio Performance', labelKey: 'navigation.investmentsPerformance', Icon: ChartLine },
+          { to: '/portfolio/allocation', label: 'Asset Allocation', labelKey: 'navigation.investmentsAllocation', Icon: ChartDonut },
+        ],
       },
     ],
   },
@@ -44,5 +51,12 @@ export const navigationGroups = [
 ];
 
 export const navigationItems = navigationGroups.flatMap((group) => group.items);
+export const commandNavigationItems = navigationItems.flatMap((item) => item.children ? [item, ...item.children] : [item]);
 export const mobileNavigationItems = navigationItems.filter((item) => ['/dashboard', '/trades', '/accounts'].includes(item.to));
-export const mobileMoreItems = navigationItems.filter((item) => ['/strategies', '/daily-review', '/portfolio', '/import', '/insights/analytics', '/insights/journal', '/insights/rules', '/insights/goals', '/settings'].includes(item.to));
+export const mobileMoreItems = navigationItems.flatMap((item) => item.children ? [item, ...item.children] : [item]).filter((item) => ['/strategies', '/daily-review', '/portfolio', '/portfolio/holdings', '/portfolio/transactions', '/portfolio/dividends', '/portfolio/performance', '/portfolio/allocation', '/import', '/insights/analytics', '/insights/journal', '/insights/rules', '/insights/goals', '/settings'].includes(item.to));
+
+export function preserveInvestmentScope(to, location) {
+  if (!to.startsWith('/portfolio') || !location?.pathname?.startsWith('/portfolio')) return to;
+  const accountId = new URLSearchParams(location.search).get('accountId');
+  return accountId ? `${to}?accountId=${encodeURIComponent(accountId)}` : to;
+}

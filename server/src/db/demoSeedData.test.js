@@ -372,7 +372,8 @@ describe('deterministic demo fixture generation', () => {
     assert.equal(dataset.investmentPortfolios.find((item) => item.isDefault).status, 'active');
     assert.equal(dataset.investmentInstruments.length, 6);
     assert.equal(dataset.investmentTransactions.length, 17);
-    assert.equal(dataset.investmentPrices.length, 5);
+    assert.equal(dataset.investmentPrices.length, 13);
+    assert.ok(new Set(dataset.investmentPrices.map((item) => item.priceDate)).size > 2);
     assert.ok(dataset.investmentTransactions.some((item) => item.transactionType === 'sell'));
     assert.ok(dataset.investmentTransactions.some((item) => item.transactionType === 'dividend'));
     assert.ok(dataset.investmentTransactions.some((item) => item.transactionType === 'withdrawal'));

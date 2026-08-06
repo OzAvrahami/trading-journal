@@ -25,6 +25,11 @@ vi.mock('./pages/Strategies.jsx', () => ({ default: () => <span>Strategies page<
 vi.mock('./pages/Settings.jsx', () => ({ default: () => <span>Settings page</span> }));
 vi.mock('./pages/Portfolio.jsx', () => ({ default: () => <span>Portfolio page</span> }));
 vi.mock('./pages/PortfolioDetail.jsx', () => ({ default: () => <span>Portfolio detail page</span> }));
+vi.mock('./pages/InvestmentHoldings.jsx', () => ({ default: () => <span>Investment Holdings page</span> }));
+vi.mock('./pages/InvestmentTransactions.jsx', () => ({ default: () => <span>Investment Transactions page</span> }));
+vi.mock('./pages/InvestmentDividends.jsx', () => ({ default: () => <span>Investment Dividends page</span> }));
+vi.mock('./pages/InvestmentPerformance.jsx', () => ({ default: () => <span>Investment Performance page</span> }));
+vi.mock('./pages/InvestmentAllocation.jsx', () => ({ default: () => <span>Investment Allocation page</span> }));
 vi.mock('./pages/Login.jsx', () => ({ default: () => <span>Login page</span> }));
 
 import { AppRoutes, ProtectedRoute, PublicRoute } from './App.jsx';
@@ -173,5 +178,26 @@ describe('route guards', () => {
     overview.unmount();
     render(<MemoryRouter initialEntries={['/portfolio/11111111-1111-4111-8111-111111111111']}><AppRoutes /></MemoryRouter>);
     expect(await screen.findByTestId('app-shell')).toHaveTextContent('Portfolio detail page');
+  });
+
+  it('protects all static Investment workspace routes before Portfolio detail', async () => {
+    const routes = [
+      ['/portfolio/holdings', 'Investment Holdings page'],
+      ['/portfolio/transactions', 'Investment Transactions page'],
+      ['/portfolio/dividends', 'Investment Dividends page'],
+      ['/portfolio/performance', 'Investment Performance page'],
+      ['/portfolio/allocation', 'Investment Allocation page'],
+    ];
+    for (const [path, text] of routes) {
+      authState.current = { user: null, loading: false };
+      const anonymous = render(<MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter>);
+      expect(screen.getByText('Login page')).toBeInTheDocument();
+      anonymous.unmount();
+      authState.current = { user: { id: 'user-1' }, loading: false };
+      const authenticated = render(<MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter>);
+      expect(await screen.findByTestId('app-shell')).toHaveTextContent(text);
+      expect(screen.queryByText('Portfolio detail page')).not.toBeInTheDocument();
+      authenticated.unmount();
+    }
   });
 });

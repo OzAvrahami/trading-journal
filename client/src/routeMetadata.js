@@ -1,4 +1,17 @@
 const ROUTES = [
+  ...[
+    ['/portfolio/holdings', 'Holdings', 'Review current derived positions across investment Accounts.', 'investmentsHoldings'],
+    ['/portfolio/transactions', 'Transactions', 'Review and manage the stored investment ledger.', 'investmentsTransactions'],
+    ['/portfolio/dividends', 'Dividends', 'Review recorded dividend payments across investment Accounts.', 'investmentsDividends'],
+    ['/portfolio/performance', 'Portfolio Performance', 'Review value history based on stored Transactions and manual prices.', 'investmentsPerformance'],
+    ['/portfolio/allocation', 'Asset Allocation', 'Review supported Account, asset-type, Instrument, currency, and cash allocation.', 'investmentsAllocation'],
+  ].map(([path, title, description, routeKey]) => ({
+    match: (pathname) => pathname === path,
+    title,
+    description,
+    breadcrumbs: ['Investments', title],
+    nav: '/portfolio', routeKey, headerControls: [], commandActions: [],
+  })),
   {
     match: (pathname) => /^\/portfolio\/[^/]+$/.test(pathname),
     title: 'Investment account details',
@@ -189,6 +202,9 @@ export function localizeRouteMetadata(metadata, t) {
     'New Trade': 'routes.tradeNew.title', 'Edit Trade': 'routes.tradeEdit.title',
     Accounts: 'navigation.accounts', 'Account details': 'routes.accountDetail.title', Import: 'navigation.import', 'Import Run': 'routes.importRunDetail.title', Analytics: 'navigation.analytics',
     'Journal & Reviews': 'navigation.journal', 'Rules & Adherence': 'navigation.rules', Goals: 'navigation.goals',
+    Holdings: 'navigation.investmentsHoldings', Transactions: 'navigation.investmentsTransactions',
+    Dividends: 'navigation.investmentsDividends', 'Portfolio Performance': 'navigation.investmentsPerformance',
+    'Asset Allocation': 'navigation.investmentsAllocation',
   };
   return {
     ...metadata,

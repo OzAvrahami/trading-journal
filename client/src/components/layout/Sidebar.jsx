@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CaretDown, CaretLeft, CaretRight, ChartLineUp, SignOut } from '@phosphor-icons/react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { IconButton } from '../ui/IconButton.jsx';
-import { navigationGroups } from './navigation.js';
+import { navigationGroups, preserveInvestmentScope } from './navigation.js';
 import { useDirection } from '../../hooks/useDirection.js';
 import { useTranslation } from 'react-i18next';
 
@@ -79,10 +79,17 @@ export function Sidebar({ collapsed, onToggle, user, onLogout }) {
                     <CaretDown size={14} className={`shrink-0 transition-transform ${expandedItems.has(to) ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </button>
                   {expandedItems.has(to) && children.map((child) => (
-                    <NavLink key={child.to} to={child.to} end className={({ isActive }) => `ms-6 flex min-h-11 items-center border-s px-3 text-sm ${isActive ? 'border-action font-medium text-action' : 'border-default text-secondary hover:text-primary'}`}>
+                    <NavLink key={child.to} to={preserveInvestmentScope(child.to, location)} end className={({ isActive }) => `ms-6 flex min-h-11 items-center border-s px-3 text-sm ${isActive ? 'border-action font-medium text-action' : 'border-default text-secondary hover:text-primary'}`}>
                       {t(child.labelKey)}
                     </NavLink>
                   ))}
+                </div>
+              ) : children && collapsed ? (
+                <div key={to} className="space-y-1" aria-label={t(labelKey)}>
+                  {children.map((child) => {
+                    const ChildIcon = child.Icon;
+                    return <NavLink key={child.to} to={preserveInvestmentScope(child.to, location)} end title={t(child.labelKey)} aria-label={t(child.labelKey)} className={({ isActive }) => `flex min-h-11 items-center justify-center border-s-2 px-2 text-sm ${isActive ? 'border-action bg-action-soft text-action' : 'border-transparent text-secondary hover:bg-surface-raised hover:text-primary'}`}><ChildIcon size={17} aria-hidden="true" /></NavLink>;
+                  })}
                 </div>
               ) : (
                 <NavLink

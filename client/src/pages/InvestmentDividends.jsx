@@ -1,0 +1,35 @@
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { investmentsApi } from '../api/investments.js';
+import { InvestmentWorkspaceFrame, Metric, money } from '../components/portfolio/InvestmentWorkspace.jsx';
+import { Badge } from '../components/ui/Badge.jsx';
+import { Card } from '../components/ui/Card.jsx';
+import { Field, Input } from '../components/ui/FormControls.jsx';
+import { EmptyState, ErrorState } from '../components/ui/States.jsx';
+import { Skeleton } from '../components/ui/Skeleton.jsx';
+import { formatDate, formatNumber } from '../utils/formatters.js';
+
+function Breakdown({ title, rows }) {
+  const { t } = useTranslation();
+  return <Card><h2 className="text-sm font-semibold text-primary">{title}</h2>{rows.length ? <ul className="mt-3 divide-y divide-default">{rows.map((item) => <li key={`${item.currency}-${item.key}`} className="flex min-h-12 items-center gap-3 py-2"><span className="min-w-0 flex-1 truncate" dir="auto">{item.label || item.key}</span><span className="font-mono text-sm" dir="ltr">{money(item.net, item.currency)}</span><span className="text-xs text-muted">{t('investments.paymentCount', { count: item.payments })}</span></li>)}</ul> : <p className="mt-4 text-sm text-muted">{t('investments.noDividends')}</p>}</Card>;
+}
+
+function DividendsContent({ accountId }) {
+  const { t } = useTranslation();
+  const [range, setRange] = useState({ from: '', to: '' });
+  const params = useMemo(() => ({ ...(accountId ? { accountId } : {}), ...(range.from ? { from: range.from } : {}), ...(range.to ? { to: range.to } : {}) }), [accountId, range]);
+  const query = useQuery({ queryKey: ['investments', 'dividends', params], queryFn: () => investmentsApi.dividends(params), retry: false });
+  if (query.isLoading) return <Skeleton className="h-80" label={t('investments.loadingDividends')} />;
+  if (query.isError) return <ErrorState title={t('investments.dividendsFailed')} detail={t('investments.loadFailedDetail')} onRetry={query.refetch} />;
+  const data = query.data;
+  return <>
+    <section className="rounded-lg border border-information bg-information-soft p-4" role="note"><h2 className="font-semibold text-primary">{t('investments.recordedOnly')}</h2><p className="mt-1 text-sm text-secondary">{t('investments.recordedOnlyDetail')}</p></section>
+    <section aria-labelledby="dividend-period"><h2 id="dividend-period" className="sr-only">{t('investments.period')}</h2><Card density="compact"><div className="grid gap-3 adaptive:grid-cols-2"><Field id="dividend-from" label={t('investments.fromDate')}>{(props) => <Input {...props} type="date" dir="ltr" value={range.from} onChange={(event) => setRange((current) => ({ ...current, from: event.target.value }))} />}</Field><Field id="dividend-to" label={t('investments.toDate')}>{(props) => <Input {...props} type="date" dir="ltr" value={range.to} onChange={(event) => setRange((current) => ({ ...current, to: event.target.value }))} />}</Field></div></Card></section>
+    {data.currencyGroups.length ? <section aria-labelledby="dividend-summary"><h2 id="dividend-summary" className="mb-3 text-sm font-semibold text-primary">{t('investments.dividendSummary')}</h2><div className="grid gap-3 adaptive:grid-cols-2">{data.currencyGroups.map((group) => <Card key={group.currency} density="compact"><div className="flex items-center justify-between"><h3 className="font-semibold" dir="ltr">{group.currency}</h3><Badge>{t('investments.recordedPayments')}</Badge></div><dl className="mt-4 grid grid-cols-2 gap-4 adaptive:grid-cols-3"><Metric label={t('investments.grossDividends')} value={money(group.gross, group.currency)} /><Metric label={t('common.fees')} value={money(group.fees, group.currency)} /><Metric label={t('investments.netDividends')} value={money(group.net, group.currency)} /><Metric label={t('investments.payments')} value={formatNumber(group.payments)} /><Metric label={t('investments.payingInstruments')} value={formatNumber(group.payingInstrumentCount)} /><Metric label={t('investments.latestPayment')} value={formatDate(group.latestPaymentDate)} /></dl>{group.topPayingInstrument && <p className="mt-3 text-xs text-muted">{t('investments.topPaying')}: <span className="font-mono" dir="ltr">{group.topPayingInstrument.label}</span> · <span dir="ltr">{money(group.topPayingInstrument.net, group.currency)}</span></p>}</Card>)}</div></section> : <EmptyState title={t('investments.noDividends')} detail={t('investments.noDividendsDetail')} />}
+    <section className="grid gap-4 wide:grid-cols-3"><Breakdown title={t('investments.byMonth')} rows={data.byMonth} /><Breakdown title={t('investments.byInstrument')} rows={data.byInstrument} /><Breakdown title={t('investments.byAccount')} rows={data.byAccount} /></section>
+    {data.history.length > 0 && <section aria-labelledby="dividend-history"><h2 id="dividend-history" className="mb-3 text-sm font-semibold text-primary">{t('investments.dividendHistory')}</h2><div className="grid gap-3 adaptive:hidden">{data.history.map((item) => <Card key={item.id} density="compact"><div className="flex justify-between gap-3"><div><strong className="font-mono" dir="ltr">{item.instrumentSymbol}</strong><p className="text-xs text-muted" dir="auto">{item.accountName || item.accountCompany}</p></div><span className="text-xs text-muted" dir="ltr">{formatDate(item.transactionDate)}</span></div><dl className="mt-3 grid grid-cols-3 gap-2"><Metric label={t('investments.gross')} value={money(item.grossAmount, item.currency)} /><Metric label={t('common.fees')} value={money(item.fees, item.currency)} /><Metric label={t('investments.net')} value={money(item.netAmount, item.currency)} /></dl>{item.notes && <p className="mt-3 text-sm" dir="auto">{item.notes}</p>}</Card>)}</div><Card className="hidden overflow-x-auto p-0 adaptive:block"><table className="w-full min-w-[760px] text-sm"><thead className="bg-surface-raised text-xs text-muted"><tr>{['date', 'account', 'symbol', 'gross', 'fees', 'net', 'notes'].map((key) => <th key={key} className="px-3 py-2 text-start" scope="col">{t(key === 'date' ? 'common.date' : key === 'fees' ? 'common.fees' : key === 'notes' ? 'common.notes' : `investments.${key}`)}</th>)}</tr></thead><tbody>{data.history.map((item) => <tr key={item.id} className="border-t border-default"><td className="px-3 py-3" dir="ltr">{formatDate(item.transactionDate)}</td><td className="px-3 py-3" dir="auto">{item.accountName || item.accountCompany}</td><td className="px-3 py-3 font-mono" dir="ltr">{item.instrumentSymbol}</td><td className="px-3 py-3 font-mono" dir="ltr">{money(item.grossAmount, item.currency)}</td><td className="px-3 py-3 font-mono" dir="ltr">{money(item.fees, item.currency)}</td><td className="px-3 py-3 font-mono" dir="ltr">{money(item.netAmount, item.currency)}</td><td className="max-w-56 truncate px-3 py-3" dir="auto">{item.notes || '—'}</td></tr>)}</tbody></table></Card></section>}
+  </>;
+}
+
+export default function InvestmentDividends() { return <InvestmentWorkspaceFrame>{(props) => <DividendsContent {...props} />}</InvestmentWorkspaceFrame>; }

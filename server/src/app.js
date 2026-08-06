@@ -22,6 +22,7 @@ import portfoliosRoutes from './routes/portfolios.js';
 import investmentInstrumentsRoutes from './routes/investmentInstruments.js';
 import portfolioTransactionsRoutes from './routes/portfolioTransactions.js';
 import investmentPricesRoutes from './routes/investmentPrices.js';
+import investmentsRoutes from './routes/investments.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -82,6 +83,7 @@ app.use('/api/portfolios', portfoliosRoutes);
 app.use('/api/investment-instruments', investmentInstrumentsRoutes);
 app.use('/api/portfolio-transactions', portfolioTransactionsRoutes);
 app.use('/api/investment-prices', investmentPricesRoutes);
+app.use('/api/investments', investmentsRoutes);
 
 // 404 handler
 app.use((_req, res) => {

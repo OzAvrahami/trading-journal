@@ -129,4 +129,18 @@ describe('route metadata', () => {
       title: 'Investment account details', routeKey: 'portfolioDetail', nav: '/portfolio', breadcrumbs: ['Investments', 'Overview', 'Investment account details'],
     });
   });
+
+  it('resolves every static Investment workspace route before dynamic detail', () => {
+    const expected = [
+      ['/portfolio/holdings', 'Holdings', 'investmentsHoldings'],
+      ['/portfolio/transactions', 'Transactions', 'investmentsTransactions'],
+      ['/portfolio/dividends', 'Dividends', 'investmentsDividends'],
+      ['/portfolio/performance', 'Portfolio Performance', 'investmentsPerformance'],
+      ['/portfolio/allocation', 'Asset Allocation', 'investmentsAllocation'],
+    ];
+    expected.forEach(([path, title, routeKey]) => {
+      expect(resolveRouteMetadata(path)).toMatchObject({ title, routeKey, nav: '/portfolio' });
+      expect(resolveRouteMetadata(path).routeKey).not.toBe('portfolioDetail');
+    });
+  });
 });
