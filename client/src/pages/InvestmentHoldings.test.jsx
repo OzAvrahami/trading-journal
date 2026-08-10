@@ -59,6 +59,7 @@ function holding(overrides = {}) {
     quantity: 2,
     averageCost: 100,
     costBasis: 200,
+    latestPrice: 110,
     marketValue: 220,
     unrealizedPnl: 20,
     unrealizedReturnPercent: 0.1,
@@ -131,9 +132,12 @@ describe('Investment Holdings live market quotes', () => {
 
     const apple = positionCard('Apple position');
     const microsoft = positionCard('Microsoft position');
-    expect(within(apple).getByRole('region', { name: 'Live market data' })).toHaveTextContent('312.46');
     expect(within(apple).getByRole('region', { name: 'Live market data' })).toHaveTextContent('+0.47%');
-    expect(within(microsoft).getByRole('region', { name: 'Live market data' })).toHaveTextContent('420.25');
+    expect(within(apple).getByText('Current market price').parentElement).toHaveTextContent('$312.46');
+    expect(apple).toHaveTextContent('$624.92');
+    expect(apple).toHaveTextContent('+$424.92');
+    expect(within(apple).getByText('Holding daily PnL').parentElement).toHaveTextContent('+$2.92');
+    expect(within(microsoft).getByText('Current market price').parentElement).toHaveTextContent('$420.25');
     expect(within(microsoft).getByRole('region', { name: 'Live market data' })).toHaveTextContent('-0.59%');
     expect(screen.getAllByRole('button', { name: 'Update price' })).toHaveLength(3);
   });
@@ -166,7 +170,7 @@ describe('Investment Holdings live market quotes', () => {
     const microsoft = positionCard('Microsoft position');
     expect(microsoft).toHaveTextContent('$840.00');
     expect(within(microsoft).queryByRole('region', { name: 'Live market data' })).not.toBeInTheDocument();
-    expect(within(positionCard('Apple position')).getByRole('region', { name: 'Live market data' })).toHaveTextContent('312.46');
+    expect(within(positionCard('Apple position')).getByText('Current market price').parentElement).toHaveTextContent('$312.46');
   });
 
   it('does not request market data when there are no holdings', async () => {

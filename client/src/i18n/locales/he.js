@@ -344,6 +344,19 @@ Object.assign(he.investments, {
   liveQuoteMissing: 'אין ציטוט שוק חי זמין עבור הסימול הזה. מוצג השווי השמור.',
   liveQuoteDisclaimer: 'ציטוט הספק מוצג למידע בלבד; לא מתבצעים המרת מטבע או חישוב שווי חי. השווי שלהלן עדיין מבוסס על מחירים ידניים שמורים.',
 });
+Object.assign(he.investments, {
+  liveQuoteDisclaimer: 'ציטוט השוק משמש רק לחישוב השווי הנוכחי. העלות הממוצעת, בסיס העלות, הפעולות והרווח הממומש נשארים נתוני ספרים מתועדים.',
+  currentMarketPrice: 'מחיר שוק נוכחי',
+  holdingDailyPnl: 'רווח והפסד יומי לאחזקה',
+  portfolioDailyPnl: 'רווח והפסד יומי לתיק',
+  marketPriceUnavailable: 'מחיר שוק אינו זמין',
+  manualValuationFallback: 'שווי ידני שמור נכון לתאריך',
+  liveValuation: 'שווי לפי נתוני שוק חיים',
+  manualFallback: 'גיבוי לפי מחיר ידני',
+  loadingLiveValuation: 'טוען שווי שוק נוכחי...',
+  liveValuationUnavailable: 'שווי השוק החי אינו זמין. השווי הידני השמור נשאר מוצג כאשר הוא זמין.',
+  missingPriceDetail: 'לפחות לנייר ערך מוחזק אחד אין ציטוט שוק תקין וגם אין מחיר ידני שמור. הסכומים הנוכחיים אינם מוצגים במקום להתייחס לערך החסר כאפס.',
+});
 Object.assign(he.errors, {
   ACCOUNT_GROUP_INVALID: 'יש לבחור קבוצת חשבון תקינה.', ACCOUNT_PARTICIPATION_INVALID: 'שילוב ההשתתפות אינו תקין עבור קבוצת החשבון.',
   INVESTMENT_PORTFOLIO_LINK_CONFLICT: 'החשבון או נתוני ההשקעות כבר מקושרים.', INVESTMENT_PORTFOLIO_CURRENCY_MISMATCH: 'החשבון ונתוני ההשקעות חייבים להשתמש באותו מטבע בסיס.',

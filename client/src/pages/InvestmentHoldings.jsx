@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { CurrencyDollar, Plus } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 import { investmentsApi } from '../api/investments.js';
-import { MARKET_DATA_BATCH_SIZE, marketDataApi } from '../api/marketData.js';
 import { portfolioApi } from '../api/portfolio.js';
 import { InvestmentWorkspaceFrame, PositionSummary } from '../components/portfolio/InvestmentWorkspace.jsx';
 import { invalidateInvestmentWorkspace } from '../components/portfolio/investmentQueryInvalidation.js';
@@ -16,43 +15,10 @@ import { Modal } from '../components/ui/Modal.jsx';
 import { EmptyState, ErrorState } from '../components/ui/States.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
+import { useInvestmentQuotes } from '../hooks/useInvestmentQuotes.js';
+import { valueInvestmentHoldings } from '../utils/investmentValuation.js';
 
-const MARKET_SYMBOL_PATTERN = /^[A-Z0-9.-]{1,20}$/;
 const EMPTY_HOLDINGS = Object.freeze([]);
-
-function normalizeMarketSymbol(symbol) {
-  if (typeof symbol !== 'string') return null;
-  const normalized = symbol.trim().toUpperCase();
-  return MARKET_SYMBOL_PATTERN.test(normalized) ? normalized : null;
-}
-
-export function quoteSymbolsForHoldings(holdings = []) {
-  return [...new Set(
-    holdings
-      .map((item) => normalizeMarketSymbol(item.symbol))
-      .filter(Boolean),
-  )].sort();
-}
-
-async function loadQuoteBatches(symbols) {
-  const batches = [];
-  for (let index = 0; index < symbols.length; index += MARKET_DATA_BATCH_SIZE) {
-    batches.push(symbols.slice(index, index + MARKET_DATA_BATCH_SIZE));
-  }
-  const results = await Promise.all(batches.map((batch) => marketDataApi.quotes(batch)));
-  return {
-    quotes: results.flatMap((result) => Array.isArray(result?.quotes) ? result.quotes : []),
-  };
-}
-
-function usableQuote(quote) {
-  return Boolean(
-    quote
-    && normalizeMarketSymbol(quote.symbol)
-    && Number.isFinite(Number(quote.price))
-    && Number(quote.price) > 0,
-  );
-}
 
 export function HoldingsContent({ accountId, querySuffix }) {
   const { t } = useTranslation();
@@ -72,21 +38,11 @@ export function HoldingsContent({ accountId, querySuffix }) {
     retry: false,
   });
   const rows = query.data?.holdings ?? EMPTY_HOLDINGS;
-  const quoteSymbols = useMemo(() => quoteSymbolsForHoldings(rows), [rows]);
-  const quotesQuery = useQuery({
-    queryKey: ['market-data', 'quotes', quoteSymbols],
-    queryFn: () => loadQuoteBatches(quoteSymbols),
-    enabled: query.isSuccess && quoteSymbols.length > 0,
-    retry: false,
-    staleTime: 30_000,
-  });
-  const quotesBySymbol = useMemo(() => {
-    const lookup = {};
-    for (const quote of quotesQuery.data?.quotes ?? []) {
-      if (usableQuote(quote)) lookup[normalizeMarketSymbol(quote.symbol)] = quote;
-    }
-    return lookup;
-  }, [quotesQuery.data]);
+  const quotesQuery = useInvestmentQuotes(rows, { enabled: query.isSuccess });
+  const valuedRows = useMemo(
+    () => valueInvestmentHoldings(rows, quotesQuery.quoteLookup, { accountId: accountId || null }),
+    [accountId, quotesQuery.quoteLookup, rows],
+  );
   const instruments = useQuery({
     queryKey: ['investment-instruments', { includeInactive: true }],
     queryFn: () => portfolioApi.instruments({ includeInactive: 'true' }),
@@ -128,16 +84,13 @@ export function HoldingsContent({ accountId, querySuffix }) {
         </div>
         <Link className="inline-flex min-h-11 items-center gap-2 rounded-md bg-action px-3 text-sm font-semibold text-on-action" to={`/portfolio/transactions${querySuffix}`}><Plus size={16} aria-hidden="true" />{t('portfolio.addTransaction')}</Link>
       </div>
-      {rows.length ? <div className="grid gap-3 adaptive:grid-cols-2 wide:grid-cols-3">
-        {rows.map((item) => {
-          const symbol = normalizeMarketSymbol(item.symbol);
-          const quote = symbol ? quotesBySymbol[symbol] : null;
+      {valuedRows.length ? <div className="grid gap-3 adaptive:grid-cols-2 wide:grid-cols-3">
+        {valuedRows.map((item) => {
           return <PositionSummary
-            key={`${item.accountId}-${item.instrumentId}`}
-            item={item}
-            quote={quote}
-            quoteStatus={quotesQuery.isSuccess && symbol && !quote ? 'missing' : null}
-            actions={<>
+             key={`${item.accountId}-${item.instrumentId}`}
+             item={item}
+             quoteStatus={quotesQuery.isSuccess && !item.liveQuote ? 'missing' : null}
+             actions={<>
               <Link className="inline-flex min-h-11 items-center px-2 text-sm text-action" to={`/portfolio/${item.portfolioId}`}>{t('investments.openAccountLedger')}</Link>
               <Button size="sm" leadingIcon={<CurrencyDollar size={15} aria-hidden="true" />} onClick={() => setPriceTarget(item)}>{t('portfolio.updatePrice')}</Button>
             </>}
