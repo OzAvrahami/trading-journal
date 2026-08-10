@@ -328,6 +328,18 @@ he.investments = {
   loadingPerformance: 'טעינת ביצועי התיק', performanceFailed: 'לא ניתן לטעון את ביצועי התיק', performanceBoundary: 'זהו דוח מוגבל ואינו TWR,‏ XIRR, השוואת מדד, חישוב מס או ביצועים בזמן אמת.', performanceHistory: 'היסטוריית ביצועים מתועדת', noPerformance: 'אין היסטוריית ביצועים', noPerformanceDetail: 'יש לתעד פעולות ומחירים ידניים בתאריכים שונים כדי לבנות את הסדרה ההיסטורית.',
   loadingAllocation: 'טעינת הקצאת נכסים', allocationFailed: 'לא ניתן לטעון את הקצאת הנכסים', noAllocation: 'אין הקצאה נוכחית', allocationDimension: 'ממד הקצאה', allocationDimensions: { account: 'חשבון', assetType: 'סוג נכס', instrument: 'נייר ערך', cash: 'מזומן מול נכסים מושקעים' }, allocationMissingDetail: 'חישוב האחוזים דורש שווי מלא לכל נייר ערך מוחזק בקבוצת המטבע.', allocationChartLabel: 'תרשים הקצאה ב־{{currency}} עם רשימה טקסטואלית מקבילה', supportedAllocationOnly: 'ההקצאה משתמשת רק בנתוני חשבון, סוג נכס, נייר ערך, מטבע ומזומן.', cash: 'מזומן', invested: 'נכסים מושקעים',
 };
+Object.assign(he.investments, {
+  liveMarketData: 'נתוני שוק חיים',
+  liveQuote: 'ציטוט שוק חי',
+  livePrice: 'מחיר שוק חי',
+  dayChange: 'שינוי יומי',
+  dayChangePercent: 'שינוי יומי באחוזים',
+  quoteAsOf: 'זמן הציטוט',
+  loadingLiveQuotes: 'טעינת ציטוטי שוק חיים…',
+  liveQuotesUnavailable: 'ציטוטי השוק החיים אינם זמינים. השווי השמור והמחירים הידניים נשארים זמינים.',
+  liveQuoteMissing: 'אין ציטוט שוק חי זמין עבור הסימול הזה. מוצג השווי השמור.',
+  liveQuoteDisclaimer: 'ציטוט הספק מוצג למידע בלבד; לא מתבצעים המרת מטבע או חישוב שווי חי. השווי שלהלן עדיין מבוסס על מחירים ידניים שמורים.',
+});
 Object.assign(he.errors, {
   ACCOUNT_GROUP_INVALID: 'יש לבחור קבוצת חשבון תקינה.', ACCOUNT_PARTICIPATION_INVALID: 'שילוב ההשתתפות אינו תקין עבור קבוצת החשבון.',
   INVESTMENT_PORTFOLIO_LINK_CONFLICT: 'החשבון או נתוני ההשקעות כבר מקושרים.', INVESTMENT_PORTFOLIO_CURRENCY_MISMATCH: 'החשבון ונתוני ההשקעות חייבים להשתמש באותו מטבע בסיס.',

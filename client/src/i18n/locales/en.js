@@ -306,6 +306,18 @@ en.investments = {
   loadingPerformance: 'Loading Portfolio Performance', performanceFailed: 'Portfolio Performance could not be loaded', performanceBoundary: 'This bounded report is not TWR, XIRR, benchmark, tax-adjusted, or live performance.', performanceHistory: 'Recorded performance history', noPerformance: 'No performance history', noPerformanceDetail: 'Record Transactions and manual prices on dated points to build the historical series.',
   loadingAllocation: 'Loading Asset Allocation', allocationFailed: 'Asset Allocation could not be loaded', noAllocation: 'No current allocation', allocationDimension: 'Allocation dimension', allocationDimensions: { account: 'Account', assetType: 'Asset type', instrument: 'Instrument', cash: 'Cash versus invested assets' }, allocationMissingDetail: 'Percentages require a complete valuation for every held Instrument in this currency.', allocationChartLabel: '{{currency}} allocation chart with an equivalent text list', supportedAllocationOnly: 'Allocation uses only Account, asset type, Instrument, currency, and cash metadata.', cash: 'Cash', invested: 'Invested assets',
 };
+Object.assign(en.investments, {
+  liveMarketData: 'Live market data',
+  liveQuote: 'Live quote',
+  livePrice: 'Live price',
+  dayChange: 'Day change',
+  dayChangePercent: 'Day change %',
+  quoteAsOf: 'Quote as of',
+  loadingLiveQuotes: 'Loading live market quotes…',
+  liveQuotesUnavailable: 'Live market quotes are unavailable. Stored and manual valuations remain available.',
+  liveQuoteMissing: 'No live quote is available for this symbol. Stored valuation is shown.',
+  liveQuoteDisclaimer: 'Informational provider quote; no FX or live valuation is calculated. The valuation below remains based on stored manual prices.',
+});
 Object.assign(en.errors, {
   ACCOUNT_GROUP_INVALID: 'Choose a valid Account group.', ACCOUNT_PARTICIPATION_INVALID: 'This participation combination is not valid for the Account group.',
   INVESTMENT_PORTFOLIO_LINK_CONFLICT: 'This Account or investment ledger is already linked.', INVESTMENT_PORTFOLIO_CURRENCY_MISMATCH: 'The Account and investment data must use the same base currency.',
