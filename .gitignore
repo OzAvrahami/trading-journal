@@ -123,3 +123,6 @@ server/.local/demo-seed-backups/
 
 # Local Codex/Claude settings; other .claude files remain shareable.
 .claude/
+
+# Local real broker import samples
+import-samples-local/

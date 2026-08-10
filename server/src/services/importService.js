@@ -14,42 +14,70 @@ const INSERT_COLS = [
   'emotions', 'screenshot_links', 'dedup_key',
 ];
 
+function expandSourceRows(row) {
+  if (!Array.isArray(row._sourceMembers) || row._sourceMembers.length === 0) return [row];
+  return row._sourceMembers.map((member) => ({
+    _rowIndex: member.rowIndex,
+    _sourceIdentifier: member.sourceIdentifier,
+    _sourceBuyFillId: member.buyFillId,
+    _sourceSellFillId: member.sellFillId,
+    _physicalDuplicate: Boolean(member.physicalDuplicate),
+    symbol: row.symbol,
+  }));
+}
+
+function previewRow(row) {
+  const { _sourceMembers, ...preview } = row;
+  return preview;
+}
+
 /**
  * Parse a CSV buffer for the given broker, run in-file deduplication,
  * and return a preview plus stats. Does NOT write to the database.
  */
 export async function parseImport(broker, csvBuffer) {
   const parse = getImporter(broker);
-  const allRows = parse(csvBuffer);
+  const logicalRows = parse(csvBuffer);
 
   // Level 1: within-file dedup
   const seen = new Set();
   const unique = [];
-  const inFileDups = [];
+  const sourceRows = [];
 
-  for (const row of allRows) {
+  for (const row of logicalRows) {
     const key = buildDedupKey(row);
-    if (seen.has(key)) {
-      inFileDups.push(row._rowIndex);
-      row._dedupKey = key;
-      row._withinFileDuplicate = true;
-    } else {
+    const withinFileDuplicate = seen.has(key);
+    row._dedupKey = key;
+    row._withinFileDuplicate = withinFileDuplicate;
+    if (!withinFileDuplicate) {
       seen.add(key);
-      row._dedupKey = key;
-      row._withinFileDuplicate = false;
       unique.push(row);
+    }
+
+    for (const sourceRow of expandSourceRows(row)) {
+      sourceRow._dedupKey = key;
+      sourceRow._withinFileDuplicate = withinFileDuplicate;
+      sourceRows.push(sourceRow);
     }
   }
 
+  const inFileDuplicates = sourceRows.filter(
+    row => row._withinFileDuplicate || row._physicalDuplicate,
+  ).length;
+
   return {
-    preview: unique.slice(0, PREVIEW_LIMIT),
+    preview: unique.slice(0, PREVIEW_LIMIT).map(previewRow),
     stats: {
-      total: allRows.length,
+      // Backward-compatible fields retain physical-row total and importable Trade count.
+      total: sourceRows.length,
       uniqueInFile: unique.length,
-      inFileDuplicates: inFileDups.length,
+      inFileDuplicates,
+      sourceRowCount: sourceRows.length,
+      logicalTradeCount: logicalRows.length,
+      tradesToImport: unique.length,
     },
     rows: unique,
-    sourceRows: allRows,
+    sourceRows,
   };
 }
 
