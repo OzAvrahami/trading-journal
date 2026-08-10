@@ -89,6 +89,77 @@ describe('Import History queries', () => {
     assert.ok(poolCalls.some(call => /INSERT INTO import_runs/.test(call.sql) && call.sql.includes("'processing'")));
   });
 
+  test('maps grouped physical rows to one Trade while skipping only a true physical duplicate', async () => {
+    const rowResultParams = [];
+    const client = { query: async (sql, params) => {
+      if (/SELECT dedup_key FROM trades/.test(sql)) return { rows: [] };
+      if (/INSERT INTO trades/.test(sql)) return { rows: [{ id: 'trade-grouped', dedup_key: 'logical-key' }] };
+      if (/INSERT INTO import_run_rows/.test(sql)) rowResultParams.push(params);
+      return { rows: [], rowCount: 1 };
+    }, release() {} };
+    const queryable = { query: async (sql) => {
+      if (/FROM import_runs r/.test(sql)) return { rows: [] };
+      if (/SELECT id, status FROM trading_accounts/.test(sql)) return { rows: [{ id: 'account', status: 'active' }] };
+      if (/INSERT INTO import_runs/.test(sql)) return { rows: [{ id: 'run-grouped' }] };
+      return { rows: [] };
+    }, connect: async () => client };
+    const logicalTrade = { _rowIndex: 2, _dedupKey: 'logical-key', _withinFileDuplicate: false, symbol: 'MNQ', market: 'futures', direction: 'short', entry_datetime: '2026-08-04T10:00:00Z', exit_datetime: '2026-08-04T10:05:00Z', entry_price: 100, exit_price: 99, quantity: 3, fees: 5.7, pnl_gross: 6, pnl_net: 0.3, duration_minutes: 5, status: 'closed' };
+    const sourceRows = [
+      { _rowIndex: 2, _dedupKey: 'logical-key', _withinFileDuplicate: false, _physicalDuplicate: false, _sourceIdentifier: 'buy-1:sell-open', symbol: 'MNQ' },
+      { _rowIndex: 3, _dedupKey: 'logical-key', _withinFileDuplicate: false, _physicalDuplicate: false, _sourceIdentifier: 'buy-2:sell-open', symbol: 'MNQ' },
+      { _rowIndex: 4, _dedupKey: 'logical-key', _withinFileDuplicate: false, _physicalDuplicate: true, _sourceIdentifier: 'buy-2:sell-open', symbol: 'MNQ' },
+    ];
+
+    const result = await executeImportRun('owner', {
+      rows: [logicalTrade], sourceRows, fileSha256: 'c'.repeat(64), originalFilename: 'grouped.csv',
+      fileSizeBytes: 42, sourceType: 'tradovate', mapping: { importer: 'tradovate' },
+    }, 'account', queryable);
+
+    assert.equal(result.inserted, 1);
+    assert.equal(result.importedRows, 2);
+    assert.equal(result.skippedRows, 1);
+    assert.deepEqual(rowResultParams.map((params) => ({
+      row: params[2], status: params[3], tradeId: params[4], sourceIdentifier: params[6],
+    })), [
+      { row: 2, status: 'imported', tradeId: 'trade-grouped', sourceIdentifier: 'buy-1:sell-open' },
+      { row: 3, status: 'imported', tradeId: 'trade-grouped', sourceIdentifier: 'buy-2:sell-open' },
+      { row: 4, status: 'skipped_duplicate', tradeId: null, sourceIdentifier: 'buy-2:sell-open' },
+    ]);
+  });
+
+  test('marks every physical member skipped when its logical Trade already exists', async () => {
+    const rowResultParams = [];
+    const client = { query: async (sql, params) => {
+      if (/SELECT dedup_key FROM trades/.test(sql)) return { rows: [{ dedup_key: 'existing-logical-key' }] };
+      if (/INSERT INTO import_run_rows/.test(sql)) rowResultParams.push(params);
+      return { rows: [], rowCount: 1 };
+    }, release() {} };
+    const queryable = { query: async (sql) => {
+      if (/FROM import_runs r/.test(sql)) return { rows: [] };
+      if (/SELECT id, status FROM trading_accounts/.test(sql)) return { rows: [{ id: 'account', status: 'active' }] };
+      if (/INSERT INTO import_runs/.test(sql)) return { rows: [{ id: 'run-existing' }] };
+      return { rows: [] };
+    }, connect: async () => client };
+    const logicalTrade = { _rowIndex: 2, _dedupKey: 'existing-logical-key', _withinFileDuplicate: false, symbol: 'MNQ', market: 'futures', direction: 'short', entry_datetime: '2026-08-04T10:00:00Z', exit_datetime: '2026-08-04T10:05:00Z', entry_price: 100, exit_price: 99, quantity: 3, fees: 5.7, pnl_gross: 6, pnl_net: 0.3, duration_minutes: 5, status: 'closed' };
+    const sourceRows = [2, 3].map((rowNumber) => ({
+      _rowIndex: rowNumber, _dedupKey: 'existing-logical-key', _withinFileDuplicate: false,
+      _physicalDuplicate: false, _sourceIdentifier: `buy-${rowNumber}:sell-open`, symbol: 'MNQ',
+    }));
+
+    const result = await executeImportRun('owner', {
+      rows: [logicalTrade], sourceRows, fileSha256: 'd'.repeat(64), originalFilename: 'existing.csv',
+      fileSizeBytes: 42, sourceType: 'tradovate', mapping: { importer: 'tradovate' },
+    }, 'account', queryable);
+
+    assert.equal(result.inserted, 0);
+    assert.equal(result.importedRows, 0);
+    assert.equal(result.skippedRows, 2);
+    assert.deepEqual(rowResultParams.map((params) => ({ status: params[3], tradeId: params[4] })), [
+      { status: 'skipped_duplicate', tradeId: null },
+      { status: 'skipped_duplicate', tradeId: null },
+    ]);
+  });
+
   test('fatal insertion rolls back Trades, records failed row results, and never commits', async () => {
     const transactionCalls = [];
     const failureCalls = [];

@@ -66,6 +66,10 @@ Object.assign(he.analytics, {
 Object.assign(he.importPage, {
   selectUpload: 'בחירה והעלאה', done: 'הושלם', progress: 'התקדמות הייבוא', noRows: 'אין שורות לתצוגה מקדימה.', previewTable: 'תצוגה מקדימה של עסקאות לייבוא', broker: 'ברוקר', csvFile: 'קובץ CSV', parsing: 'מנתח…', selectBrokerError: 'יש לבחור ברוקר.', selectFileError: 'יש לבחור קובץ CSV.', selectAccountError: 'יש לבחור חשבון לעסקאות האלה.', parseFailed: 'ניתוח קובץ ה־CSV נכשל.', totalRows: 'סך השורות בקובץ', uniqueRows: 'שורות ייחודיות בקובץ', inFileDuplicates: 'כפילויות בתוך הקובץ', previewCount: 'תצוגה מקדימה ({{shown}} מתוך {{total}} שורות ייחודיות)', assignAccount: 'שיוך לחשבון *', assignAccountHelp: 'כל העסקאות המיובאות ישויכו לחשבון הזה.', importCount: 'ייבוא עסקה אחת', importCount_other: 'ייבוא {{count}} עסקאות', startOver: 'התחלה מחדש', importedCount: 'עסקאות שיובאו', existingCount: 'כבר היו קיימות', viewTrades: 'הצגת עסקאות', importMore: 'ייבוא נוסף'
 });
+Object.assign(he.importPage, {
+  sourceRows: 'שורות מקור', logicalTrades: 'עסקאות לוגיות', tradesToImport: 'עסקאות לייבוא',
+  previewCount: 'תצוגה מקדימה ({{shown}} מתוך {{total}} עסקאות לוגיות)',
+});
 Object.assign(he.rules, {
   overallAdherence: 'עמידה כוללת', summary: 'סיכום עמידה בכללים', notApplicableDetail: 'כל הבדיקות בתקופה אינן רלוונטיות, ולכן הן אינן נכללות במכנה של חישוב העמידה.', recordToMeasure: 'תעדו מה קרה כדי להתחיל למדוד עמידה בכללים.', reactivateHelp: 'יש להפעיל מחדש את הכלל לפני תיעוד בדיקה חדשה.', noLinkedContext: 'אין הקשר מקושר', overview: 'סקירה', detailsUnavailable: 'פרטי הכלל אינם זמינים. נסו לטעון מחדש את רשימת הכללים לפני העריכה.', period: 'תקופת הכללים', customDates: 'תאריכים מותאמים לכללים', view: 'תצוגת כללים', invalidRange: 'טווח התאריכים אינו תקין', managementForms: 'ניהול כללים וטפסים', perRule: 'עמידה לפי כלל', recentChecks: 'בדיקות אחרונות', management: 'ניהול כללים', search: 'חיפוש כללים', statusFilter: 'סטטוס כלל', scopeFilter: 'היקף כלל', allScopes: 'כל ההיקפים'
 });

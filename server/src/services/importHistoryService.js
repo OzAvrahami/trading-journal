@@ -145,14 +145,14 @@ export async function executeImportRun(userId, session, accountId, queryable = p
     const committed = await commitImport(userId, session.rows, accountId, client);
     const insertedByKey = new Map(committed.insertedTrades.map(item => [item.dedupKey, item.id]));
     const duplicateKeys = new Set(committed.duplicateKeys);
-    const seen = new Set();
     const rowResults = session.sourceRows.map(row => {
       const common = { rowNumber: row._rowIndex, symbol: row.symbol, sourceIdentifier: row._sourceIdentifier ?? row._dedupKey };
-      if (row._withinFileDuplicate || seen.has(row._dedupKey) || duplicateKeys.has(row._dedupKey)) {
-        seen.add(row._dedupKey);
+      if (row._physicalDuplicate) {
+        return { ...common, status: 'skipped_duplicate', errorCode: 'IMPORT_SOURCE_ROW_DUPLICATE', errorDetail: 'The exact buy/sell execution pair was repeated in the source file.' };
+      }
+      if (row._withinFileDuplicate || duplicateKeys.has(row._dedupKey)) {
         return { ...common, status: 'skipped_duplicate', errorCode: 'IMPORT_ROW_DUPLICATE', errorDetail: 'The Trade matched another row or an existing Trade.' };
       }
-      seen.add(row._dedupKey);
       return { ...common, status: 'imported', tradeId: insertedByKey.get(row._dedupKey) };
     });
     await insertRowResults(client, runId, userId, rowResults);
@@ -168,7 +168,7 @@ export async function executeImportRun(userId, session, accountId, queryable = p
         status === 'failed' ? 'No source row produced a new Trade.' : null, userId],
     );
     await client.query('COMMIT');
-    return { runId, status, inserted: importedRows, dbDuplicates: skippedRows, totalRows: rowResults.length, importedRows, skippedRows, failedRows };
+    return { runId, status, inserted: committed.inserted, dbDuplicates: skippedRows, totalRows: rowResults.length, importedRows, skippedRows, failedRows };
   } catch (error) {
     if (client) try { await client.query('ROLLBACK'); } catch {}
     try {
