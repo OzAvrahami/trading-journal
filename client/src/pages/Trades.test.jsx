@@ -17,18 +17,19 @@ import { HeaderControlsProvider } from '../components/layout/HeaderControls.jsx'
 import { resolveRouteMetadata } from '../routeMetadata.js';
 
 const trade = { id: 't1', accountId: 'a1', symbol: 'AAPL', market: 'stocks', direction: 'long', status: 'closed', entryDatetime: '2026-07-01T12:00:00Z', exitDatetime: '2026-07-01T13:00:00Z', entryPrice: 100, exitPrice: 110, quantity: 2, pnlNet: 20, rMultiple: 2, durationMinutes: 60 };
+const defaultListFilters = { page: 1, limit: 50, sort: 'entry_datetime', order: 'desc' };
 
 function response(data = [], overrides = {}) {
   return { data, pagination: { page: 1, limit: 50, total: data.length, totalPages: 1, ...overrides } };
 }
 
-function renderTrades() {
+function renderTrades(entry = '/trades') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   const metadata = resolveRouteMetadata('/trades');
   return render(
     <QueryClientProvider client={client}>
       <ToastProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[entry]}>
           <HeaderControlsProvider metadata={metadata}>
             <Header metadata={metadata} />
             <Trades />
@@ -60,14 +61,15 @@ describe('Trades page', () => {
     apiMocks.list.mockResolvedValue(response());
     renderTrades();
     expect(await screen.findByRole('heading', { name: 'No trades recorded yet' })).toBeInTheDocument();
+    expect(apiMocks.list.mock.calls[0][0]).toEqual(defaultListFilters);
 
     await userEvent.click(screen.getByRole('button', { name: 'More filters' }));
     fireEvent.change(screen.getByLabelText('Symbol'), { target: { value: 'ZZZZ' } });
     expect(await screen.findByRole('heading', { name: 'No trades match the current filters' })).toBeInTheDocument();
+    await waitFor(() => expect(apiMocks.list).toHaveBeenLastCalledWith({ ...defaultListFilters, symbol: 'ZZZZ' }));
     await userEvent.click(screen.getAllByRole('button', { name: 'Clear filters' }).at(-1));
 
-    await waitFor(() => expect(apiMocks.list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, limit: 50, sort: 'entry_datetime', order: 'desc' })));
-    expect(apiMocks.list.mock.calls.at(-1)[0]).not.toHaveProperty('symbol');
+    await waitFor(() => expect(apiMocks.list).toHaveBeenLastCalledWith(defaultListFilters));
   });
 
   it('shows a retryable API error while preserving the filter UI', async () => {
@@ -82,10 +84,21 @@ describe('Trades page', () => {
     apiMocks.list.mockResolvedValue(response([trade]));
     renderTrades();
     expect((await screen.findAllByText('AAPL')).length).toBeGreaterThan(0);
+    expect(apiMocks.list.mock.calls[0][0]).toEqual(defaultListFilters);
     expect(screen.getAllByText('Main').length).toBeGreaterThan(0);
     expect(screen.queryByText(/review status/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/execution timeline/i)).not.toBeInTheDocument();
     expect(screen.getByText('Showing 1–1 of 1 trades')).toBeInTheDocument();
+  });
+
+  it('preserves a non-empty account ID from an account-scoped URL', async () => {
+    const accountId = '11111111-1111-4111-8111-111111111111';
+    apiMocks.list.mockResolvedValue(response([trade]));
+
+    renderTrades(`/trades?accountId=${accountId}`);
+
+    expect((await screen.findAllByText('AAPL')).length).toBeGreaterThan(0);
+    expect(apiMocks.list.mock.calls[0][0]).toEqual({ ...defaultListFilters, accountId });
   });
 
   it('preserves paging and export scope while separating New Trade from Quick Add', async () => {

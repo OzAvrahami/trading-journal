@@ -46,7 +46,10 @@ export default function Trades() {
   const { t } = useTranslation();
   const timezone = useUserTimezone();
   const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState(() => ({ ...DEFAULT_TRADE_FILTERS, accountId: searchParams.get('accountId') || '' }));
+  const [filters, setFilters] = useState(() => {
+    const accountId = searchParams.get('accountId');
+    return { ...DEFAULT_TRADE_FILTERS, ...(accountId ? { accountId } : {}) };
+  });
   const [addOpen, setAddOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const toast = useToast();
