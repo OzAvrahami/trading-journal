@@ -100,6 +100,18 @@ Open http://localhost:5173
 - **CSV Export** — Download all filtered trades as CSV
 - **Security** — Helmet, CORS, rate limiting, Zod validation, parameterized SQL
 
+## Database security boundary
+
+Application data follows one trusted path:
+
+```text
+Browser -> Express API -> trusted PostgreSQL connection -> Supabase PostgreSQL
+```
+
+The browser must not access application tables through the Supabase Data API/PostgREST. Public application tables use Row Level Security with no `anon` or `authenticated` policies; Express enforces the authenticated user boundary and connects with the trusted backend database role.
+
+`DATABASE_URL`, JWT secrets, Supabase secret/service-role keys, and provider API keys are server-only credentials. Never give a secret a `VITE_` prefix because Vite exposes `VITE_*` values to browser bundles. Only non-secret client configuration such as `VITE_API_URL` may use that prefix.
+
 ## Computed Fields
 
 Server calculates these automatically on every create/update:
