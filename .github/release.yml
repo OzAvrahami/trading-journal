@@ -1,0 +1,24 @@
+# Adapted from OzAvrahami/ProjectDeck at 9f0bbb27ce015c13c76dd7c7db1f162751d2bc60
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+  categories:
+    - title: Features
+      labels:
+        - feature
+    - title: Enhancements
+      labels:
+        - enhancement
+    - title: Bug Fixes
+      labels:
+        - bug
+    - title: Maintenance
+      labels:
+        - chore
+    - title: Documentation
+      labels:
+        - documentation
+
