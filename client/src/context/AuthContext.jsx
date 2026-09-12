@@ -1,75 +1,61 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/auth.js';
-import { setAccessToken, clearAccessToken } from '../api/client.js';
+import { refreshAccessToken } from '../api/client.js';
+import { setAccessToken, getSessionVersion, invalidateSession, onSessionInvalidated } from '../api/session.js';
 
 export const AuthContext = createContext(null);
-
 export function AuthProvider({ children }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Prevent double-fire in React StrictMode
-  const didInit = useRef(false);
-
-  // On mount, try to restore session via the httpOnly refresh token cookie.
-  // Use a raw axios call so the response interceptor doesn't interfere.
-  useEffect(() => {
-    if (didInit.current) return;
-    didInit.current = true;
-
-    axios
-      .post(`${import.meta.env.VITE_API_URL || ''}/api/auth/refresh`, {}, { withCredentials: true })
-      .then(({ data }) => {
-        setAccessToken(data.accessToken);
-        return authApi.getMe();
-      })
-      .then(setUser)
-      .catch(() => {
-        // No valid session — stay logged out, this is expected
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const login = useCallback(async (credentials) => {
-    const { user: u, accessToken } = await authApi.login(credentials);
-    setAccessToken(accessToken);
-    setUser(u);
-    return u;
-  }, []);
-
-  const signup = useCallback(async (data) => {
-    const { user: u, accessToken } = await authApi.signup(data);
-    setAccessToken(accessToken);
-    setUser(u);
-    return u;
-  }, []);
-
-  const logout = useCallback(async () => {
-    try { await authApi.logout(); } catch {}
-    clearAccessToken();
+  useEffect(() => onSessionInvalidated(() => {
+    // Cancel before clearing: late responses cannot refill a previous user's cache.
+    void queryClient.cancelQueries();
     queryClient.clear();
     setUser(null);
-  }, [queryClient]);
+  }), [queryClient]);
 
-  const updateProfile = useCallback(async (data) => {
+  useEffect(() => {
+    let mounted = true;
+    const version = getSessionVersion();
+    refreshAccessToken(version).then(() => authApi.getMe()).then(value => {
+      if (mounted && version === getSessionVersion()) setUser(value);
+    }).catch(() => {
+      // Only definitive 401s invalidate session state in the API layer.
+      // Offline/5xx errors retain the cookie and do not manufacture a logout.
+    }).finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, []);
+
+  const authenticate = useCallback(async (method, credentials) => {
+    const version = invalidateSession();
+    const result = await method(credentials);
+    if (version !== getSessionVersion()) return null;
+    setAccessToken(result.accessToken);
+    setUser(result.user);
+    return result.user;
+  }, []);
+  const login = useCallback(data => authenticate(authApi.login, data), [authenticate]);
+  const signup = useCallback(data => authenticate(authApi.signup, data), [authenticate]);
+  const logout = useCallback(async () => {
+    const version = getSessionVersion();
+    try { await authApi.logout(); } catch {}
+    finally { if (version === getSessionVersion()) invalidateSession(); }
+  }, []);
+  const updateProfile = useCallback(async data => {
+    const version = getSessionVersion();
     const updated = await authApi.updateMe(data);
-    setUser(prev => ({ ...prev, ...updated }));
+    if (version === getSessionVersion()) setUser(prev => prev ? { ...prev, ...updated } : prev);
     return updated;
   }, []);
-
-  const applyUserUpdate = useCallback((data) => {
-    setUser((previous) => (previous ? { ...previous, ...data } : previous));
-  }, []);
-
+  const applyUserUpdate = useCallback(data => setUser(previous => previous ? { ...previous, ...data } : previous), []);
   return (
     <AuthContext.Provider value={{ user, loading, login, signup, logout, updateProfile, applyUserUpdate }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');

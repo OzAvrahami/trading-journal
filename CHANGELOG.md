@@ -1,15 +1,43 @@
 # Changelog
 
-This changelog starts with the current product baseline. GitHub has no published
-Releases as of preparation on 2026-09-10. Historical tags are preserved; they do
-not establish publication dates. The owner accepted `v1.0.0` as the first stable
-baseline. The entry below is finalized for the preparation commit, not published.
+This changelog starts with the first stable product baseline. Preparation on
+2026-09-10 preceded publication; its validation limits are retained below.
+Historical tags are preserved and do not establish publication dates.
 
-## [1.0.0] — Accepted baseline, unpublished
+## [Unreleased]
 
-Release date and final commit are pending owner publication. Product scope is
-the repository through `bebce992cc710df7407c551a8052bf7ad0e333c7`, plus the
-governance and release documentation in the pending owner commit.
+### Maintenance and security
+
+- TJ-02: explicit verified-TLS PostgreSQL configuration, bounded connections and
+  timeouts, intentional loopback development, and a separate direct migration
+  connection with an explicit application owner role.
+- Remove the unused Supabase wrapper/SDK and its exclusive dependencies; retain
+  `pg` and application-owned JWT/refresh authentication.
+- Serialize migration execution and record each file atomically with its schema
+  changes. Preserve SQL 001–017 and existing ledger timestamps; add checksum
+  checks, explicit bootstrap assumptions, forward validation of trade constraints
+  and global/per-schema creator default-privilege hardening.
+- Reject sessions for nonexistent users before protected work, expire invalid
+  refresh cookies, and clear stale client authentication/query state without
+  treating network/server failures as invalid credentials. Discard late responses
+  across session changes and share concurrent refresh requests.
+- Add secret-free configuration examples, fresh initialization/role instructions
+  and focused local connection, migration, security and authentication tests.
+
+These changes are prepared locally for review, not deployed or released. Neon
+provisioning/initialization remains TJ-03; complete financial/workflow validation,
+production launch and operational recovery gates remain downstream. All package
+versions remain `1.0.0`. Historical Supabase data is intentionally not imported;
+new Neon records must be preserved. The dated baseline evidence below is unchanged.
+
+## [1.0.0] — 2026-09-10
+
+Published [v1.0.0](https://github.com/OzAvrahami/trading-journal/releases/tag/v1.0.0)
+at `2026-09-10T18:53:07Z`, stable, non-draft, and Latest at reconciliation.
+Release commit: `9434cda9b8b225b6615e31bad379c3de63d4ea4e`. Product scope is
+the code through `bebce992cc710df7407c551a8052bf7ad0e333c7`, plus the governance
+and release documentation in that owner commit. No application code changed
+between those commits.
 
 ### Features
 
@@ -70,7 +98,11 @@ governance and release documentation in the pending owner commit.
   was not independently tested. Native reopened-to-Ready support was not
   separately confirmed; the manual fallback applies where necessary and is
   not a release blocker.
-- The Supabase-to-Neon migration is not included as completed work. Future
-  backlog creation and next-version planning have not started.
+- The Supabase-to-Neon migration is not included as completed work. At release
+  preparation, its backlog had not been created. Subsequent planning is tracked
+  in [v1.1.0 — Neon Migration](https://github.com/OzAvrahami/trading-journal/milestone/1)
+  and [the migration backlog](docs/neon-migration-backlog.md). Implementation had
+  not started at that planning snapshot; subsequent work is recorded under
+  Unreleased above. Package versions remain `1.0.0`.
 
 See [release evidence and publication steps](docs/release-baseline.md).

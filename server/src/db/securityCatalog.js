@@ -7,7 +7,7 @@ const PUBLIC_TABLE_VIOLATIONS_SQL = `
   WHERE namespace.nspname = 'public'
     AND relation.relkind IN ('r', 'p')
     AND (
-      NOT relation.relrowsecurity
+      NOT relation.relrowsecurity OR relation.relforcerowsecurity
       OR EXISTS (
         SELECT 1
         FROM pg_roles api_role
@@ -96,7 +96,10 @@ const PUBLIC_DEFAULT_PRIVILEGE_VIOLATIONS_SQL = `
   WITH creator_roles AS (
     SELECT oid, rolname
     FROM pg_roles
-    WHERE rolname IN (current_user, 'postgres', 'supabase_admin')
+    WHERE rolname = current_user OR oid IN (
+      SELECT c.relowner FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname='public' AND c.relkind IN ('r', 'p')
+    )
   ), object_types(object_type, protected_privileges) AS (
     VALUES
       ('r'::"char", ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE']::text[]),
@@ -110,12 +113,18 @@ const PUBLIC_DEFAULT_PRIVILEGE_VIOLATIONS_SQL = `
   FROM creator_roles creator
   CROSS JOIN object_types object_type
   LEFT JOIN pg_namespace namespace ON namespace.nspname = 'public'
-  LEFT JOIN pg_default_acl defaults
-    ON defaults.defaclrole = creator.oid
-   AND defaults.defaclnamespace = namespace.oid
-   AND defaults.defaclobjtype = object_type.object_type
-  CROSS JOIN LATERAL aclexplode(
-    COALESCE(defaults.defaclacl, acldefault(object_type.object_type, creator.oid))
+  LEFT JOIN pg_default_acl global_defaults
+    ON global_defaults.defaclrole = creator.oid
+   AND global_defaults.defaclnamespace = 0
+   AND global_defaults.defaclobjtype = object_type.object_type
+  LEFT JOIN pg_default_acl schema_defaults
+    ON schema_defaults.defaclrole = creator.oid
+   AND schema_defaults.defaclnamespace = namespace.oid
+   AND schema_defaults.defaclobjtype = object_type.object_type
+  CROSS JOIN LATERAL (
+    SELECT * FROM aclexplode(COALESCE(global_defaults.defaclacl, acldefault(object_type.object_type, creator.oid)))
+    UNION ALL
+    SELECT * FROM aclexplode(schema_defaults.defaclacl)
   ) privilege
   LEFT JOIN pg_roles grantee ON grantee.oid = privilege.grantee
   WHERE (privilege.grantee = 0 OR grantee.rolname IN ('anon', 'authenticated'))
@@ -124,12 +133,10 @@ const PUBLIC_DEFAULT_PRIVILEGE_VIOLATIONS_SQL = `
 `;
 
 export async function auditPublicSchemaSecurity(queryable) {
-  const [tables, functions, sequences, defaults] = await Promise.all([
-    queryable.query(PUBLIC_TABLE_VIOLATIONS_SQL),
-    queryable.query(PUBLIC_FUNCTION_VIOLATIONS_SQL),
-    queryable.query(PUBLIC_SEQUENCE_VIOLATIONS_SQL),
-    queryable.query(PUBLIC_DEFAULT_PRIVILEGE_VIOLATIONS_SQL),
-  ]);
+  // Also supports one dedicated pg.Client; do not queue concurrent queries on it.
+  const results = [];
+  for (const sql of [PUBLIC_TABLE_VIOLATIONS_SQL, PUBLIC_FUNCTION_VIOLATIONS_SQL, PUBLIC_SEQUENCE_VIOLATIONS_SQL, PUBLIC_DEFAULT_PRIVILEGE_VIOLATIONS_SQL]) results.push(await queryable.query(sql));
+  const [tables, functions, sequences, defaults] = results;
 
   return {
     tables: tables.rows,

@@ -10,7 +10,7 @@ import {
 const { Pool } = pg;
 const migrationsUrl = new URL('./migrations/', import.meta.url);
 const securityMigrationUrl = new URL('./migrations/017_secure_public_data_api.sql', import.meta.url);
-const migrationRunnerUrl = new URL('./migrate.js', import.meta.url);
+const migrationRunnerUrl = new URL('./migrationRunner.js', import.meta.url);
 
 function migrationSources() {
   return readdirSync(migrationsUrl)
@@ -76,7 +76,6 @@ test('security migration revokes every application function created by migration
 
 test('security migration is transactional, deny-by-default, and leaves owner bypass behavior intact', () => {
   const sql = readFileSync(securityMigrationUrl, 'utf8');
-  const migrationRunner = readFileSync(migrationRunnerUrl, 'utf8');
   const executableSql = sql
     .split('\n')
     .filter((line) => !line.trim().startsWith('--'))
@@ -93,8 +92,6 @@ test('security migration is transactional, deny-by-default, and leaves owner byp
   assert.match(sql, /ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public REVOKE ALL PRIVILEGES ON TABLES/i);
   assert.match(sql, /ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS/i);
   assert.match(sql, /ARRAY\[current_user::text, 'postgres', 'supabase_admin'\]/i);
-  assert.match(migrationRunner, /SELECT 1 FROM schema_migrations WHERE filename = \$1/i);
-  assert.match(migrationRunner, /INSERT INTO schema_migrations \(filename\) VALUES \(\$1\)/i);
 });
 
 test('catalog verifier rejects RLS, API-grant, function, sequence, and default-privilege violations', async () => {
@@ -131,6 +128,9 @@ test('migrated disposable PostgreSQL catalog is deny-by-default', {
     ? false
     : 'Set SECURITY_TEST_DATABASE_URL to an isolated database with all migrations applied.',
 }, async () => {
+  const target = new URL(securityTestDatabaseUrl);
+  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(target.hostname));
+  assert.match(target.pathname, /^\/tj02_/);
   const pool = new Pool({ connectionString: securityTestDatabaseUrl });
   try {
     await assertPublicSchemaSecurity(pool);

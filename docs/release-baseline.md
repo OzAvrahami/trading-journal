@@ -1,26 +1,34 @@
-# Current release baseline and owner handoff
+# Published release baseline and preparation evidence
 
 Evidence collected on **2026-09-10** using the authenticated local GitHub and
-Railway CLIs, repository source, and unauthenticated HTTP reads. This document
-prepares a release; it does not publish one.
+Railway CLIs, repository source, and unauthenticated HTTP reads. The baseline is
+now published. This reconciliation preserves the earlier preparation evidence
+and validation limits; it does not change the existing Release or tags.
 
-## Accepted baseline
+## Published baseline
 
-Use **`v1.0.0`**, titled **`Trading Journal v1.0.0 — Trading and Investment Platform`**,
-as the first stable GitHub Release, as accepted by the owner on 2026-09-10.
-This version decision is complete; publication and the final commit remain
-pending. Root, client, server, and shared manifests
-and lockfiles already use `1.0.0`. The existing platform tag is a historical
-checkpoint with a suffix, not a stable `v1.0.0` Release. The history supports
-formalizing the current product without inventing a higher version solely
-because Releases are absent. No version bump is required in this phase.
+**[v1.0.0](https://github.com/OzAvrahami/trading-journal/releases/tag/v1.0.0)**,
+titled **Trading Journal v1.0.0 — Trading and Investment Platform**, was published
+at `2026-09-10T18:53:07Z`. It is stable, non-draft, and returned by GitHub's Latest
+Release endpoint at reconciliation. Release ID: `386542082`.
+
+The tag independently resolves to `9434cda9b8b225b6615e31bad379c3de63d4ea4e`,
+also the clean local HEAD and remote main at the start of migration planning.
+The Release API's `target_commitish` is `main`; the resolved tag commit, not
+that moving branch name, establishes the exact release SHA. Root, client,
+server, and shared manifests and lockfiles remain at `1.0.0`.
 
 The accepted baseline scope is all delivered product source through
 `bebce992cc710df7407c551a8052bf7ad0e333c7`, plus the governance and release files
-prepared here. **The final release SHA is pending a new owner commit.** Neither
-moving `main` nor the earlier platform tag is the proposed publication target.
+in owner commit `9434cda9b8b225b6615e31bad379c3de63d4ea4e`. The commit adds the
+ten preparation files and has no application/package differences from the
+inspected product commit. The old handoff is complete; do not recreate or move
+`v1.0.0`, `v0.2.0-redesign`, or `v1.0.0-platform`.
 
-## Version inventory
+## Preparation inventory before publication (2026-09-10)
+
+This table preserves what was observed before the owner committed and published.
+It is not the current release, issue, or milestone inventory.
 
 | Evidence kind | Observed value |
 | --- | --- |
@@ -45,11 +53,11 @@ platform tag through the inspected HEAD. Source review included the client
 routes, server route registry, importers, authentication service, investment
 valuation and quote code, README, migrations/catalog, and Git history.
 
-## Deployment evidence
+## Deployment evidence from preparation (2026-09-10)
 
 Railway project `33467026-92c3-47f8-a74a-9603dee32671`, environment
 `fe8779c6-1889-4a0a-8842-34bfb472dfe0` (`production`), is linked to this repository.
-The current service records reported:
+The service records at preparation time reported:
 
 | Service | Active deployment | Commit | State |
 | --- | --- | --- | --- |
@@ -76,7 +84,7 @@ No login, user data, production database state, applied-migration state, or
 Finnhub request was inspected. Existing migration 017 is part of source scope;
 this task did not execute or prove its production application.
 
-## GitHub alignment evidence
+## GitHub alignment evidence from preparation
 
 Canonical source: ProjectDeck revision
 `9f0bbb27ce015c13c76dd7c7db1f162751d2bc60`. No applicable `AGENTS.md` was found in
@@ -119,9 +127,9 @@ not separately confirmed; the owner or assignee uses the agreed manual fallback
 where necessary. No native reopening behavior is claimed. This distinction is
 not a release blocker. No test issues or workflow experiments were performed.
 
-## Prepared local files and checks
+## Preparation files and historical validation
 
-The only new repository files are:
+The preparation commit added these ten files:
 
 ```text
 .github/ISSUE_TEMPLATE/bug.yml
@@ -136,16 +144,16 @@ docs/releases/v1.0.0.md
 CHANGELOG.md
 ```
 
-The six YAML files are adapted from the pinned canonical revision; the Bug
-environment guidance is tailored to Trading Journal. Targeted validation checks
+The six YAML files were adapted from the pinned canonical revision; the Bug
+environment guidance was tailored to Trading Journal. Preparation validation checked
 YAML parsing/duplicate keys, Issue Form structure and unique IDs, required
 fields, existing remote form labels, one primary type per form, disabled blank
 issues, release categories/exclusions, and agreement of all manifest/lockfile
-versions. Scope checks confirm no tracked application file or index change.
-No application build, broad test suite, migration, or data operation is needed
-for these governance files. GitHub-hosted rendering remains pending the owner
-push. Native workflow behavior remains untested because no test issues were
-created.
+versions. Scope checks confirmed no tracked application file or index change
+during preparation. No application build, broad test suite, migration, or data
+operation was run for those governance files. GitHub-hosted rendering had not
+been checked before the owner push. Native workflow behavior was not tested;
+no test issues were created.
 
 Validation passed on 2026-09-10: six YAML files parsed with duplicate-key
 rejection, all four forms passed structure/label checks, canonical categories
@@ -156,86 +164,42 @@ scope check found exactly the ten files above, no tracked application changes,
 and no staged changes. YAML tooling was installed only in an operating-system
 temporary directory; no application dependencies or lockfiles changed.
 
-Finalization rechecked all ten currently untracked files, including YAML
+Before publication, finalization rechecked all ten then-untracked files, including YAML
 structure, live read-only form-label lookup, Markdown file links and anchors,
 UTF-8 content, trailing whitespace, and the accepted release title. The full
 changelog and release body were compared with source and commit history.
 Owner-confirmed configuration, untested automation behavior, and the manual
-reopening fallback are now consistent across the four Markdown files. All
-checks passed; tracked files and the Git index remain unchanged.
+reopening fallback were consistent across the four Markdown files. All
+preparation checks passed; tracked files and the Git index were unchanged at
+that point, before the owner committed and published.
 
-## Exact owner handoff
+## Publication reconciliation and next phase
 
-1. Review the finalized ten files, [release body](releases/v1.0.0.md), and
-   [CHANGELOG](../CHANGELOG.md), then stage only those files and review the
-   staged diff before committing. The owner has already accepted `v1.0.0` and
-   confirmed workflow setup; neither decision needs repeating. The preparation
-   commit may retain the accurately marked unpublished changelog entry: no
-   release date is invented and no final SHA is assigned in advance. Record
-   the actual publication date when publication occurs, without changing the
-   release tag to incorporate a later documentation update.
-2. Check Railway's deployment trigger settings before pushing: both services
-   have source branch `main`, and previous main updates triggered deployments.
-   If this governance push must not deploy, the owner must pause the relevant
-   automatic deployments first. This task changed no Railway settings.
-3. Stage only the listed files, make the owner preparation commit, and push it
-   to main using the owner's normal Git workflow. Suggested commit title:
-   `chore: align GitHub workflow and prepare v1.0.0 release`.
-   If other work has arrived, review/reconcile it before choosing a release
-   commit; do not silently include a future migration or unrelated changes.
-4. Capture the **full immutable SHA of that owner commit**, then verify it
-   remotely and locally. The following read-only PowerShell checks illustrate
-   the required gate; replace the placeholder with the actual SHA:
+The published Release, Latest endpoint, and tag resolution were read back on
+2026-09-10. The original release body still contains preparation-time wording
+and appends the verified release SHA; the remote body was left unchanged as
+instructed. This local document, the local release notes, and CHANGELOG now
+record the actual publication URL, timestamp, and commit.
 
-   ```powershell
-   $releaseSha = 'REPLACE_WITH_FULL_OWNER_COMMIT_SHA'
-   if ($releaseSha -notmatch '^[0-9a-f]{40}$') { throw 'Supply the reviewed full SHA' }
-   git status --short
-   git rev-parse HEAD
-   gh api "repos/OzAvrahami/trading-journal/commits/$releaseSha" --jq .sha
-   gh api repos/OzAvrahami/trading-journal/branches/main --jq .commit.sha
-   git merge-base --is-ancestor bebce992cc710df7407c551a8052bf7ad0e333c7 $releaseSha
-   git diff --name-status bebce992cc710df7407c551a8052bf7ad0e333c7 $releaseSha
-   git diff --exit-code bebce992cc710df7407c551a8052bf7ad0e333c7 $releaseSha -- client server shared package.json package-lock.json
-   git show "${releaseSha}:CHANGELOG.md"
-   git show "${releaseSha}:docs/releases/v1.0.0.md"
-   git ls-tree -r --name-only $releaseSha -- .github docs CHANGELOG.md
-   gh api repos/OzAvrahami/trading-journal/tags
-   gh api repos/OzAvrahami/trading-journal/releases
-   ```
+The dated production observations above remain preparation evidence. No fresh
+claim is made about the currently deployed commit, authenticated application
+behavior, live database contents, applied migrations, or Finnhub availability.
+Release publication alone does not establish those facts.
 
-   Require successful commands, all ten intended files in the commit, no
-   application/package difference from the inspected product baseline, and a
-   reviewed changelog/release body. Verify remote main resolves to the intended
-   SHA at this gate; if it moved, inspect the new commits and repeat review.
-   Never replace `$releaseSha` with `main` as the tag target. Recheck all manifest
-   and lockfile versions from that commit and the configuration checks after
-   any owner edits. Confirm `v1.0.0` is still absent locally and remotely.
-5. Only the owner then creates and pushes the new tag at that exact SHA:
+At publication reconciliation on 2026-09-10, the owner had authorized planning for
+[v1.1.0 — Neon Migration](https://github.com/OzAvrahami/trading-journal/milestone/1).
+See [the six-issue migration backlog](neon-migration-backlog.md). This milestone
+is not a Release and has no due date. At that snapshot, TJ-01 was the next task:
+read-only dependency audit and migration planning; TJ-02 through TJ-06 remained
+in Backlog. Creating the backlog did not execute TJ-01 or any migration work.
+Current implementation and acceptance states are recorded in the linked backlog;
+this paragraph preserves the earlier publication-reconciliation evidence.
 
-   ```powershell
-   git tag -a v1.0.0 $releaseSha -m 'Trading Journal v1.0.0'
-   git rev-parse 'v1.0.0^{commit}'
-   git push origin refs/tags/v1.0.0
-   gh api repos/OzAvrahami/trading-journal/commits/v1.0.0 --jq .sha
-   ```
-
-   Both resolved commit reads must equal `$releaseSha`. Do not move, delete,
-   or recreate either historical tag. Stop if a conflicting stable tag exists.
-6. Publish a stable GitHub Release from the **existing verified tag** using the
-   title above and the full body in `docs/releases/v1.0.0.md`. Append the verified
-   full release SHA to the publication body, and retain the preparation-time
-   verification limits. If using the CLI, pass a reviewed body file and
-   `--verify-tag`; do not allow release creation to synthesize a tag from main.
-   A draft or tag alone does not formalize a published version. Read back
-   `tagName`, `isDraft`, `isPrerelease`, `publishedAt`, the body, and the tag's
-   resolved SHA. Record the real publication URL/date. Compare Railway active
-   deployment SHAs separately; publishing a Release does not itself prove a
-   new deployment.
-
-All commands that stage, commit, push, tag, or publish are **owner-only handoff
-instructions**, not actions executed in this task. The next immediate owner
-action is review of the finalized files and staged diff, followed by the
-preparation commit. Workflow setup and baseline acceptance are already complete.
-Future issues and the next target
-version are a subsequent phase; no future milestone or backlog was created.
+For v1.1.0, complete and verify implementation before a deliberate version bump
+and release preparation in TJ-06. The owner controls staging, commits, pushes,
+tags, and publication. Before tagging, verify the exact reviewed pushed commit
+and its files, package/lockfile versions, changelog, and recorded validation;
+resolve the new tag back to that SHA. Never bind a release to moving main or
+reuse an existing historical tag. Production deployment and database verification
+remain separate evidence. No commit, push, tag, Release, production configuration,
+database, or deployment mutation was performed during this planning task.

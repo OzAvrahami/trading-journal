@@ -22,7 +22,7 @@ trading-journal/
 ### Prerequisites
 
 - Node.js 20+
-- PostgreSQL (local or Supabase)
+- PostgreSQL (intentional local development, or a separately verified Neon database)
 
 ### 1. Clone and install
 
@@ -38,8 +38,8 @@ npm run install:all
 
 **Server:**
 ```bash
-cp .env.example server/.env
-# Edit server/.env — set DATABASE_URL and JWT_SECRET
+cp server/.env.example server/.env
+# Edit server/.env: runtime/direct migration URLs, explicit roles/TLS and JWT_SECRET
 ```
 
 **Client:**
@@ -50,7 +50,8 @@ cp client/.env.example client/.env
 
 ### 3. Run migrations
 
-Make sure your PostgreSQL database exists, then:
+Create the intended empty database and roles following the
+[connection and initialization guide](docs/neon-initialization.md), then:
 
 ```bash
 npm run migrate
@@ -105,12 +106,12 @@ Open http://localhost:5173
 Application data follows one trusted path:
 
 ```text
-Browser -> Express API -> trusted PostgreSQL connection -> Supabase PostgreSQL
+Browser -> Express API -> trusted PostgreSQL connection -> PostgreSQL
 ```
 
-The browser must not access application tables through the Supabase Data API/PostgREST. Public application tables use Row Level Security with no `anon` or `authenticated` policies; Express enforces the authenticated user boundary and connects with the trusted backend database role.
+The browser must not access application tables through a provider Data API. Public application tables use policy-free Row Level Security; Express enforces the authenticated user boundary and explicitly assumes the dedicated application owner role. This trusted backend has strong rights over its own objects. A non-owner with table grants alone is not compatible with this RLS model. See the [role and verification contract](docs/neon-initialization.md).
 
-`DATABASE_URL`, JWT secrets, Supabase secret/service-role keys, and provider API keys are server-only credentials. Never give a secret a `VITE_` prefix because Vite exposes `VITE_*` values to browser bundles. Only non-secret client configuration such as `VITE_API_URL` may use that prefix.
+`DATABASE_URL`, operator-only `MIGRATION_DATABASE_URL`, JWT secrets, and provider API keys are server-only credentials. Never give a secret a `VITE_` prefix because Vite exposes `VITE_*` values to browser bundles. Only non-secret client configuration such as `VITE_API_URL` may use that prefix. Remote database connections verify certificates and hostnames; plaintext is restricted to explicit loopback development. No Supabase SDK or Supabase URL/key is required by the application.
 
 ## Computed Fields
 

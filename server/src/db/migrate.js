@@ -1,56 +1,24 @@
 import 'dotenv/config';
-import { readFileSync, readdirSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import pool from './client.js';
+import pg from 'pg';
+import { databaseConfig, safeDatabaseError } from './config.js';
+import { loadMigrations, runMigrations, MigrationError } from './migrationRunner.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_DIR = join(__dirname, 'migrations');
-
-async function migrate() {
-  const client = await pool.connect();
-  try {
-    // Ensure the tracking table exists
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS schema_migrations (
-        filename   TEXT PRIMARY KEY,
-        applied_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `);
-
-    // Discover all .sql files in alphabetical order
-    const files = readdirSync(MIGRATIONS_DIR)
-      .filter(f => f.endsWith('.sql'))
-      .sort();
-
-    for (const filename of files) {
-      const { rows } = await client.query(
-        'SELECT 1 FROM schema_migrations WHERE filename = $1',
-        [filename]
-      );
-      if (rows.length > 0) {
-        console.log(`Skipping ${filename} (already applied)`);
-        continue;
-      }
-
-      console.log(`Applying ${filename}…`);
-      const sql = readFileSync(join(MIGRATIONS_DIR, filename), 'utf8');
-      await client.query(sql);
-      await client.query(
-        'INSERT INTO schema_migrations (filename) VALUES ($1)',
-        [filename]
-      );
-      console.log(`  ✓ ${filename}`);
-    }
-
-    console.log('All migrations up to date.');
-  } catch (err) {
-    console.error('Migration failed:', err.message);
-    process.exit(1);
-  } finally {
-    client.release();
-    await pool.end();
-  }
+let client;
+try {
+  const config = databaseConfig(process.env, { migration: true });
+  const migrations = await loadMigrations(new URL('./migrations/', import.meta.url));
+  client = new pg.Client(config);
+  client.on('error', () => {});
+  await client.connect();
+  await runMigrations(client, migrations, { role: process.env.MIGRATION_DATABASE_ROLE, log: console.log });
+  console.log('Migration run completed. Verify schema/security before enabling writes.');
+} catch (error) {
+  console.error('Migration run failed.', safeDatabaseError(error));
+  if (error instanceof MigrationError) console.error(error.message);
+  if (/^\d{3}_[a-z0-9_]+\.sql$/.test(error.migrationFile || '')) console.error('Check migration:', error.migrationFile);
+  console.error('Check connection/role settings and migration history before retrying. A lost connection during commit requires ledger inspection.');
+  if (!client) console.error(error.message);
+  process.exitCode = 1;
+} finally {
+  if (client) await client.end().catch(() => {});
 }
-
-migrate();

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validateBody } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as authService from '../services/authService.js';
+import { refreshCookieOptions, clearRefreshCookie } from '../utils/authCookies.js';
 
 const router = Router();
 
@@ -18,11 +19,8 @@ const loginSchema = z.object({
 });
 
 function setRefreshCookie(res, token) {
-  const isProd = process.env.NODE_ENV === 'production';
   res.cookie('refreshToken', token, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'strict',
+    ...refreshCookieOptions(),
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   });
 }
@@ -54,12 +52,14 @@ router.post('/refresh', async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken;
     if (!token) {
+      clearRefreshCookie(res);
       return res.status(401).json({ error: { code: 'NO_REFRESH_TOKEN', message: 'No refresh token provided.' } });
     }
     const result = await authService.refresh(token);
     setRefreshCookie(res, result.refreshToken);
     res.json({ accessToken: result.accessToken });
   } catch (err) {
+    if (err.code === 'INVALID_REFRESH_TOKEN' && err.statusCode === 401) clearRefreshCookie(res);
     next(err);
   }
 });
@@ -69,12 +69,7 @@ router.post('/logout', requireAuth, async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken;
     if (token) await authService.logout(token);
-    const isProd = process.env.NODE_ENV === 'production';
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'strict',
-    });
+    clearRefreshCookie(res);
     res.json({ message: 'Logged out successfully.' });
   } catch (err) {
     next(err);

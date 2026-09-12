@@ -11,13 +11,14 @@ adaptations are not canonical requirements.
 
 - Repository: [OzAvrahami/trading-journal](https://github.com/OzAvrahami/trading-journal).
 - Development Project: [Trading Journal Development, #12](https://github.com/users/OzAvrahami/projects/12).
-  It is owned by OzAvrahami, private, linked to this repository, and currently empty.
+  It is owned by OzAvrahami, private, and linked to this repository. Current
+  planned work is recorded in [the migration backlog](neon-migration-backlog.md).
 - Homepage: [Trading Journal](https://trading-journal-client-production.up.railway.app).
   Railway's client service domain and HTTP response were checked on 2026-09-10.
 - OzAvrahami owns prioritization, acceptance, version selection, and publication.
   An issue assignee owns implementation and supplies verification evidence.
   The owner or designated reviewer decides when acceptance is satisfied.
-- In the current preparation phase, the owner performs all staging, commits,
+- The owner performs all staging, commits,
   pushes, merges, tagging, publication, and deployment decisions. Automation and
   coding agents must not interpret a prepared release as permission to publish.
 
@@ -121,9 +122,9 @@ GitHub can close linked issues on merge independently of Project workflows.
 Use a reference such as `Refs #…` while acceptance is pending.
 
 No test issues, workflow experiments, custom GitHub Actions, tokens, or
-replacement automation were created. Normal use of legitimate issues in a
-later phase may supply behavior evidence; that future evidence is not a release
-blocker and is not part of this governance task.
+replacement automation were created. Creating and triaging the legitimate
+migration backlog does not prove closing or reopening automation. Workflow
+setup remains owner-confirmed; no repeat setup investigation is required.
 
 See GitHub's [native workflow guide](https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations)
 and [auto-add guide](https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/adding-items-automatically).
@@ -135,29 +136,51 @@ A **published GitHub Release** is authoritative for the released version. Packag
 versions, tags, repository HEAD, and deployed commits are separate evidence.
 Never call a tag alone a Release or move historical tags to fit new naming.
 
-The owner accepted `v1.0.0` as the first stable baseline; all manifests and lockfiles
-already agree at `1.0.0`. See the [baseline inventory and owner handoff](release-baseline.md),
-[changelog](../CHANGELOG.md), and [prepared release notes](releases/v1.0.0.md).
-The intended release commit does not exist yet. Verify its immutable SHA and
-contents after the owner commits and pushes, before creating a tag. Do not bind
-the release to moving `main` or the historical platform tag.
+The first stable baseline is published:
+[v1.0.0](https://github.com/OzAvrahami/trading-journal/releases/tag/v1.0.0),
+`2026-09-10T18:53:07Z`, commit `9434cda9b8b225b6615e31bad379c3de63d4ea4e`.
+It is stable, non-draft, and Latest at reconciliation. All manifests and
+lockfiles remain `1.0.0`. See the [publication and preparation evidence](release-baseline.md),
+[changelog](../CHANGELOG.md), and [reconciled local release notes](releases/v1.0.0.md).
+Existing Releases and tags are not rewritten to reconcile local documentation.
 
 For later releases, review the delivered changes, choose SemVer based on scope,
 keep manifests and lockfiles consistent, update the changelog, and publish only
 after the owner accepts the exact commit and verification evidence. Generated
 notes group Features, Enhancements, Bug Fixes, Maintenance, and Documentation and
 exclude duplicate, invalid, and wontfix items. The first baseline uses curated
-notes because there are no historical GitHub issues or pull requests to group.
+notes because no GitHub issues or pull requests existed at baseline preparation.
 
 ## Activation and phase boundary
 
-The local Issue Forms, blank-issue setting, and `.github/release.yml` become
-available after the owner commits and pushes them to the default branch.
+The Issue Forms, blank-issue setting, and `.github/release.yml` were committed
+and pushed with the published baseline and are present on the default branch.
 Local Markdown does not configure remote workflows. Remote metadata, labels,
 fields, and views are already active. Workflow setup is owner-confirmed, with
 the manual reopening fallback and untested behavior distinguished above.
 
-The Supabase-to-Neon migration is paused. Current release preparation contains
-no application, connection, schema, or data changes. Future development issues,
-the next-version milestone, and a future package-version bump wait until this
-baseline is formalized and the owner starts the next planning phase.
+The owner authorized planning for
+[v1.1.0 — Neon Migration](https://github.com/OzAvrahami/trading-journal/milestone/1)
+and explicitly accepted the technical plan/start of TJ-02 on 2026-09-12. It remains
+a planned milestone, not a published Release, with no due date. In the six-issue
+[migration backlog](neon-migration-backlog.md), TJ-01 is accepted/closed and Done;
+TJ-02 is locally implemented and open in Verify. TJ-03 through TJ-06 remain Backlog.
+The [plan](neon-migration-plan.md) and [initialization guide](neon-initialization.md)
+separate local code/test evidence from later Neon, production and recovery gates.
+This authorization permits TJ-02 code and disposable local tests; it does not
+permit cloud provisioning, production configuration/deployment or Git operations.
+Package versions stay at `1.0.0`; a deliberate bump belongs to
+TJ-06 after implementation and verification are complete. Each later release
+must verify its final reviewed pushed commit before owner-controlled tagging
+and publication; never tag moving `main` or repurpose a historical tag.
+
+The owner accepted a complete fresh start on 2026-09-10 because Supabase is
+inactive and cannot be reactivated. The milestone now targets an empty Neon
+database initialized from repository migrations; historical users, sessions and
+business records are intentionally not imported. Source access/backups/transfer
+and source comparisons are superseded requirements, not successful tests. No
+repeat approval of this decision is needed. New-user onboarding, deterministic
+financial verification, migration/security checks and Neon-only recovery remain
+required. Newly created Neon data is protected; the historical reset does not
+authorize another reset after launch. The 2026-09-10 scope revision authorized planning only; the separate 2026-09-12
+TJ-02 approval authorizes the local implementation above, not provisioning or launch.
