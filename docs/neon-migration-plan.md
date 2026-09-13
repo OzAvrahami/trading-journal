@@ -32,7 +32,42 @@ implementation boundary, while cloud and production remain unchanged. Packages/l
 changes are preserved. See [backlog](neon-migration-backlog.md) and
 [development standard](github-development-standard.md).
 
-## Owner technical acceptance and TJ-02 implementation - 2026-09-12
+## Current execution evidence - 2026-09-12
+
+TJ-02 is owner-accepted, committed and pushed at
+`2821435dc609ad85d3447cd22f799fb17a508968` on
+`chore/tj-02-neon-preparation`; local HEAD and the remote branch were independently
+matched. TJ-02 is closed/Done. The separate TJ-03 authorization provisioned only
+included Free-plan validation resources and verified two independent empty
+initializations using that unchanged application code. The subsequent owner instruction
+authorized agent review and acceptance of that isolated scope: TJ-03 is closed/Done.
+TJ-04 application/tests are owner-accepted; it is open in Verify pending final pushed-fix verification; TJ-05/TJ-06 remain
+Backlog. Main remains at the baseline SHA; no production configuration was changed.
+
+See the [TJ-03 report](validation/tj-03-neon-2026-09-12.md) and
+[complete redacted catalog/ledger](validation/tj-03-neon-2026-09-12.json) for actual
+IDs/settings, PostgreSQL 18.6/pgcrypto 1.4, exact 001-019 checksums/timestamps,
+20 tables/19 empty business tables, 13 application functions, verified 017/019
+controls, owner/runtime probes, independent normalized equality, reruns and
+interruption results. The bootstrap guide was corrected to execute database
+ACL changes as `tj_owner`; application and historical migration bytes did not
+change. That historical TJ-03 snapshot did not test recovery. The subsequent
+[TJ-04 report](validation/tj-04-neon-2026-09-12.md) records an actual timestamp-child
+recovery exercise, authenticated deterministic API results, two uncommitted fixes
+(account-scoped import files via forward migration 020; stale quote rejection and
+manual fallback). The September 13
+[real-browser follow-up](validation/tj-04-browser-2026-09-13.md) completes the automated
+UI/session checks and adds a narrow Hebrew pagination correction. The owner
+accepted the application review/tests on 2026-09-13. No production readiness or
+recovery-time/data-loss commitment follows. Verification of the final reviewed
+pushed SHA of the fixes remains pending. The original TJ-03 evidence files are retained
+unchanged; acceptance records agent artifact review under the delegated instruction,
+not an independent inspection of local artifacts by the owner or this chat.
+
+## Owner technical acceptance and TJ-02 local snapshot - 2026-09-12
+
+The following pre-commit evidence is historical. Its pending implementation SHA
+and issue states are superseded by the current execution evidence above.
 
 The owner explicitly accepted the technical plan and authorized TJ-02 connections,
 unused dependency removal, fresh initialization/forward security improvements,
@@ -75,24 +110,26 @@ changed. TJ-03 through TJ-06 remain Backlog; TJ-02 is open for review in Verify.
 
 ## Destination and connection design
 
-Propose a dedicated Neon project **`trading-journal`** in existing organization
-`org-lively-cherry-67205699` (Oz). Reuse the already authenticated Neon CLI OAuth;
-do not create replacement credentials or reuse `projectdeck`/`cockpitpath`.
-Names below are planned, not provisioned IDs:
+TJ-03 created dedicated Neon project **`trading-journal`** /
+`delicate-fire-79141899` in existing Free organization
+`org-lively-cherry-67205699` (Oz), reusing existing Neon CLI OAuth.
+`projectdeck`/`cockpitpath` were not adopted or changed. The validation settings
+below are now observed; production remains a proposal:
 
 | Setting | Selected proposal and remaining verification |
 | --- | --- |
 | Region | AWS Oregon, `aws-us-west-2`, based on the last Railway API placement `us-west2`. Recheck deployment placement and measure application-to-database latency before launch; provider region names alone do not prove physical colocation. Residency constraints, if any, remain an owner decision. |
 | PostgreSQL | **18**, based on reviewed PostgreSQL/PLpgSQL migrations, node-postgres and supported `pgcrypto`, not the unavailable source version. Full initialization and application compatibility must pass in isolation before production. Record actual server minor version. |
-| Production | Branch `production`, database `trading_journal`, created empty and initialized independently; never clone a fixture-bearing validation branch into production. |
-| Validation | Branch `validation`, separate endpoint/credentials and restricted test API. Branch from an empty project parent before any data is written, then initialize independently; verify emptiness rather than assume branch creation means empty. A second empty validation database proves repeatability. |
-| Roles | Proposed `tj_owner` (application object owner), `tj_migrator` (controlled operator login able to assume owner), `tj_backend` (server-only login explicitly assuming the owner role). Record real IDs, attributes, membership options and effective privileges later. |
+| Production | Proposed separate project `trading-journal-production`, branch `production`, database `trading_journal`; no actual IDs assigned. Initialize independently from empty; never clone the fixture-bearing validation branch. See the later [launch plan](neon-launch-plan.md) for the isolation rationale and unresolved provisioning/operational gates. |
+| Validation | Root/default branch `validation` / `br-green-cake-arg1asaf`, direct endpoint `ep-bold-fire-aryb3eiv`, databases `trading_journal_validation` and `trading_journal_validation_repeat`. Both independently created from template0, zero public tables before initialization. Fixed 0.25 CU, plan-default five-minute suspension, 21600-second history; no production application attached. |
+| Roles | Verified `tj_owner` NOLOGIN owner, `tj_migrator` and `tj_backend` NOINHERIT non-admin logins with SET owner membership. Provider-admin `tj_admin` stays separate. Untrusted `tj_untrusted` has no application database CONNECT. Full attributes/effective privileges are in the report. |
 | Runtime | Start with direct verified-TLS Neon connections and bounded `pg.Pool`; retain maximum 10 per API process pending measurements. Budget maximum replicas plus deployment overlap/operator headroom against the selected compute limits. |
 | Migration connection | Separate direct operator connection, verified TLS, explicit database and owner/search path; never rely on pooled runtime session settings for DDL. |
 
 Neon lists Oregon under `aws-us-west-2`; PostgreSQL 18 is generally available,
-and Neon documents `pgcrypto` support on 18. These support the proposal, not a
-claim of application compatibility on Neon; local PG18 tests are recorded above.
+and Neon documents `pgcrypto` support on 18. TJ-03 now verifies the migration chain and role/security behavior on Neon
+18.6 with pgcrypto 1.4; subsequent isolated application evidence is recorded in TJ-04,
+with owner acceptance received and final pushed-fix verification pending.
 [Regions](https://neon.com/docs/introduction/regions),
 [PostgreSQL 18 availability](https://neon.com/docs/changelog/2026-05-01),
 [extension support](https://neon.com/docs/changelog/2025-10-31).
@@ -102,8 +139,9 @@ The prior audit found CLI `3.6.0` with existing local OAuth at
 Local PostgreSQL tools are 18.6; only version checks were previously run. Use
 them for later Neon recovery only after matching tool/server compatibility;
 initialization uses the repository's Node migration runner, not `pg_restore`.
-Compute size, backup retention, actual destination IDs and named operator/reviewer
-remain to be recorded. None depends on accessing Supabase.
+Validation compute/history and actual destination IDs are recorded in the
+TJ-03 report. Production compute, accepted retention/recovery coverage and named
+operational ownership remain later decisions. None depends on Supabase.
 
 The baseline pool inferred TLS from a provider hostname and lacked statement/
 idle-transaction limits. TJ-02 replaces it with [config.js](../server/src/db/config.js):
@@ -122,7 +160,7 @@ session advisory lock. [Neon pooling](https://neon.com/docs/connect/connection-p
 All 17 historical SQL files were statically reviewed on 2026-09-10 and were not
 executed in that audit. The table retains those baseline findings. TJ-02 subsequently
 executed the preserved files plus 018/019 on disposable local PostgreSQL 18.6;
-actual Neon initialization/catalog verification remains TJ-03.
+TJ-03 subsequently verified the same chain on isolated Neon, as reported above.
 
 | Migration(s) | Empty-database finding / requirement |
 | --- | --- |
@@ -175,9 +213,9 @@ RLS or add permissive policies to make the application work.
 Implement `tj_owner` as the intended dedicated NOLOGIN application owner;
 `tj_migrator` assumes it for DDL/ledger creation and `tj_backend` explicitly
 assumes it via connection startup options. Use NOINHERIT logins with SET membership.
-The roles themselves are not provisioned on Neon by TJ-02. This intentionally grants strong rights over this application's objects,
+TJ-03 has now provisioned and verified this relationship in isolation. This intentionally grants strong rights over this application's objects,
 not a claim of database-enforced per-user isolation or minimal DDL privilege.
-Locally tested SET ROLE works with NOINHERIT logins; verify the same on Neon. Do not substitute
+NOINHERIT plus explicit SET ROLE was tested locally and on the direct Neon endpoint. Do not substitute
 `neon_superuser` or blanket BYPASSRLS merely for convenience. Inspect actual
 Neon-created role attributes and memberships. Restrict database CONNECT and public
 schema CREATE to approved roles; use an explicit `public` search path for the
@@ -212,8 +250,9 @@ TJ-03 must record, independently of the ledger:
   as a starting point, extending checks for global defaults, creator roles and
   constraints as required; a ledger row or checker subset is insufficient.
 
-These controls were tested on disposable local PostgreSQL in TJ-02; none of the
-Neon catalog/security/initialization behavior above is verified yet. The old
+TJ-02 tested these controls locally; TJ-03 additionally verified the isolated
+Neon catalog, effective security and independent initialization. TJ-04 then verified
+API user isolation on validation; production remains a separate unverified gate. The old
 `--no-owner` / `--no-acl` transfer concern is superseded for initialization because
 there is no restore. Retain ownership/ACL manifests for **future Neon recovery**;
 any later restore that omits them must re-establish and verify security explicitly.
@@ -273,7 +312,7 @@ precision, branch, role, code SHA and actual failures. This fixture matrix remai
 | --- | --- |
 | [TJ-01 / #1](https://github.com/OzAvrahami/trading-journal/issues/1) | Retain dependency audit, record accepted reset and static bootstrap review; resolve only destination/role/operational implementation choices. Owner technically accepted on 2026-09-12; closed and Done. No repeat approval of historical data loss. |
 | [TJ-02 / #2](https://github.com/OzAvrahami/trading-journal/issues/2) | Adapt connections/TLS and direct migration role selection, remove SDK only after renewed caller proof, implement necessary forward portability/default-privilege/008 validation steps, runner safeguards and stale-session handling. Focused tests and secret-free examples; no production switch. |
-| [TJ-03 / #3](https://github.com/OzAvrahami/trading-journal/issues/3) | In a later authorized task, provision the explicit isolated destination, initialize from empty with reviewed migrations, inspect schema/ledger/security, and prove repeatability on another empty validation database plus ledger-preserving rerun. No source archive/history and no production fixtures. |
+| [TJ-03 / #3](https://github.com/OzAvrahami/trading-journal/issues/3) | Authorized isolated initialization completed for review: two empty databases initialized with reviewed migrations; schema/ledger/security, independent repeatability, ledger-preserving rerun and interrupted rollback verified. No source archive/history and no production fixtures. |
 | [TJ-04 / #4](https://github.com/OzAvrahami/trading-journal/issues/4) | Exercise deterministic fixtures, empty/new-user states, stale sessions, negative isolation, financial/date/UI behavior; record actual results. Blocking failures must be resolved before launch. |
 | [TJ-05 / #5](https://github.com/OzAvrahami/trading-journal/issues/5) | Independently initialize and verify fresh production using the same reviewed revision, with all 19 business tables empty before owner onboarding. No clone/restore of fixture data. Owner performs reviewed configuration/deployment and verifies the working application. |
 | [TJ-06 / #6](https://github.com/OzAvrahami/trading-journal/issues/6) | Stabilize, verify Neon backup/recovery, reconcile obsolete configuration without automatic deletion, prepare changelog/release notes and only then deliberate version bump and owner publication. |
@@ -342,19 +381,20 @@ to repeat the historical reset.
 
 ## Remaining technical decisions and verification limits
 
-The fresh-start decision is accepted. Remaining decisions are the dedicated
-project's billing/compute/retention settings, final confirmation of the proposed
-Oregon/PG18 deployment after isolated compatibility/latency evidence, operator
-and reviewer assignments, live verification of the implemented trusted-backend role, launch window
-and measurable recovery commitments. Real resource IDs will be recorded when
-provisioning is separately authorized. No source access or historical-data
-preservation work remains. TJ-01 is accepted, closed and Done. TJ-02 is implemented
-locally and open in Verify; TJ-03 through TJ-06 remain Backlog.
+The fresh-start and TJ-02 implementation decisions are accepted. Validation
+resources, PG18 migration compatibility and the trusted-backend role are now
+verified. Remaining decisions concern production sizing/retention and placement
+after Railway latency/load measurements, operational ownership, launch window
+and measurable recovery commitments. Isolated application/browser checks and the
+restricted Neon recovery exercise have passed within documented limits; the owner
+accepted the tests. No source access or historical-data preservation work remains.
+TJ-01 through TJ-03 are closed/Done; TJ-04 is open/Verify pending final pushed-fix
+verification; TJ-05/TJ-06 remain Backlog. Reports record actual validation IDs.
 
 Validation during the 2026-09-10 planning pass was static/documentation/metadata
-review only. TJ-02 adds the local integration and client checks above. Live Neon
-catalog/security, authenticated production functionality and operational
-backup/recovery remain untested; local repeatability does not establish them.
+review only. TJ-02 adds the local integration and client checks above. TJ-03 now adds live isolated Neon
+catalog/security/repeatability evidence. Authenticated production functionality
+and operational backup/recovery remain untested.
 Earlier release-preparation evidence and owner-confirmed Project workflows remain
 unchanged, including the manual reopened-to-Ready fallback.
 
@@ -425,4 +465,17 @@ elsewhere. Their databases were not inspected.
 
 
 The new destination proposal above supersedes the former source-version-dependent
-selection. Existing tools/authentication are retained; no resources were created.
+selection. At that historical planning snapshot, existing tools/authentication were retained
+and no resources were created. TJ-03 creation is separately recorded above.
+
+## Accepted application review and production preparation - 2026-09-13
+
+TJ-04 owner application/test acceptance is received and must not be requested again.
+The [current handoff](validation/tj-04-handoff-2026-09-13.md) separates accepted
+technical/browser evidence from the pending exact pushed-commit verification.
+The [TJ-05 launch plan](neon-launch-plan.md) records read-only Railway triggers,
+actual remaining configuration gaps, a separately initialized production target,
+TLS/roles, HTTPS sessions, provider/operational checks and Neon recovery.
+No production action was executed. All existing Neon data, including the owner's
+new user and accounts, is protected; never empty validation data to make production.
+The catalogue Feature #7 remains independent and unscheduled, not a Neon blocker.

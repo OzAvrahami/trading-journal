@@ -21,6 +21,8 @@ export function useInvestmentQuotes(holdings = [], { enabled = true } = {}) {
     retry: false,
     staleTime: 30_000,
   });
-  const quoteLookup = useMemo(() => quotesBySymbol(query.data), [query.data]);
+  // React Query retains previous data after a failed refresh. Fall back to the
+  // dated manual valuation rather than keep presenting that quote as live.
+  const quoteLookup = useMemo(() => query.isError ? {} : quotesBySymbol(query.data), [query.data, query.isError]);
   return { ...query, quoteLookup, symbols };
 }

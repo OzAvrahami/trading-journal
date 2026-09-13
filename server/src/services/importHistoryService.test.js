@@ -32,7 +32,7 @@ test('file identity is server-authoritative over uploaded bytes and preview crea
 });
 
 describe('Import History queries', () => {
-  test('same successful hash is blocked for that user before Account or Run creation', async () => {
+  test('same successful hash is scoped to the selected account before Run creation', async () => {
     const calls = [];
     const queryable = { query: async (sql, params) => {
       calls.push({ sql, params });
@@ -45,6 +45,8 @@ describe('Import History queries', () => {
     });
     assert.equal(calls.length, 1);
     assert.equal(calls[0].params[0], 'owner');
+    assert.equal(calls[0].params[3], 'account');
+    assert.match(calls[0].sql, /r.account_id = \$4/);
   });
 
   test('list and detail keep ownership parameterized and expose no raw payload', async () => {

@@ -2,7 +2,9 @@
 
 Planning metadata created on 2026-09-10. This document records the authorized
 backlog and subsequent dated progress. v1.1.0 is not a published Release;
-TJ-02 now has local implementation evidence, while Neon remains unprovisioned.
+TJ-02 is accepted/closed at `2821435dc609ad85d3447cd22f799fb17a508968`;
+TJ-03 is accepted/closed and Done. TJ-04 tests and owner application review are
+accepted; #4 is open/Verify pending exact pushed-fix verification. #5/#6 stay Backlog.
 
 ## Baseline and target
 
@@ -26,16 +28,17 @@ and verification. The owner controls commits, pushes, tags, and publication.
 
 ## Ordered backlog
 
-The TJ identifiers are title prefixes, independent of GitHub's issue numbers.
-All issues use one primary type, `chore`, and the indicated durable scope labels.
+The established TJ-01 through TJ-06 identifiers name this migration sequence,
+independent of GitHub issue numbers. These six issues use primary type `chore`
+and the indicated durable scope labels. Other Features use their Issue Form titles.
 Status and Priority live in native Project fields.
 
 | Identifier / issue | Scope | Status | Priority | Depends on |
 | --- | --- | --- | --- | --- |
 | [TJ-01 / #1 — Audit dependencies and define fresh initialization](https://github.com/OzAvrahami/trading-journal/issues/1) | backend, database, railway | Done | P1 — High | None |
-| [TJ-02 / #2 — Adapt connections and migration portability](https://github.com/OzAvrahami/trading-journal/issues/2) | backend, database | Verify | P1 — High | [TJ-01 / #1](https://github.com/OzAvrahami/trading-journal/issues/1) |
-| [TJ-03 / #3 — Initialize isolated empty Neon and verify security](https://github.com/OzAvrahami/trading-journal/issues/3) | database | Backlog | P1 — High | [TJ-02 / #2](https://github.com/OzAvrahami/trading-journal/issues/2) |
-| [TJ-04 / #4 — Verify workflows with deterministic fixtures](https://github.com/OzAvrahami/trading-journal/issues/4) | frontend, backend, database | Backlog | P1 — High | [TJ-03 / #3](https://github.com/OzAvrahami/trading-journal/issues/3) |
+| [TJ-02 / #2 — Adapt connections and migration portability](https://github.com/OzAvrahami/trading-journal/issues/2) | backend, database | Done | P1 — High | [TJ-01 / #1](https://github.com/OzAvrahami/trading-journal/issues/1) |
+| [TJ-03 / #3 — Initialize isolated empty Neon and verify security](https://github.com/OzAvrahami/trading-journal/issues/3) | database | Done | P1 — High | [TJ-02 / #2](https://github.com/OzAvrahami/trading-journal/issues/2) |
+| [TJ-04 / #4 — Verify workflows with deterministic fixtures](https://github.com/OzAvrahami/trading-journal/issues/4) | frontend, backend, database | Verify | P1 — High | [TJ-03 / #3](https://github.com/OzAvrahami/trading-journal/issues/3) |
 | [TJ-05 / #5 — Launch separately initialized fresh production](https://github.com/OzAvrahami/trading-journal/issues/5) | backend, database, railway | Backlog | P1 — High | [TJ-04 / #4](https://github.com/OzAvrahami/trading-journal/issues/4) |
 | [TJ-06 / #6 — Stabilize operations and prepare v1.1.0](https://github.com/OzAvrahami/trading-journal/issues/6) | backend, database, github, railway | Backlog | P2 — Medium | [TJ-05 / #5](https://github.com/OzAvrahami/trading-journal/issues/5) |
 
@@ -71,13 +74,16 @@ The full acceptance criteria live in the linked issues.
    deletion, and prepare release/version changes only after implementation and
    verification. Owner controls Git/deployment/publication.
 
-Proposed destination: dedicated `trading-journal`, Oregon (`aws-us-west-2`),
-PostgreSQL 18, isolated validation plus separately initialized production.
-Real IDs, compute/retention, measured compatibility/latency, operator assignments
-and recovery commitments remain to be recorded. This pass provisions nothing.
-The six original issues and their priorities/labels/milestone/memberships and
-linear dependency order are retained. TJ-02 is open in Verify after local
-implementation; TJ-03 through TJ-06 remain Backlog.
+Actual isolated destination: `trading-journal` / `delicate-fire-79141899`,
+validation branch `br-green-cake-arg1asaf`, Oregon (`aws-us-west-2`), PostgreSQL
+18.6, fixed 0.25 CU on the existing Free plan, six-hour history setting. Two
+empty databases initialized independently with reviewed 001-019 and matching
+normalized schema/security. See the [TJ-03 report](validation/tj-03-neon-2026-09-12.md).
+Production remains unprovisioned. Application checks and the restricted recovery
+exercise have passed with their documented limits; Railway/production operational
+gates remain. All six migration issues retain their metadata and linear dependencies.
+TJ-01 through TJ-03 are closed/Done; TJ-04 is owner-accepted and open/Verify pending
+final pushed-fix verification; TJ-05/TJ-06 remain Backlog.
 
 ## Membership and triage evidence
 
@@ -159,7 +165,10 @@ staging, commits or pushes occurred. Local document checks include untracked
 files; issue metadata is read back, preserving original memberships and dependencies.
 The accepted historical reset does not permit discarding any new Neon records.
 
-## TJ-02 implementation handoff - 2026-09-12
+## TJ-02 local implementation snapshot - 2026-09-12
+
+This dated pre-commit evidence is retained. Its pending-SHA and issue-state
+statements are superseded by the accepted pushed handoff below.
 
 Owner technical acceptance closes TJ-01 (Done). TJ-02 moved deliberately through
 Ready and In Progress and is now open in Verify. Priorities, canonical labels,
@@ -195,3 +204,106 @@ release corrections were preserved. Packages remain 1.0.0. No cloud provisioning
 production configuration/signing rotation, deployment or Git publication occurred.
 The owner already accepted technical work; sizing, retention, launch timing and
 operational recovery commitments are separately reviewed downstream.
+
+## Accepted pushed handoff and TJ-03 verification - 2026-09-12
+
+The owner accepted/pushed the 34 reviewed TJ-02 paths on
+`chore/tj-02-neon-preparation` at `2821435dc609ad85d3447cd22f799fb17a508968`.
+Local HEAD and remote branch matched; remote main remains the v1.0.0 SHA.
+TJ-02's final acceptance was recorded, the issue closed as completed and its
+existing Project item verified Done. This completes code/local verification,
+not production launch. TJ-03 moved through Ready and In Progress to Verify and
+remains open; TJ-04 through TJ-06 were not started. Workflow setup was not revisited.
+
+The [live report](validation/tj-03-neon-2026-09-12.md) and
+[redacted evidence](validation/tj-03-neon-2026-09-12.json) record two independently
+initialized empty Neon databases using the unchanged reviewed runner, pgcrypto
+1.4, 20 tables/19 empty business tables, 13 protected trigger functions, validated
+018 constraints, effective 017/019 security and the explicit owner role model.
+The bootstrap guide now requires database ACL statements as `tj_owner`: doing
+so as the Neon admin had left PUBLIC grants unchanged. This was corrected and
+negative access tests passed without weakening RLS or changing application code.
+
+The independent normalized schema/security manifests match. Full-precision
+ledger timestamps/checksums remain unchanged on 19-skip reruns. Live busy-runner,
+SQL-failure rollback and targeted session interruption checks passed, with no
+probe objects/records or synthetic migration ledger entries left behind.
+Actual shared-pool role startup, TLS, DATE parsing and transaction rollback passed.
+New role credentials are encrypted outside Git. No production system was connected.
+
+TJ-04 receives the isolated validation database for comprehensive deterministic
+application verification. A separate restricted recovery-branch exercise remains
+planned; six-hour history configuration is not a tested recovery guarantee.
+Railway latency, cold-start/load sizing, production initialization, launch and
+operational commitments remain downstream. New Neon records must be preserved.
+These documentation changes await owner commit; reviewed code SHA and all
+package/lockfile versions are unchanged. No Git publication or deployment ran.
+
+## TJ-03 acceptance and TJ-04 execution - 2026-09-12
+
+The owner delegated review and acceptance of the completed isolated TJ-03 scope.
+The agent inspected all six pending documentation files, verified the detailed
+catalog/ledger evidence and the `tj_owner` database-ACL correction, and accepted
+that scope without repeating its completed suite. This records agent review of
+local artifacts, not a claim that the owner or this chat independently inspected
+them. TJ-03 is closed/Done. Its two original evidence files remain unchanged as
+dated snapshots; their former open/Verify state is superseded here.
+
+TJ-04 proceeded through Ready and In Progress and is open in Verify. See the
+[report](validation/tj-04-neon-2026-09-12.md),
+[independent fixture expectations](validation/tj-04-fixtures-2026-09-12.md) and
+[redacted execution evidence](validation/tj-04-neon-2026-09-12.json).
+Authenticated APIs exercised two synthetic users, financial ledgers, both CSV
+importers, ownership boundaries, dates/timezones and session failures. A dedicated
+timestamp recovery child preserved the selected historical state and passed
+application/security checks without changing the root. Uncommitted fixes address
+the demonstrated cross-account file-import blocker (forward migration 020) and
+stale provider/retained client quote handling. The original SHA is still HEAD;
+there is no final implementation SHA for these fixes yet.
+
+Interactive English/Hebrew/RTL, responsive flows and real-browser cache/session
+acceptance remain open: the connected browser inventory was empty. API locale,
+Unicode and date checks and focused jsdom component/session tests passed, but
+they do not substitute for browser verification. TJ-04's combined UI and
+launch-blocker checklist items remain unchecked. TJ-05/TJ-06 remain Backlog.
+No production readiness, actual Finnhub connectivity, Railway latency, general
+RPO/RTO, new version, Git publication or fixture promotion is claimed.
+
+## TJ-04 actual-browser follow-up - 2026-09-13 (before owner acceptance)
+
+The earlier browser-unavailable observation is a dated snapshot, superseded by the
+[Chrome follow-up](validation/tj-04-browser-2026-09-13.md) and
+[structured evidence](validation/tj-04-browser-2026-09-13.json). Installed Chrome
+ran 21 passing scenarios: real signup/first account/login/reload/logout, two-user
+switching and delayed-response isolation, expired/stale sessions, bounded transient
+failures, English/Hebrew/RTL and narrow layouts, account-scoped CSV feedback and
+controlled quote fallback. A demonstrated English-only pagination summary received
+a narrow locale/direction fix; 15 focused existing tests and the browser rerun passed.
+
+Issue #4 acceptance items 2 and 6 now have actual-browser plus prior API evidence.
+Item 7 remains open pending owner visual acceptance and final review/publication
+of uncommitted fixes. #4 stays open/Verify; #5/#6 stay Backlog with existing metadata.
+The actual local app is left running with dedicated synthetic review users and
+private local credentials. Old fixtures/ledger are preserved; repeat/recovery
+resources are untouched. Local HTTP is not production cross-site HTTPS cookie
+verification. No actual Finnhub connectivity, production launch, new SHA/version,
+Git publication or owner visual acceptance is claimed.
+
+## Current owner acceptance and final commit gate - 2026-09-13
+
+The owner completed application review and accepted the TJ-04 tests. Earlier
+pending-visual-acceptance statements above are historical and superseded. Completed
+API, browser and recovery checks retain their actual limits. #4 remains open/Verify
+only for the final reviewed/pushed commit verification and publication handoff;
+#1-#3 remain closed/Done and #5/#6 Backlog with unchanged metadata/dependencies.
+After that exact commit and the remaining #4 criteria are verified, close #4/Done
+and move #5/Ready. See the [reviewed handoff](validation/tj-04-handoff-2026-09-13.md)
+and [production launch checkpoints](neon-launch-plan.md). No production readiness
+is inferred from accepted local review. All existing Neon records are protected.
+
+[Feature #7](https://github.com/OzAvrahami/trading-journal/issues/7) captures the
+administrator-controlled catalogue including casing, remains Backlog/P2 without
+a milestone or dependency, and is not a Neon release blocker. Its invented TJ-07
+prefix was corrected to the Feature template convention. No catalogue code exists
+in this reviewed changeset. Cross-project memberships were corrected without
+changing Finance Tracker's legitimate Project #1 fields or the Neon issue sequence.

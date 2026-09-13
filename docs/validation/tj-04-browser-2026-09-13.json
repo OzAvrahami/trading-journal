@@ -1,0 +1,878 @@
+{
+  "date": "2026-09-13",
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+  "automation": "Playwright 1.60.0, installed Chrome, isolated persistent profile, headless",
+  "origins": [
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3001"
+  ],
+  "results": [
+    {
+      "name": "UI signup then empty authenticated dashboard",
+      "result": "pass",
+      "evidence": "Signup HTTP 201; dashboard/accounts/portfolio requests HTTP 200; zero trades/accounts/portfolios. Initial runner working-directory error corrected before visual assertions."
+    },
+    {
+      "name": "Reload restores session and rotates HttpOnly local cookie",
+      "result": "pass",
+      "cookie": {
+        "httpOnly": true,
+        "secure": false,
+        "sameSite": "Strict",
+        "domain": "127.0.0.1"
+      }
+    },
+    {
+      "name": "Explicit first account through real dialog",
+      "result": "pass"
+    },
+    {
+      "name": "English to Hebrew navigation and RTL",
+      "result": "pass"
+    },
+    {
+      "name": "390px Hebrew accounts/dialog/trade cards",
+      "result": "pass",
+      "dialog": {
+        "x": 16,
+        "y": 54.203125,
+        "width": 358,
+        "height": 759.59375
+      },
+      "dimensions": {
+        "viewport": 390,
+        "scroll": 390
+      },
+      "observation": "Pagination summary remained English; investigating this demonstrated localization gap."
+    },
+    {
+      "name": "Actual browser account-scoped duplicate preview",
+      "result": "pass",
+      "sameAccountDisabled": true,
+      "alternateAccountEnabled": true,
+      "duplicateText": "קובץ שכבר יובאהקובץ הזה כבר יובא בעבר. הוספת העסקאות נחסמה.צפייה בייבוא הקודם"
+    },
+    {
+      "name": "Actual UI logout clears refresh cookie and protected screen",
+      "result": "pass"
+    },
+    {
+      "name": "A logout to B signup: no A accounts retained",
+      "result": "pass"
+    },
+    {
+      "name": "Ordinary B login has only B empty data",
+      "result": "pass"
+    },
+    {
+      "name": "Controlled expired access token triggers real 401, shared refresh and successful UI",
+      "result": "pass",
+      "network": [
+        {
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "path": "/api/preferences",
+          "status": 401
+        },
+        {
+          "path": "/api/analytics/calendar",
+          "status": 401
+        },
+        {
+          "path": "/api/accounts",
+          "status": 401
+        },
+        {
+          "path": "/api/analytics/summary",
+          "status": 401
+        },
+        {
+          "path": "/api/analytics/equity-curve",
+          "status": 401
+        },
+        {
+          "path": "/api/analytics/distribution",
+          "status": 401
+        },
+        {
+          "path": "/api/analytics/breakdown",
+          "status": 401
+        },
+        {
+          "path": "/api/accounts",
+          "status": 401
+        },
+        {
+          "path": "/api/accounts",
+          "status": 401
+        },
+        {
+          "path": "/api/portfolios",
+          "status": 401
+        },
+        {
+          "path": "/api/auth/refresh",
+          "status": 200
+        },
+        {
+          "path": "/api/preferences",
+          "status": 200
+        },
+        {
+          "path": "/api/analytics/distribution",
+          "status": 200
+        },
+        {
+          "path": "/api/analytics/calendar",
+          "status": 200
+        },
+        {
+          "path": "/api/analytics/summary",
+          "status": 200
+        },
+        {
+          "path": "/api/analytics/equity-curve",
+          "status": 200
+        },
+        {
+          "path": "/api/accounts",
+          "status": 200
+        },
+        {
+          "path": "/api/analytics/breakdown",
+          "status": 200
+        },
+        {
+          "path": "/api/portfolios",
+          "status": 200
+        },
+        {
+          "path": "/api/accounts",
+          "status": 200
+        },
+        {
+          "path": "/api/accounts",
+          "status": 200
+        }
+      ],
+      "setup": "Only the isolated browser login response carried a locally signed expired access token; actual server refresh and database requests executed."
+    },
+    {
+      "name": "Definitive stale refresh cookie clears auth and returns login without loop",
+      "result": "pass",
+      "refreshRequests": 1
+    },
+    {
+      "name": "Controlled 503 does not destructively logout or loop",
+      "result": "pass",
+      "requests": 2
+    },
+    {
+      "name": "Hebrew pagination correction in real browser",
+      "result": "pass",
+      "expected": "מציג 1–3 מתוך 3 עסקאות",
+      "actual": "מציג 1–3 מתוך 3 עסקאות"
+    },
+    {
+      "name": "Transport failure retains signed-in state and bounded retries",
+      "result": "pass",
+      "requests": 2
+    },
+    {
+      "name": "Unconfigured actual local provider displays dated manual fallback",
+      "result": "pass",
+      "manualPrice": 110,
+      "marketValue": 220,
+      "unrealized": 20
+    },
+    {
+      "name": "Controlled current quote rendered without altering ledger",
+      "result": "pass",
+      "providerPrice": 120,
+      "marketValue": 240,
+      "costBasis": 200,
+      "setup": "Browser-only intercepted quote response; actual ledger API remains Neon-backed."
+    },
+    {
+      "name": "Switch back to English updates direction without logout",
+      "result": "pass"
+    },
+    {
+      "name": "Stale quote refresh replaces retained live data with dated manual valuation",
+      "result": "pass",
+      "requests": 1,
+      "expected": {
+        "price": 110,
+        "marketValue": 220,
+        "unrealizedPnl": 20
+      },
+      "actual": {
+        "manualVisible": true,
+        "market220": true
+      },
+      "setup": "Isolated browser clock advanced beyond the 30-second query cache; quote HTTP response explicitly controlled as 503 MARKET_DATA_STALE. Initial mutable test interception was corrected; no application change needed."
+    },
+    {
+      "name": "Late A response cannot repopulate B cache after logout/login",
+      "result": "pass",
+      "oldResponseDelivery": "fulfilled",
+      "setup": "Held one real authenticated A account response; released only after B authenticated."
+    },
+    {
+      "name": "Mobile account dialog scroll reaches submit control",
+      "result": "pass",
+      "submitBox": {
+        "x": 37,
+        "y": 753.203125,
+        "width": 316,
+        "height": 44
+      }
+    },
+    {
+      "name": "Mobile More menu reaches investment holdings without page overflow",
+      "result": "pass",
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    }
+  ],
+  "fixtures": [
+    {
+      "kind": "review-user-a-ui",
+      "id": "d7cf2756-709e-4c6d-80d1-5682e326fa78"
+    },
+    {
+      "kind": "first-account-ui",
+      "id": "76ed6f2b-9936-46f2-8f37-cb6dd014bea6"
+    },
+    {
+      "kind": "second-trading-account",
+      "path": "/api/accounts",
+      "id": "60ff802e-904f-450e-98ad-9f5630daac61",
+      "inputs": {
+        "company": "סקירת TJ04",
+        "accountNumber": "REVIEW-A-02",
+        "accountName": "מסחר לדוגמה — נוסף",
+        "baseCurrency": "USD"
+      }
+    },
+    {
+      "kind": "long-trade",
+      "path": "/api/trades",
+      "id": "dc396ad0-b9e2-4755-b849-48edcfa31ef0",
+      "inputs": {
+        "accountId": "76ed6f2b-9936-46f2-8f37-cb6dd014bea6",
+        "symbol": "TJLONG",
+        "market": "stocks",
+        "direction": "long",
+        "entryDatetime": "2026-09-10T07:00:00Z",
+        "exitDatetime": "2026-09-10T08:00:00Z",
+        "entryPrice": 100,
+        "exitPrice": 110,
+        "quantity": 2,
+        "fees": 1,
+        "riskAmount": 10,
+        "notes": "דוגמה לבדיקה: רווח נטו 19 ויחס סיכון 1.9"
+      }
+    },
+    {
+      "kind": "short-trade",
+      "path": "/api/trades",
+      "id": "032004e7-c161-4b1c-b7ec-730c96bd5e29",
+      "inputs": {
+        "accountId": "76ed6f2b-9936-46f2-8f37-cb6dd014bea6",
+        "symbol": "TJSHORT",
+        "market": "stocks",
+        "direction": "short",
+        "entryDatetime": "2026-09-11T07:00:00Z",
+        "exitDatetime": "2026-09-11T08:00:00Z",
+        "entryPrice": 110,
+        "exitPrice": 105,
+        "quantity": 3,
+        "fees": 1,
+        "riskAmount": 10,
+        "notes": "עסקת שורט לדוגמה"
+      }
+    },
+    {
+      "kind": "investment-portfolio",
+      "path": "/api/portfolios",
+      "id": "4fae5010-88d0-40d8-b43d-7e57c3d798d2",
+      "inputs": {
+        "name": "השקעות לדוגמה",
+        "baseCurrency": "USD"
+      }
+    },
+    {
+      "kind": "investment-account",
+      "path": "/api/accounts",
+      "id": "b618d5e6-ca19-4c91-b635-abbaaa299566",
+      "inputs": {
+        "company": "סקירת TJ04",
+        "accountNumber": "REVIEW-INV-01",
+        "accountName": "השקעות לטווח ארוך",
+        "baseCurrency": "USD",
+        "accountGroup": "personal_investment",
+        "includeInInvestmentValue": true,
+        "includeInNetWorth": true,
+        "includeInTradingAnalytics": false,
+        "linkPortfolioId": "4fae5010-88d0-40d8-b43d-7e57c3d798d2"
+      }
+    },
+    {
+      "kind": "investment-instrument",
+      "path": "/api/investment-instruments",
+      "id": "65de8898-f86b-4d96-a702-c8828edc33a0",
+      "inputs": {
+        "symbol": "TJVIEW",
+        "name": "מניית הדגמה",
+        "assetType": "stock",
+        "currency": "USD"
+      }
+    },
+    {
+      "kind": "deposit",
+      "path": "/api/portfolio-transactions",
+      "id": "6fff215e-5e75-4d72-bbae-f00f32f58f2e",
+      "inputs": {
+        "portfolioId": "4fae5010-88d0-40d8-b43d-7e57c3d798d2",
+        "transactionType": "deposit",
+        "transactionDate": "2026-09-01",
+        "amount": 1000
+      }
+    },
+    {
+      "kind": "buy",
+      "path": "/api/portfolio-transactions",
+      "id": "199fed7a-cfd3-4552-a407-7b02a03620d4",
+      "inputs": {
+        "portfolioId": "4fae5010-88d0-40d8-b43d-7e57c3d798d2",
+        "instrumentId": "65de8898-f86b-4d96-a702-c8828edc33a0",
+        "transactionType": "buy",
+        "transactionDate": "2026-09-02",
+        "quantity": 2,
+        "price": 100,
+        "fees": 0
+      }
+    },
+    {
+      "kind": "manual-price",
+      "instrumentId": "65de8898-f86b-4d96-a702-c8828edc33a0",
+      "date": "2026-09-12",
+      "price": 110
+    },
+    {
+      "kind": "journal",
+      "path": "/api/journal",
+      "id": "457f0552-a6fa-4010-837c-3c6d93ed440e",
+      "inputs": {
+        "entryType": "trade_review",
+        "entryDate": "2026-09-10",
+        "title": "סקירת עסקה — עמידה בתכנית",
+        "content": "כניסה לפי התכנית, סיכון מוגדר מראש ובדיקה של עמלות ותוצאות.",
+        "tradeIds": [
+          "dc396ad0-b9e2-4755-b849-48edcfa31ef0"
+        ]
+      }
+    },
+    {
+      "kind": "browser-import-run",
+      "id": "343f661f-3b0b-4fc4-ba8c-3e5ca676975c",
+      "inserted": 1
+    },
+    {
+      "kind": "review-user-b-ui",
+      "id": "c9065f1e-00be-4836-a4fa-b50178e4feff"
+    }
+  ],
+  "errors": [],
+  "completedAt": "2026-09-13T14:44:44.457Z",
+  "screenshots": [
+    "tj-04-browser-2026-09-13/accounts-he-desktop.png",
+    "tj-04-browser-2026-09-13/holdings-he-fallback.png",
+    "tj-04-browser-2026-09-13/trades-he-mobile.png"
+  ],
+  "chrome_version": "152.0.7977.83",
+  "head": "2821435dc609ad85d3447cd22f799fb17a508968",
+  "working_tree": "Includes prior TJ-04 fixes/migration 020 and current uncommitted pagination localization correction",
+  "destination_verification": {
+    "at": "2026-09-13T14:30:01.394Z",
+    "identity": {
+      "database": "trading_journal_validation",
+      "session_user": "tj_backend",
+      "current_user": "tj_owner"
+    },
+    "tls": "authorized, verify-full",
+    "endpoint": "ep-bold-fire-aryb3eiv.c-4.us-west-2.aws.neon.tech",
+    "ledger": [
+      {
+        "filename": "001_init.sql",
+        "checksum": "382918d1c89b36a9cf715f4bacce3cb617f25a0ef8236e35498661e40c6156a1",
+        "applied_at": "2026-09-12 10:17:03.680055+00"
+      },
+      {
+        "filename": "002_add_dedup_key.sql",
+        "checksum": "699d51afd039da9107028716b48d6241f1747e2a6d42fcd7810aecc71a7c4f50",
+        "applied_at": "2026-09-12 10:17:07.736231+00"
+      },
+      {
+        "filename": "003_trading_accounts.sql",
+        "checksum": "9c9f5b9ff739d3d00e1ae04e400a1d44e0cde68b92d34beb974261f5e9569956",
+        "applied_at": "2026-09-12 10:17:08.735695+00"
+      },
+      {
+        "filename": "004_fix_dedup_scope.sql",
+        "checksum": "70d146578101dff4d08699e650db7191decbac0120ad6367acdaa3f2a895ce6e",
+        "applied_at": "2026-09-12 10:17:11.351118+00"
+      },
+      {
+        "filename": "005_journal_entries.sql",
+        "checksum": "a4a8a7d6b80ec081d8875d9aacc45828aa8bdb6839675199e67d49689b25709d",
+        "applied_at": "2026-09-12 10:17:12.360902+00"
+      },
+      {
+        "filename": "006_rules_adherence.sql",
+        "checksum": "49280aed26594b7d4c52fe06a0c661f67904c9a428b1cec29b125ccccfcf0289",
+        "applied_at": "2026-09-12 10:17:14.997504+00"
+      },
+      {
+        "filename": "007_goals.sql",
+        "checksum": "93655bb33da5ec59bca2396f747aea859aa6e96304b2299cb4dad17dcfbd4df2",
+        "applied_at": "2026-09-12 10:17:18.431084+00"
+      },
+      {
+        "filename": "008_trading_integrity_gate.sql",
+        "checksum": "bb25c1a335a9905d5c6237f371784681e82bff27abce535337b1ff22fca55ca3",
+        "applied_at": "2026-09-12 10:17:20.046747+00"
+      },
+      {
+        "filename": "009_user_timezone.sql",
+        "checksum": "44be40964779adff9b91de48451c5672a677d03d0a9070252ea63c1aeb508313",
+        "applied_at": "2026-09-12 10:17:21.451201+00"
+      },
+      {
+        "filename": "010_daily_review_details.sql",
+        "checksum": "1d56739161cccfb898163e4a53e3ade009e6c574e0053d47d48b37d8564b3ce5",
+        "applied_at": "2026-09-12 10:17:22.45204+00"
+      },
+      {
+        "filename": "011_strategies_setups.sql",
+        "checksum": "516a3e63e545b1080ffb20e4a2118bc1343a1815484aa143d5ee7967e3cd17f6",
+        "applied_at": "2026-09-12 10:17:23.66643+00"
+      },
+      {
+        "filename": "012_accounts_expansion.sql",
+        "checksum": "882ef6b0d76cd7cc7a809e18d67235568f8f0f52386a8c627f000da9993da926",
+        "applied_at": "2026-09-12 10:17:28.503948+00"
+      },
+      {
+        "filename": "013_import_history.sql",
+        "checksum": "fbb1d2191630b749485fe72969b512e9fa4f00f22c1ff8d755e5d4ec4e32d609",
+        "applied_at": "2026-09-12 10:17:29.909788+00"
+      },
+      {
+        "filename": "014_user_preferences.sql",
+        "checksum": "b8d1a3d43bda578bf7277cca994b183f0b6f940ccf0a141c3933b88103ae3ad3",
+        "applied_at": "2026-09-12 10:17:32.93987+00"
+      },
+      {
+        "filename": "015_portfolio_foundation.sql",
+        "checksum": "9313ccb856c3efe1cfcf13c2a36f2d0c9f38110f05e10529d097a2fe0397de7f",
+        "applied_at": "2026-09-12 10:17:33.947211+00"
+      },
+      {
+        "filename": "016_unified_accounts_investments.sql",
+        "checksum": "bf831eea0a6c60594171f1a612d037409b0b55d823a67587212b5567ff23d07f",
+        "applied_at": "2026-09-12 10:17:40.215369+00"
+      },
+      {
+        "filename": "017_secure_public_data_api.sql",
+        "checksum": "cb6456a4c72a914fdc0d37ad1726a681fe73e3d686e34a1982df56a1eab454fe",
+        "applied_at": "2026-09-12 10:17:44.057703+00"
+      },
+      {
+        "filename": "018_validate_trade_constraints.sql",
+        "checksum": "1c82af6044d7c4efa88efa731b0777751ce84e49ebb475a4133399393dba4d0d",
+        "applied_at": "2026-09-12 10:17:49.66136+00"
+      },
+      {
+        "filename": "019_harden_creator_defaults.sql",
+        "checksum": "5cf3c6fe81d497d7bd1cd0b3821f456033b79d740627630478539460789ac88f",
+        "applied_at": "2026-09-12 10:17:50.662734+00"
+      },
+      {
+        "filename": "020_account_scoped_import_files.sql",
+        "checksum": "21f5ba958704ca267068db7f8024ef465e8d5a8bc67d75df7fb7ed840c6b6cc7",
+        "applied_at": "2026-09-12 12:24:44.138055+00"
+      }
+    ],
+    "existing_user_ids": [
+      {
+        "id": "2d579214-cd73-4766-b979-82c51640ca96"
+      },
+      {
+        "id": "58d94a6c-6bbb-4d5d-bad1-15a975d3e9cb"
+      },
+      {
+        "id": "d7cf2756-709e-4c6d-80d1-5682e326fa78"
+      }
+    ],
+    "origins": {
+      "client": "http://127.0.0.1:5173",
+      "api": "http://127.0.0.1:3001"
+    },
+    "project_id": "delicate-fire-79141899",
+    "branch_id": "br-green-cake-arg1asaf"
+  },
+  "preservation": {
+    "at": "2026-09-13T14:44:44.037Z",
+    "old_record_fingerprints_match": true,
+    "ledger_unchanged": true,
+    "preserved": {
+      "daily_review_details": {
+        "count": 1,
+        "fingerprint": "519639f749476b9b45a4d31b9cbdd8a4"
+      },
+      "goals": {
+        "count": 1,
+        "fingerprint": "c07e42f4b45933ced6680240b1eb7162"
+      },
+      "import_run_rows": {
+        "count": 8,
+        "fingerprint": "21bc731e8e366aa423003fd09a32f38a"
+      },
+      "import_runs": {
+        "count": 6,
+        "fingerprint": "12deaf0526314fc6216a1e7450449ce1"
+      },
+      "investment_instruments": {
+        "count": 2,
+        "fingerprint": "46f6233970cabae5beb9a85e0018ef74"
+      },
+      "investment_portfolios": {
+        "count": 3,
+        "fingerprint": "e3a76ce8eb5c84d7841c72ac562f10c7"
+      },
+      "investment_prices": {
+        "count": 1,
+        "fingerprint": "9b3dfb2e1eaa590c54e534812d199fab"
+      },
+      "investment_transactions": {
+        "count": 8,
+        "fingerprint": "f9b04c369b4b61b0c2e88f3c5878f6b5"
+      },
+      "journal_entries": {
+        "count": 10,
+        "fingerprint": "0f08f2dc2335631c80308f7246c1cbf9"
+      },
+      "journal_entry_trades": {
+        "count": 1,
+        "fingerprint": "75d79e4db3170cd88d0ed6c65fffb548"
+      },
+      "refresh_tokens": {
+        "count": 24,
+        "fingerprint": "7eb8f714104942f08952246bbb03b8a2"
+      },
+      "rule_checks": {
+        "count": 3,
+        "fingerprint": "484bf614f016b5f30b7eed5ba6e7c63e"
+      },
+      "setups": {
+        "count": 1,
+        "fingerprint": "4bb6ae59248215404a12e8990bca3ad6"
+      },
+      "strategies": {
+        "count": 1,
+        "fingerprint": "db6d3ab4591b56bf58ce31e7fd26bcf1"
+      },
+      "trades": {
+        "count": 10,
+        "fingerprint": "f081c4ad5fee5824e4ff136c40b3efca"
+      },
+      "trading_accounts": {
+        "count": 7,
+        "fingerprint": "77942f04ed459df6d3f3e0bbb72b5ba9"
+      },
+      "trading_rules": {
+        "count": 1,
+        "fingerprint": "42b7b65aabd3767d86fe9049ee345f65"
+      },
+      "user_preferences": {
+        "count": 1,
+        "fingerprint": "633e510b5271b8489d6140c24e8e0b69"
+      },
+      "users": {
+        "count": 2,
+        "fingerprint": "af71b08f2db7cf4bbbc48c17462dcb27"
+      }
+    }
+  },
+  "running_handoff": {
+    "at": "2026-09-13T14:46:24.187Z",
+    "url": "http://127.0.0.1:5173",
+    "html_status": 200,
+    "login_status": 200,
+    "profile_status": 200,
+    "accounts_status": 200,
+    "account_count": 3,
+    "review_user_id": "d7cf2756-709e-4c6d-80d1-5682e326fa78",
+    "cors_origin": "http://127.0.0.1:5173",
+    "cors_credentials": "true"
+  },
+  "owner_visual_acceptance": "accepted by explicit owner instruction, 2026-09-13",
+  "sign_in_credentials": "Private local handoff outside repository; omitted here",
+  "focused_tests": {
+    "files": [
+      "client/src/pages/Trades.test.jsx",
+      "client/src/i18n/i18n.test.jsx"
+    ],
+    "passed": 15,
+    "failed": 0
+  },
+  "limitations": [
+    "Headless installed Chrome on Windows; no physical mobile device or Edge/Safari test.",
+    "Actual local HTTP HttpOnly/SameSite=Strict cookies verified. Production cross-site HTTPS SameSite=None/Secure cookies remain a launch gate.",
+    "Provider failure/current-price responses were controlled in the browser; actual local provider is intentionally unconfigured. No Finnhub connectivity claim.",
+    "Minor existing holdings-filter wording uses the generic Hebrew label for All dates; retained for owner review, no workflow blocker observed.",
+    "Owner visual/test acceptance received on 2026-09-13; final pushed implementation SHA verification remains pending."
+  ],
+  "implementation_sha256": {
+    "client/src/pages/Trades.jsx": "ebda214307bf743cc1d4190e8f35932dd19401013d92b96cd9c58f07dbcbf2ba",
+    "client/src/i18n/locales/en.js": "d0e13d29938119299f354730fa592772969614efe248fde8ebde43a9d9818e32",
+    "client/src/i18n/locales/he.js": "e2b526c50ed76e52b25ac3c13fe3830d248e64e9dd70fa9c3dac31af09cf5896"
+  },
+  "new_row_identifiers": {
+    "at": "2026-09-13T14:53:43.054Z",
+    "scope": "Primary keys added since preserved September 12 inventory; two designated review users and their application-created fixtures/sessions/preferences/import history",
+    "tables": {
+      "daily_review_details": [],
+      "goals": [],
+      "import_run_rows": [
+        {
+          "id": "1fa4681f-894c-4bd9-ba23-4d00c27f7be1"
+        }
+      ],
+      "import_runs": [
+        {
+          "id": "343f661f-3b0b-4fc4-ba8c-3e5ca676975c"
+        }
+      ],
+      "investment_instruments": [
+        {
+          "id": "65de8898-f86b-4d96-a702-c8828edc33a0"
+        }
+      ],
+      "investment_portfolios": [
+        {
+          "id": "4fae5010-88d0-40d8-b43d-7e57c3d798d2"
+        }
+      ],
+      "investment_prices": [
+        {
+          "id": "fe73d895-6373-4730-a26c-2a6c5721bdb6"
+        }
+      ],
+      "investment_transactions": [
+        {
+          "id": "6fff215e-5e75-4d72-bbae-f00f32f58f2e"
+        },
+        {
+          "id": "199fed7a-cfd3-4552-a407-7b02a03620d4"
+        }
+      ],
+      "journal_entries": [
+        {
+          "id": "457f0552-a6fa-4010-837c-3c6d93ed440e"
+        }
+      ],
+      "journal_entry_trades": [
+        {
+          "journal_entry_id": "457f0552-a6fa-4010-837c-3c6d93ed440e",
+          "trade_id": "dc396ad0-b9e2-4755-b849-48edcfa31ef0"
+        }
+      ],
+      "refresh_tokens": [
+        {
+          "id": "ffb5081d-3d59-4083-a96c-f77514a86cc7"
+        },
+        {
+          "id": "57b34dc4-a26a-4b27-a47e-5829ee280e13"
+        },
+        {
+          "id": "cd208c1c-1a4f-415d-9f33-a484e6c33cdd"
+        }
+      ],
+      "rule_checks": [],
+      "setups": [],
+      "strategies": [],
+      "trades": [
+        {
+          "id": "dc396ad0-b9e2-4755-b849-48edcfa31ef0"
+        },
+        {
+          "id": "032004e7-c161-4b1c-b7ec-730c96bd5e29"
+        },
+        {
+          "id": "1e5be3e7-352e-41cd-af9a-511b4f73e67a"
+        }
+      ],
+      "trading_accounts": [
+        {
+          "id": "76ed6f2b-9936-46f2-8f37-cb6dd014bea6"
+        },
+        {
+          "id": "60ff802e-904f-450e-98ad-9f5630daac61"
+        },
+        {
+          "id": "b618d5e6-ca19-4c91-b635-abbaaa299566"
+        }
+      ],
+      "trading_rules": [],
+      "user_preferences": [
+        {
+          "user_id": "d7cf2756-709e-4c6d-80d1-5682e326fa78"
+        }
+      ],
+      "users": [
+        {
+          "id": "d7cf2756-709e-4c6d-80d1-5682e326fa78"
+        },
+        {
+          "id": "c9065f1e-00be-4836-a4fa-b50178e4feff"
+        }
+      ]
+    }
+  },
+  "github_readback": [
+    {
+      "number": 3,
+      "state": "CLOSED",
+      "status": "Done",
+      "priority": "P1 — High",
+      "labels": [
+        "chore",
+        "database"
+      ],
+      "milestone": "v1.1.0 — Neon Migration",
+      "project_item": "PVTI_lAHOAgE74M4BjGpszg6Y4mo",
+      "dependencies": [
+        2
+      ]
+    },
+    {
+      "number": 4,
+      "state": "OPEN",
+      "status": "Verify",
+      "priority": "P1 — High",
+      "labels": [
+        "chore",
+        "frontend",
+        "backend",
+        "database"
+      ],
+      "milestone": "v1.1.0 — Neon Migration",
+      "project_item": "PVTI_lAHOAgE74M4BjGpszg6Y4pQ",
+      "dependencies": [
+        3
+      ]
+    },
+    {
+      "number": 5,
+      "state": "OPEN",
+      "status": "Backlog",
+      "priority": "P1 — High",
+      "labels": [
+        "chore",
+        "backend",
+        "database",
+        "railway"
+      ],
+      "milestone": "v1.1.0 — Neon Migration",
+      "project_item": "PVTI_lAHOAgE74M4BjGpszg6Y4s4",
+      "dependencies": [
+        4
+      ]
+    },
+    {
+      "number": 6,
+      "state": "OPEN",
+      "status": "Backlog",
+      "priority": "P2 — Medium",
+      "labels": [
+        "chore",
+        "backend",
+        "database",
+        "github",
+        "railway"
+      ],
+      "milestone": "v1.1.0 — Neon Migration",
+      "project_item": "PVTI_lAHOAgE74M4BjGpszg6Y4vw",
+      "dependencies": [
+        5
+      ]
+    }
+  ],
+  "file_inventory": {
+    "paths": [
+      "CHANGELOG.md",
+      "client/src/hooks/useInvestmentQuotes.js",
+      "client/src/hooks/useInvestmentQuotes.test.jsx",
+      "client/src/i18n/locales/en.js",
+      "client/src/i18n/locales/he.js",
+      "client/src/pages/Import.jsx",
+      "client/src/pages/Import.test.jsx",
+      "client/src/pages/Trades.jsx",
+      "docs/github-development-standard.md",
+      "docs/neon-initialization.md",
+      "docs/neon-migration-backlog.md",
+      "docs/neon-migration-plan.md",
+      "docs/validation/tj-03-neon-2026-09-12.json",
+      "docs/validation/tj-03-neon-2026-09-12.md",
+      "docs/validation/tj-04-browser-2026-09-13.json",
+      "docs/validation/tj-04-browser-2026-09-13.md",
+      "docs/validation/tj-04-browser-2026-09-13/accounts-he-desktop.png",
+      "docs/validation/tj-04-browser-2026-09-13/holdings-he-fallback.png",
+      "docs/validation/tj-04-browser-2026-09-13/trades-he-mobile.png",
+      "docs/validation/tj-04-fixtures-2026-09-12.md",
+      "docs/validation/tj-04-neon-2026-09-12.json",
+      "docs/validation/tj-04-neon-2026-09-12.md",
+      "server/src/db/migrations/020_account_scoped_import_files.sql",
+      "server/src/services/importHistoryService.js",
+      "server/src/services/importHistoryService.test.js",
+      "server/src/services/marketDataService.js",
+      "server/src/services/marketDataService.test.js"
+    ],
+    "prior_files_changed_this_pass": [
+      "CHANGELOG.md",
+      "docs/github-development-standard.md",
+      "docs/neon-initialization.md",
+      "docs/neon-migration-backlog.md",
+      "docs/neon-migration-plan.md",
+      "docs/validation/tj-04-neon-2026-09-12.md"
+    ],
+    "additional_paths": [
+      "client/src/i18n/locales/en.js",
+      "client/src/i18n/locales/he.js",
+      "client/src/pages/Trades.jsx",
+      "docs/validation/tj-04-browser-2026-09-13.json",
+      "docs/validation/tj-04-browser-2026-09-13.md",
+      "docs/validation/tj-04-browser-2026-09-13/accounts-he-desktop.png",
+      "docs/validation/tj-04-browser-2026-09-13/holdings-he-fallback.png",
+      "docs/validation/tj-04-browser-2026-09-13/trades-he-mobile.png"
+    ]
+  },
+  "configuration_checks": {
+    "utf8_json_markdown_links": "pass",
+    "git_diff_check": "pass",
+    "empty_index": true,
+    "package_lockfile_versions": "1.0.0 unchanged",
+    "previous_implementation_and_historical_json": "byte-for-byte preserved",
+    "credential_value_and_jwt_scan": "pass"
+  },
+  "owner_visual_acceptance_at_browser_completion": "pending",
+  "final_pushed_fix_verification": "pending",
+  "snapshot_notice": "Execution results, fixture IDs and file inventory record browser completion; owner acceptance was subsequently received. Existing owner-created Neon records must be preserved."
+}

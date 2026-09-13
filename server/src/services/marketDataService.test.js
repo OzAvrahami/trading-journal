@@ -8,8 +8,9 @@ import {
     MAX_QUOTE_SYMBOLS,
  } from './marketDataService.js';
 
- beforeEach(() => {
+ beforeEach((t) => {
   clearQuoteCache();
+  t.mock.method(Date, 'now', () => 1786038724 * 1000);
 });
 
 test('mapFinnhubQuote maps a Finnhub quote to our market data format', () => {
@@ -37,6 +38,24 @@ test('mapFinnhubQuote maps a Finnhub quote to our market data format', () => {
         previousClose: 311,
         asOf: '2026-08-06T17:52:04.000Z',
     });    
+});
+
+test('provider timestamps must fit the 96-hour window and are not cached on rejection', async (t) => {
+    const previous = process.env.FINNHUB_API_KEY;
+    process.env.FINNHUB_API_KEY = 'test-api-key';
+    t.after(() => { if (previous === undefined) delete process.env.FINNHUB_API_KEY; else process.env.FINNHUB_API_KEY = previous; });
+    const now = Date.now();
+    let timestamp = (now - 96 * 3600_000 - 1000) / 1000;
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => ({ ok: true, json: async () => ({ c: 110, t: timestamp }) }));
+    await assert.rejects(() => getQuote('TJUSD'), error => error.code === 'MARKET_DATA_STALE');
+    timestamp = (now + 301_000) / 1000;
+    await assert.rejects(() => getQuote('TJUSD'), error => error.code === 'MARKET_DATA_STALE');
+    timestamp = (now - 96 * 3600_000) / 1000;
+    assert.equal((await getQuote('TJUSD')).price, 110);
+    assert.equal(fetchMock.mock.callCount(), 3);
+    t.mock.method(Date, 'now', () => now + 1000);
+    await assert.rejects(() => getQuote('TJUSD'), error => error.code === 'MARKET_DATA_STALE');
+    assert.equal(fetchMock.mock.callCount(), 4, 'cached quotes also expire at the observation-age boundary');
 });
 
 test('getQuote normalizes the symbol and requests a quote from Finnhub', async (t) => {

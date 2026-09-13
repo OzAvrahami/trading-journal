@@ -4,6 +4,9 @@ const quoteCache = new Map();
 
 const QUOTE_CACHE_TTL_MS = 30_000;
 export const MAX_QUOTE_SYMBOLS = 25;
+// Permit a long market-closure weekend, but never present an arbitrarily old
+// provider observation as a current quote. Manual prices retain their dates.
+export const MAX_QUOTE_AGE_MS = 96 * 60 * 60 * 1000;
 
 const SYMBOL_PATTERN = /^[A-Z0-9.-]+$/;
 
@@ -20,7 +23,8 @@ function getCachedQuote(symbol) {
 
     const age = Date.now() - cached.cachedAt;
 
-    if (age >= QUOTE_CACHE_TTL_MS) {
+    const observationAge = Date.now() - Date.parse(cached.quote.asOf);
+    if (age >= QUOTE_CACHE_TTL_MS || observationAge > MAX_QUOTE_AGE_MS || observationAge < -300_000) {
         quoteCache.delete(symbol);
         return null;
     }
@@ -116,6 +120,12 @@ export async function getQuote(symbol) {
             `No market quote was found for ${normalizedSymbol}.`,
             404,
         );
+    }
+
+    const observationTime = Number(quote.t) * 1000;
+    const age = Date.now() - observationTime;
+    if (!Number.isFinite(observationTime) || age < -300_000 || age > MAX_QUOTE_AGE_MS) {
+        throw createError('MARKET_DATA_STALE', 'Market quote is outside the supported freshness window.', 503);
     }
 
     const normalizedQuote = mapFinnhubQuote(

@@ -340,4 +340,6 @@ Object.assign(en.errors, {
   INVESTMENT_SCOPE_NOT_FOUND: 'The requested investment Account is unavailable or has no linked investment ledger.',
 });
 
+Object.assign(en.trades, { showing: 'Showing {{from}}–{{to}} of {{total}} trades' });
+
 export default en;

@@ -164,11 +164,21 @@ The owner authorized planning for
 and explicitly accepted the technical plan/start of TJ-02 on 2026-09-12. It remains
 a planned milestone, not a published Release, with no due date. In the six-issue
 [migration backlog](neon-migration-backlog.md), TJ-01 is accepted/closed and Done;
-TJ-02 is locally implemented and open in Verify. TJ-03 through TJ-06 remain Backlog.
-The [plan](neon-migration-plan.md) and [initialization guide](neon-initialization.md)
-separate local code/test evidence from later Neon, production and recovery gates.
-This authorization permits TJ-02 code and disposable local tests; it does not
-permit cloud provisioning, production configuration/deployment or Git operations.
+TJ-02 is accepted/closed and Done at pushed implementation SHA
+`2821435dc609ad85d3447cd22f799fb17a508968`. Separately authorized TJ-03 initialized
+and verified isolated Free-plan Neon resources. Its isolated scope is accepted and
+TJ-03 is closed/Done. TJ-04 is open in Verify: authenticated deterministic API and
+isolated recovery evidence is reviewable. The September 13
+[browser follow-up](validation/tj-04-browser-2026-09-13.md) passed, and the owner
+accepted the application review/tests on 2026-09-13. Only verification of the final
+reviewed/pushed fix commit remains pending for TJ-04. TJ-05/TJ-06 remain Backlog. See the
+[TJ-04 report](validation/tj-04-neon-2026-09-12.md) for uncommitted corrections and limits. The [plan](neon-migration-plan.md),
+[initialization guide](neon-initialization.md) and
+[TJ-03 report](validation/tj-03-neon-2026-09-12.md) distinguish reviewed code,
+live isolated evidence and outstanding application/production/recovery gates.
+The subsequent TJ-04 authorization permits isolated fixtures/recovery and minimal
+fixes for demonstrated failures; production configuration/deployment and Git
+publication remain owner-controlled downstream actions.
 Package versions stay at `1.0.0`; a deliberate bump belongs to
 TJ-06 after implementation and verification are complete. Each later release
 must verify its final reviewed pushed commit before owner-controlled tagging
@@ -183,4 +193,25 @@ repeat approval of this decision is needed. New-user onboarding, deterministic
 financial verification, migration/security checks and Neon-only recovery remain
 required. Newly created Neon data is protected; the historical reset does not
 authorize another reset after launch. The 2026-09-10 scope revision authorized planning only; the separate 2026-09-12
-TJ-02 approval authorizes the local implementation above, not provisioning or launch.
+TJ-02 approval authorized local implementation; the subsequent TJ-03 instruction
+authorized isolated included-allowance provisioning, not production launch.
+
+## Owner acceptance and Project correction - 2026-09-13
+
+The owner confirmed fixing Project workflows that caused cross-project membership.
+No workflow settings were reopened or tested. Paginated item and repository-link
+reads identified Finance Tracker Project #1 as the existing correct destination.
+Twelve erroneous finance-tracker #36-#47 memberships were removed only from Project
+#12 after snapshotting all field values, including unset values, and verifying
+existing correct memberships. Correct-project fields and underlying issues remained
+unchanged. Project #12 now contains Trading Journal #1-#7 only.
+
+The catalogue issue uses the Feature convention:
+[#7 - Manage a central company and broker catalogue through administrator settings](https://github.com/OzAvrahami/trading-journal/issues/7).
+Its invented TJ-07 prefix was removed; established TJ-01 through TJ-06 are preserved.
+The Feature is Backlog/P2 with no milestone/version/date or dependency; casing is
+part of that feature, and implementation/release scheduling remains undecided.
+Owner acceptance of TJ-04 is received; keep it open/Verify until the exact pushed
+fix commit is verified against the reviewed inventory. Then close #4/Done and move
+#5/Ready after remaining criteria are satisfied. See the
+[handoff](validation/tj-04-handoff-2026-09-13.md) and [launch plan](neon-launch-plan.md).

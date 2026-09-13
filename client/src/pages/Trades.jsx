@@ -141,7 +141,7 @@ export default function Trades() {
 
       {pagination && (
         <div className="flex min-h-8 flex-wrap items-center justify-between gap-2 text-xs text-secondary" role="status" aria-live="polite">
-          <span dir="ltr">{t('trades.showing', { defaultValue: `Showing ${rangeStart}–${rangeEnd} of ${pagination.total} trades`, from: rangeStart, to: rangeEnd, total: pagination.total })}</span>
+          <span dir="auto">{t('trades.showing', { from: rangeStart, to: rangeEnd, total: pagination.total })}</span>
           {tradesQuery.isFetching && !tradesQuery.isLoading && <span className="text-muted">{t('common.loading')}</span>}
         </div>
       )}

@@ -53,11 +53,14 @@ export function mapImportRow(row) {
 const RUN_SELECT = `SELECT r.*, a.account_name, a.company AS account_company, a.account_number
   FROM import_runs r LEFT JOIN trading_accounts a ON a.id = r.account_id AND a.user_id = r.user_id`;
 
-export async function findSuccessfulDuplicate(userId, fileSha256, queryable = pool) {
+// Preview can offer a user-owned hint before an account is selected. Commit and
+// its uniqueness-race recovery must always supply the selected account.
+export async function findSuccessfulDuplicate(userId, fileSha256, queryable = pool, accountId = null) {
   const result = await queryable.query(
     `${RUN_SELECT} WHERE r.user_id = $1 AND r.file_sha256 = $2 AND r.status = ANY($3::text[])
+       AND ($4::uuid IS NULL OR r.account_id = $4)
      ORDER BY r.completed_at DESC LIMIT 1`,
-    [userId, fileSha256, SUCCESS_STATUSES],
+    [userId, fileSha256, SUCCESS_STATUSES, accountId],
   );
   return result.rows[0] ? mapImportRun(result.rows[0]) : null;
 }
@@ -121,7 +124,7 @@ async function insertRowResults(client, runId, userId, rowResults) {
 }
 
 export async function executeImportRun(userId, session, accountId, queryable = pool) {
-  const duplicate = await findSuccessfulDuplicate(userId, session.fileSha256, queryable);
+  const duplicate = await findSuccessfulDuplicate(userId, session.fileSha256, queryable, accountId);
   if (duplicate) throw duplicateError(duplicate);
 
   const account = await queryable.query(
@@ -205,7 +208,7 @@ export async function executeImportRun(userId, session, accountId, queryable = p
       } finally { failureClient.release(); }
     } catch (finalizeError) { error.finalizeError = finalizeError; }
     if (error?.code === '23505') {
-      const raced = await findSuccessfulDuplicate(userId, session.fileSha256, queryable);
+      const raced = await findSuccessfulDuplicate(userId, session.fileSha256, queryable, accountId);
       if (raced) throw duplicateError(raced);
     }
     error.code = 'IMPORT_FATAL_ERROR';

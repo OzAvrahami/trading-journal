@@ -68,4 +68,23 @@ describe('Import preview counters', () => {
     expect(screen.getByText('Trades to import').parentElement).toHaveTextContent('10');
     expect(screen.getByRole('button', { name: 'Import 10 trades' })).toBeDisabled();
   });
+
+  it('blocks the duplicate account while allowing a different owned account', async () => {
+    api.listAccounts.mockResolvedValue([
+      { id: 'account-a', status: 'active', company: 'A', accountNumber: '1' },
+      { id: 'account-b', status: 'active', company: 'B', accountNumber: '2' },
+    ]);
+    const preview = await api.parseImport();
+    api.parseImport.mockResolvedValue({ ...preview, duplicateRun: { id: 'prior', account: { id: 'account-a' } } });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: 'Tradovate' }));
+    await user.upload(screen.getByLabelText('CSV File'), new File(['symbol'], 'same.csv', { type: 'text/csv' }));
+    await user.click(screen.getByRole('button', { name: 'Upload and preview' }));
+    const select = await screen.findByRole('combobox');
+    await user.selectOptions(select, 'account-a');
+    expect(screen.getByRole('button', { name: 'Import 10 trades' })).toBeDisabled();
+    await user.selectOptions(select, 'account-b');
+    expect(screen.getByRole('button', { name: 'Import 10 trades' })).toBeEnabled();
+  });
 });

@@ -24,9 +24,24 @@ Historical tags are preserved and do not establish publication dates.
 - Add secret-free configuration examples, fresh initialization/role instructions
   and focused local connection, migration, security and authentication tests.
 
-These changes are prepared locally for review, not deployed or released. Neon
-provisioning/initialization remains TJ-03; complete financial/workflow validation,
-production launch and operational recovery gates remain downstream. All package
+### Fixes
+
+- TJ-04: allow the same CSV file in different owned trading accounts while keeping
+  duplicate-file protection within each account. Update the import preview and
+  add forward migration 020 without changing historical migration records.
+- Reject provider quotes older than 96 hours or more than five minutes in the
+  future. After a failed quote refresh, use dated manual valuation rather than
+  retaining a previously successful quote as live. Missing valuation remains
+  unavailable; currencies and ledger calculations are unchanged.
+- Translate the trade pagination summary into Hebrew and let its text follow the
+  selected language direction; the previous summary always fell back to English.
+
+TJ-02 is pushed at `2821435dc609ad85d3447cd22f799fb17a508968`; the TJ-04 fixes
+remain uncommitted for owner review. None is deployed or released. Isolated Neon
+initialization and the recorded TJ-04 API/recovery checks are complete within
+their stated limits. The owner accepted the September 13 application/browser
+review and tests. Verification of the final pushed fix commit, production launch
+and operational recovery commitments remain downstream. All package
 versions remain `1.0.0`. Historical Supabase data is intentionally not imported;
 new Neon records must be preserved. The dated baseline evidence below is unchanged.
 

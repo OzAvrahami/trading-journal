@@ -366,4 +366,6 @@ Object.assign(he.errors, {
   INVESTMENT_SCOPE_NOT_FOUND: 'חשבון ההשקעות המבוקש אינו זמין או שאין לו רישום השקעות מקושר.',
 });
 
+Object.assign(he.trades, { showing: 'מציג {{from}}–{{to}} מתוך {{total}} עסקאות' });
+
 export default he;

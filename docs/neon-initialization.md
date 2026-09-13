@@ -6,6 +6,17 @@ production configuration, signing-secret rotation and deployment belong to TJ-05
 The [migration plan](neon-migration-plan.md) retains the accepted fresh start,
 destination proposal and Neon-only recovery requirements.
 
+**TJ-03 update, 2026-09-12:** the owner accepted and pushed TJ-02 at
+`2821435dc609ad85d3447cd22f799fb17a508968`. Local HEAD and the remote work branch
+were independently matched; TJ-02 is closed/Done. Separately authorized TJ-03
+initialized two isolated Neon databases using that unchanged code. See the
+[live validation report](validation/tj-03-neon-2026-09-12.md) and
+[redacted catalog/ledger evidence](validation/tj-03-neon-2026-09-12.json).
+TJ-03's isolated scope was accepted under the owner's subsequent review instruction
+and is closed/Done. The original report remains a dated execution snapshot;
+production readiness is not implied. The bootstrap
+template below includes the owner-role ACL correction found during Neon checks.
+
 ## Connection contract
 
 Use [server/.env.example](../server/.env.example) for intentional loopback
@@ -32,8 +43,8 @@ enabled where the server supports it. Configuration errors name settings, not
 their values; database failures report safe codes. API startup validates syntax,
 but listening or `/health` alone does not prove database connectivity.
 
-Start with direct runtime connections. TJ-03 must verify role startup options,
-TLS, actual endpoint identity and session behavior on Neon. Transaction pooling
+Start with direct runtime connections. TJ-03 verified role startup options,
+TLS, endpoint identity and transaction rollback on the isolated Neon endpoint. Transaction pooling
 is not qualified by the local tests; do not switch to it without testing role,
 search-path, transaction and session behavior. Budget pools across all API
 replicas, rollout overlap and operators; measure timeouts against imports and
@@ -59,9 +70,18 @@ CREATE ROLE tj_owner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 CREATE ROLE tj_migrator LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 CREATE ROLE tj_backend LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 GRANT tj_owner TO tj_migrator, tj_backend WITH INHERIT FALSE, SET TRUE;
+-- Neon role creation gives the administrator ADMIN, not automatic SET membership.
+-- Substitute the explicitly identified bootstrap administrator if named otherwise.
+GRANT tj_owner TO tj_admin WITH INHERIT FALSE, SET TRUE;
 CREATE DATABASE trading_journal OWNER tj_owner;
+-- Database ACL statements must execute as the actual database owner.
+SET ROLE tj_owner;
 REVOKE CONNECT, TEMPORARY ON DATABASE trading_journal FROM PUBLIC;
 GRANT CONNECT ON DATABASE trading_journal TO tj_migrator, tj_backend;
+-- Grant CONNECT to the approved bootstrap operator separately if still needed.
+SELECT datacl FROM pg_database WHERE datname = 'trading_journal';
+SELECT has_database_privilege('tj_backend', 'trading_journal', 'CONNECT');
+RESET ROLE;
 -- Reconnect explicitly to trading_journal before schema operations:
 SET ROLE tj_owner;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
@@ -70,9 +90,13 @@ SELECT has_schema_privilege(current_user, 'public', 'USAGE'),
        has_schema_privilege(current_user, 'public', 'CREATE');
 ```
 
-Provisioning privileges, database ownership/public schema ownership, supported
-`pgcrypto` installation and exact membership syntax must be checked on Neon in
-TJ-03. Do not automatically reassign existing objects or adopt an unrelated
+TJ-03 verified provisioning privileges, `tj_owner` database ownership,
+`pg_database_owner` public-schema ownership, pgcrypto 1.4 and the membership syntax
+on Neon PostgreSQL 18.6. Recheck these on the separately initialized production
+target. Admin-issued database ACL statements initially left PUBLIC CONNECT/TEMP
+unchanged; repeating them as `tj_owner` removed those grants. A successful SQL
+command is insufficient: inspect ACLs and test a denied login. Do not
+automatically reassign existing objects or adopt an unrelated
 project. Repository migration 001 creates `pgcrypto`; the selected owner needs
 the trusted-extension/database privileges to do so, or an operator must install
 the verified extension in the intended schema beforehand. Use explicit `public`
@@ -129,10 +153,10 @@ an explicit security design and tests of all application paths.
 Serialization uses [PostgreSQL advisory locking](https://www.postgresql.org/docs/18/explicit-locking.html).
 Default privilege handling follows [PostgreSQL's additive global/schema rules](https://www.postgresql.org/docs/18/sql-alterdefaultprivileges.html).
 
-Expected fresh result: 20 public tables including the ledger, 19 empty business
-tables, 19 migration records with actual timestamps/checksums, `pgcrypto`, 13
+Expected fresh result through 020: 20 public tables including the ledger, 19 empty
+business tables, 20 migration records with actual timestamps/checksums, `pgcrypto`, 13
 protected application trigger functions, and both named trade constraints with
-`convalidated=true`. Compare the exact file list rather than hard-code 19 forever.
+`convalidated=true`. Compare the exact reviewed file list; the original TJ-03 001-019 evidence remains historical.
 Inspect constraints, indexes, trigger definitions, owners, RLS/FORCE/policies,
 role memberships, schema/database privileges and effective default privileges.
 Use `assertPublicSchemaSecurity` in [securityCatalog.js](../server/src/db/securityCatalog.js)
@@ -140,6 +164,36 @@ as one check, plus positive backend/negative untrusted-role probes. It checks
 global and per-schema defaults for current/table-owning creators; separately
 inventory any additional role allowed to create objects. Local checks do not
 establish a live Neon catalog or future recovery capability.
+
+### TJ-04 forward correction and isolated recovery evidence
+
+The [TJ-04 report](validation/tj-04-neon-2026-09-12.md) records authenticated
+Neon application checks and uncommitted fixes based on the reviewed TJ-02 SHA.
+Migration 020 replaces the user-wide successful-file import index with a
+user/account/file index. It was applied with the reviewed runner only to
+`trading_journal_validation`; its ledger has 20 records. SQL 001–019 and their
+recorded timestamps/checksums were preserved. The independent repeat database
+retains the original 19-record initialization evidence and no fixtures.
+
+An included Free-plan child, `br-soft-mountain-aratb02z`, recovered the validation
+database at `2026-09-12T13:55:19.539Z`, preserving pre-point row fingerprints and
+excluding a later marker. Direct TLS application access and security passed.
+Neon added two `cloud_admin` per-schema defaults granting its `neon_superuser`
+role access to future provider-owned tables/sequences. These were explicitly
+inspected, not removed or hidden as application changes; all application-owned
+defaults and effective security matched. Read back provider defaults on recovery.
+
+For a later authorized recovery: identify a timestamp/LSN within the actual
+retained interval; create a dedicated child using `parent_id` plus
+`parent_timestamp` (or LSN) and a separate minimal endpoint; wait for operations;
+verify TLS/role/database identity, schema/ledger/security, acknowledged data and
+application behavior before any routing decision. Never reset the validation
+root or production as a diagnostic step. A historical copy excludes later writes:
+reconcile those writes and revoked sessions before resuming service. The exercise
+does not establish automatic reconciliation, zero loss, a six-hour demonstrated
+restore interval, production RPO/RTO, or signing/session recovery commitments.
+The source root and both recovery markers were retained. No provider resource
+was deleted. Do not copy these fixtures or the recovery child into production.
 
 ## Authentication and launch signing configuration
 
@@ -186,10 +240,38 @@ node --test server/src/db/config.test.js server/src/db/migrationRunner.test.js s
 npm test --prefix client -- --run src/api/client.test.js src/context/AuthContext.test.jsx
 ```
 
-Cloud provisioning is still TJ-03: verify Oregon/PG18 against current Railway
-placement, actual Neon IDs/minor version/extension support, SET ROLE and direct
-endpoint/TLS behavior, catalog security and independent fresh initialization.
+TJ-03 provisioned only isolated Free-plan Oregon/PG18 validation resources and
+verified SET ROLE, direct endpoint/TLS, catalog security, independent initialization,
+ledger-preserving rerun, concurrency rejection and interrupted transaction rollback.
+The report records actual IDs and the documented six-hour history window; PITR
+restoration and recovery guarantees were not tested. For an operator interruption
+exercise, obtain the real PID with `SELECT pg_backend_pid()` and verify its target
+database/login before termination; Neon's proxy `pg.Client.processID` is not the
+server PID. Never terminate unrelated sessions. Railway-to-Neon latency, cold-start
+reconnection and workload sizing remain downstream measurements.
 TJ-04 covers comprehensive two-user workflows, deterministic financial fixtures,
 imports, valuation fallback and Hebrew/date/time behavior. Retention, sizing,
 launch timing and accepted operational recovery commitments belong to their
 downstream gates. They do not undo the owner's accepted TJ-01 technical plan.
+
+## Local browser review follow-up - 2026-09-13
+
+The [browser report](validation/tj-04-browser-2026-09-13.md) records actual Chrome
+checks using the existing validation database and migration 020. The actual client
+and API are left running locally at `http://127.0.0.1:5173` and port 3001 with the
+reviewed `tj_backend` / `tj_owner` verified-TLS contract. Only designated synthetic
+review users/data were added; the earlier records and 20-file ledger are unchanged.
+Private review credentials remain outside Git. The repeat database and recovery
+resources were not written. Production HTTPS cookie/provider configuration and
+final pushed-fix verification remain separate gates; owner visual/test acceptance
+was received on 2026-09-13. No fixtures may be promoted.
+
+## Production handoff - 2026-09-13
+
+Use the [concrete TJ-05 launch plan](neon-launch-plan.md) after the final pushed
+TJ-04 commit is verified. Production initialization must run 001-020 on a separate
+fixture-free target with owner-issued database ACLs and positive/negative effective
+security verification. The existing validation branch, repeat database, recovery
+child and all records (including the owner's registered user/accounts) are protected.
+Do not reuse them by deleting their contents. No database write or production change
+occurred in this handoff. No repeat Supabase access or data-loss approval is required.

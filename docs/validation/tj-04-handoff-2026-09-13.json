@@ -1,0 +1,2122 @@
+{
+  "observed_at": "2026-09-13T18:15:46.426331+00:00",
+  "repository": "OzAvrahami/trading-journal",
+  "branch": "chore/tj-02-neon-preparation",
+  "base_sha": "2821435dc609ad85d3447cd22f799fb17a508968",
+  "main_sha": "9434cda9b8b225b6615e31bad379c3de63d4ea4e",
+  "final_implementation_sha": null,
+  "owner_application_test_acceptance": {
+    "accepted": true,
+    "date": "2026-09-13",
+    "source": "Explicit owner instruction; no repeat review requested"
+  },
+  "remaining_tj04_gate": "Verify exact final pushed commit against fresh reviewed file/blob manifest",
+  "project_cleanup": {
+    "source_project": 12,
+    "destination_project": 1,
+    "association_verified": "OzAvrahami/finance-tracker",
+    "paginated_counts_before": {
+      "12": 19,
+      "1": 45
+    },
+    "pages_before": {
+      "12": 2,
+      "1": 5
+    },
+    "counts_after": {
+      "12": 7,
+      "1": 45
+    },
+    "affected": [
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 36,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/36",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7pg",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: Savings module — accounts, transactions, interest and budget integration (v1.3.0)",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P1 — High",
+              "optionId": "062b19a2",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 37,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/37",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7qs",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Chore]: SAV-01 — Specify savings accounting, compact schema and legacy reserve transition",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Done",
+              "optionId": "98236657",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxr48Q",
+                    "name": "chore"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P1 — High",
+              "optionId": "062b19a2",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 38,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/38",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7sQ",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: SAV-02 — Build savings accounts, ledger and Loans-based management screens",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Done",
+              "optionId": "98236657",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3mAQ",
+                    "name": "ui"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P1 — High",
+              "optionId": "062b19a2",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 39,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/39",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7tk",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: SAV-03 — Link manual savings deposits and withdrawals to transactions",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Verify",
+              "optionId": "d1370ad0",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P1 — High",
+              "optionId": "062b19a2",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 40,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/40",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7us",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: SAV-04 — Record realized savings interest in the account or checking",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P2 — Medium",
+              "optionId": "e533aa53",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 41,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/41",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7ws",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: SAV-05 — Transfer funded budget surplus into a selected savings account",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P1 — High",
+              "optionId": "062b19a2",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 42,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/42",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7yQ",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: SAV-06 — Record monthly savings deposits automatically without duplicates",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P2 — Medium",
+              "optionId": "e533aa53",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 43,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/43",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y7zU",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: SAV-07 — Present savings balances, cash flows and interest in reports",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P2 — Medium",
+              "optionId": "e533aa53",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 44,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/44",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6Y70g",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Chore]: SAV-08 — Verify Savings end to end and prepare v1.3.0 release",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxruNQ",
+                    "name": "testing"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxr48Q",
+                    "name": "chore"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": {
+              "__typename": "ProjectV2ItemFieldMilestoneValue",
+              "milestone": {
+                "id": "MI_kwDORBGGjM4BD1yv",
+                "title": "v1.3.0",
+                "dueOn": null
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhY",
+                "name": "Milestone"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P2 — Medium",
+              "optionId": "e533aa53",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 45,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/45",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6ns4U",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Feature]: Show calculated bank account balance on the Dashboard by bank-impact date",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3sIA",
+                    "name": "feature"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA6mYw",
+                    "name": "database"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P2 — Medium",
+              "optionId": "e533aa53",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 46,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/46",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6ns4o",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Chore]: Audit repository relevance and organize code and folder structure",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3xVg",
+                    "name": "backend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxr48Q",
+                    "name": "chore"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P2 — Medium",
+              "optionId": "e533aa53",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      },
+      {
+        "repository": "OzAvrahami/finance-tracker",
+        "issue": 47,
+        "url": "https://github.com/OzAvrahami/finance-tracker/issues/47",
+        "removed_project": 12,
+        "preserved_project": 1,
+        "preserved_item_id": "PVTI_lAHOAgE74M4BQrY_zg6ouE8",
+        "all_fields_including_unset": {
+          "PVTF_lAHOAgE74M4BQrY_zg-unhE": {
+            "name": "Title",
+            "value": {
+              "__typename": "ProjectV2ItemFieldTextValue",
+              "text": "[Bug]: Budget deficit action opens outdated funding dialog instead of the current allocation interface",
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhE",
+                "name": "Title"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhI": {
+            "name": "Assignees",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zg-unhM": {
+            "name": "Status",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "Backlog",
+              "optionId": "086bd025",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+                "name": "Status"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhQ": {
+            "name": "Labels",
+            "value": {
+              "__typename": "ProjectV2ItemFieldLabelValue",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACV8tt9w",
+                    "name": "bug"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACaA3mAQ",
+                    "name": "ui"
+                  },
+                  {
+                    "id": "LA_kwDORBGGjM8AAAACxxrP4A",
+                    "name": "frontend"
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhQ",
+                "name": "Labels"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhU": {
+            "name": "Linked pull requests",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhY": {
+            "name": "Milestone",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhc": {
+            "name": "Repository",
+            "value": {
+              "__typename": "ProjectV2ItemFieldRepositoryValue",
+              "repository": {
+                "id": "R_kgDORBGGjA",
+                "nameWithOwner": "OzAvrahami/finance-tracker"
+              },
+              "field": {
+                "id": "PVTF_lAHOAgE74M4BQrY_zg-unhc",
+                "name": "Repository"
+              }
+            }
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhg": {
+            "name": "Reviewers",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unhk": {
+            "name": "Parent issue",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zg-unho": {
+            "name": "Sub-issues progress",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WKs": {
+            "name": "Created",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WK8": {
+            "name": "Updated",
+            "value": null
+          },
+          "PVTF_lAHOAgE74M4BQrY_zhP8WLM": {
+            "name": "Closed",
+            "value": null
+          },
+          "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU": {
+            "name": "Priority",
+            "value": {
+              "__typename": "ProjectV2ItemFieldSingleSelectValue",
+              "name": "P2 — Medium",
+              "optionId": "e533aa53",
+              "field": {
+                "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+                "name": "Priority"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "all_other_issue_metadata_and_memberships_preserved": true,
+    "no_missing_correct_memberships": true,
+    "later_concurrent_activity": [
+      {
+        "issue": 39,
+        "observed_at": "2026-09-13T18:19:08.193949+00:00",
+        "current_fields": {
+          "Status": {
+            "__typename": "ProjectV2ItemFieldSingleSelectValue",
+            "name": "Done",
+            "optionId": "98236657",
+            "field": {
+              "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+              "name": "Status"
+            }
+          },
+          "Priority": {
+            "__typename": "ProjectV2ItemFieldSingleSelectValue",
+            "name": "P1 — High",
+            "optionId": "062b19a2",
+            "field": {
+              "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+              "name": "Priority"
+            }
+          }
+        },
+        "issue_state": {
+          "closedAt": "2026-09-13T18:11:47Z",
+          "state": "CLOSED",
+          "updatedAt": "2026-09-13T18:11:47Z"
+        },
+        "disposition": "Changed after completed cleanup readback by activity outside this task; not reset or altered"
+      },
+      {
+        "issue": 40,
+        "observed_at": "2026-09-13T18:19:08.533446+00:00",
+        "current_fields": {
+          "Status": {
+            "__typename": "ProjectV2ItemFieldSingleSelectValue",
+            "name": "In Progress",
+            "optionId": "47fc9ee4",
+            "field": {
+              "id": "PVTSSF_lAHOAgE74M4BQrY_zg-unhM",
+              "name": "Status"
+            }
+          },
+          "Priority": {
+            "__typename": "ProjectV2ItemFieldSingleSelectValue",
+            "name": "P2 — Medium",
+            "optionId": "e533aa53",
+            "field": {
+              "id": "PVTSSF_lAHOAgE74M4BQrY_zhgK0GU",
+              "name": "Priority"
+            }
+          }
+        },
+        "issue_state": {
+          "closedAt": null,
+          "state": "OPEN",
+          "updatedAt": "2026-09-10T19:09:50Z"
+        },
+        "disposition": "Changed after completed cleanup readback by activity outside this task; not reset or altered"
+      }
+    ]
+  },
+  "railway_read_only": {
+    "observed_at": "2026-09-13T18:07:16.300093+00:00",
+    "railway": {
+      "baseEnvironmentId": null,
+      "botPrEnvironments": false,
+      "environments": {
+        "edges": [
+          {
+            "node": {
+              "deploymentTriggers": {
+                "edges": [
+                  {
+                    "node": {
+                      "baseEnvironmentOverrideId": null,
+                      "branch": "main",
+                      "checkSuites": false,
+                      "environmentId": "fe8779c6-1889-4a0a-8842-34bfb472dfe0",
+                      "id": "7379a3fc-a28c-4894-88ad-7875ad0c7f42",
+                      "provider": "github",
+                      "repository": "OzAvrahami/trading-journal",
+                      "serviceId": "c4270688-1473-48cb-8f82-4260e4aded70"
+                    }
+                  },
+                  {
+                    "node": {
+                      "baseEnvironmentOverrideId": null,
+                      "branch": "main",
+                      "checkSuites": false,
+                      "environmentId": "fe8779c6-1889-4a0a-8842-34bfb472dfe0",
+                      "id": "b8591c05-d06c-4161-a71f-91e6f6b324d6",
+                      "provider": "github",
+                      "repository": "OzAvrahami/trading-journal",
+                      "serviceId": "29cdfe74-c3c9-4180-8090-5b2611c5d9da"
+                    }
+                  }
+                ],
+                "pageInfo": {
+                  "endCursor": "R1BDOlM6Yjg1OTFjMDUtZDA2Yy00MTYxLWE3MWYtOTFlNmY2YjMyNGQ2",
+                  "hasNextPage": false
+                }
+              },
+              "id": "fe8779c6-1889-4a0a-8842-34bfb472dfe0",
+              "isEphemeral": false,
+              "name": "production",
+              "serviceInstances": {
+                "edges": [
+                  {
+                    "node": {
+                      "buildCommand": "npm install && npm run build",
+                      "cronSchedule": null,
+                      "healthcheckPath": null,
+                      "numReplicas": null,
+                      "preDeployCommand": null,
+                      "region": null,
+                      "rootDirectory": "/client",
+                      "serviceId": "c4270688-1473-48cb-8f82-4260e4aded70",
+                      "serviceName": "trading-journal-client",
+                      "startCommand": "npm start",
+                      "watchPatterns": []
+                    }
+                  },
+                  {
+                    "node": {
+                      "buildCommand": "npm install",
+                      "cronSchedule": null,
+                      "healthcheckPath": null,
+                      "numReplicas": null,
+                      "preDeployCommand": null,
+                      "region": null,
+                      "rootDirectory": "/server",
+                      "serviceId": "29cdfe74-c3c9-4180-8090-5b2611c5d9da",
+                      "serviceName": "trading-journal-api",
+                      "startCommand": "npm start",
+                      "watchPatterns": []
+                    }
+                  }
+                ],
+                "pageInfo": {
+                  "endCursor": "R1BDOlM6ZDM4MzdlNDQtMDFjYS00Njc0LWIyMDgtYzEyNmY5OWVlODc3",
+                  "hasNextPage": false
+                }
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "endCursor": "R1BDOlM6ZmU4Nzc5YzYtMTg4OS00YTBhLTg4NDItMzRiZmI0NzJkZmUw",
+          "hasNextPage": false
+        }
+      },
+      "focusedPrEnvironments": false,
+      "id": "33467026-92c3-47f8-a74a-9603dee32671",
+      "name": "trading-journal",
+      "prDeploys": false,
+      "primaryEnvironmentId": "fe8779c6-1889-4a0a-8842-34bfb472dfe0"
+    },
+    "service_configuration": {
+      "trading-journal-api": {
+        "variable_names": [
+          "CLIENT_URL",
+          "DATABASE_URL",
+          "JWT_SECRET",
+          "NODE_ENV",
+          "RAILWAY_ENVIRONMENT",
+          "RAILWAY_ENVIRONMENT_ID",
+          "RAILWAY_ENVIRONMENT_NAME",
+          "RAILWAY_PRIVATE_DOMAIN",
+          "RAILWAY_PROJECT_ID",
+          "RAILWAY_PROJECT_NAME",
+          "RAILWAY_PUBLIC_DOMAIN",
+          "RAILWAY_SERVICE_ID",
+          "RAILWAY_SERVICE_NAME",
+          "RAILWAY_SERVICE_TRADING_JOURNAL_API_URL",
+          "RAILWAY_SERVICE_TRADING_JOURNAL_CLIENT_URL",
+          "RAILWAY_STATIC_URL",
+          "SUPABASE_SERVICE_ROLE_KEY",
+          "SUPABASE_URL"
+        ],
+        "NODE_ENV": "production",
+        "CLIENT_URL": "https://trading-journal-client-production.up.railway.app",
+        "database_reference": {
+          "host": "aws-1-ap-southeast-1.pooler.supabase.com",
+          "port": 5432,
+          "database": "postgres",
+          "query_parameter_names": []
+        },
+        "FINNHUB_API_KEY_present": false
+      },
+      "trading-journal-client": {
+        "variable_names": [
+          "RAILWAY_ENVIRONMENT",
+          "RAILWAY_ENVIRONMENT_ID",
+          "RAILWAY_ENVIRONMENT_NAME",
+          "RAILWAY_PRIVATE_DOMAIN",
+          "RAILWAY_PROJECT_ID",
+          "RAILWAY_PROJECT_NAME",
+          "RAILWAY_PUBLIC_DOMAIN",
+          "RAILWAY_SERVICE_ID",
+          "RAILWAY_SERVICE_NAME",
+          "RAILWAY_SERVICE_TRADING_JOURNAL_API_URL",
+          "RAILWAY_SERVICE_TRADING_JOURNAL_CLIENT_URL",
+          "RAILWAY_STATIC_URL",
+          "VITE_API_URL"
+        ],
+        "VITE_API_URL": "https://trading-journal-api-production-5863.up.railway.app",
+        "FINNHUB_API_KEY_present": false
+      }
+    },
+    "deployments": [
+      {
+        "service": "trading-journal-client",
+        "id": "1fb07f0a-629e-4692-95bf-45f5a1d83ca5",
+        "status": "SUCCESS",
+        "createdAt": "2026-09-10T18:36:14.842Z",
+        "commit": "9434cda9b8b225b6615e31bad379c3de63d4ea4e",
+        "branch": "main",
+        "instances": [
+          {
+            "id": "56f535dc-d682-454b-b6c3-29f26498e66b",
+            "status": "RUNNING"
+          }
+        ],
+        "deploy_settings": {
+          "cronSchedule": null,
+          "drainingSeconds": null,
+          "healthcheckPath": null,
+          "healthcheckTimeout": null,
+          "ipv6EgressEnabled": false,
+          "limitOverride": null,
+          "multiRegionConfig": {
+            "us-west2": {
+              "numReplicas": 1
+            }
+          },
+          "numReplicas": 1,
+          "overlapSeconds": null,
+          "preDeployCommand": null,
+          "preDeployTimeoutSeconds": null,
+          "region": null,
+          "registryCredentials": null,
+          "requiredMountPath": null,
+          "restartPolicyMaxRetries": 10,
+          "restartPolicyType": "ON_FAILURE",
+          "runtime": "V2",
+          "sleepApplication": false,
+          "startCommand": "npm start",
+          "useLegacyStacker": false
+        }
+      },
+      {
+        "service": "trading-journal-api",
+        "id": "99f68f14-4476-4ead-9866-e1b3c5d39ee9",
+        "status": "SUCCESS",
+        "createdAt": "2026-09-10T18:36:14.843Z",
+        "commit": "9434cda9b8b225b6615e31bad379c3de63d4ea4e",
+        "branch": "main",
+        "instances": [
+          {
+            "id": "c0fc1810-0e66-4bda-af03-68bb73c4883e",
+            "status": "RUNNING"
+          }
+        ],
+        "deploy_settings": {
+          "cronSchedule": null,
+          "drainingSeconds": null,
+          "healthcheckPath": null,
+          "healthcheckTimeout": null,
+          "ipv6EgressEnabled": false,
+          "limitOverride": null,
+          "multiRegionConfig": {
+            "us-west2": {
+              "numReplicas": 1
+            }
+          },
+          "numReplicas": 1,
+          "overlapSeconds": null,
+          "preDeployCommand": null,
+          "preDeployTimeoutSeconds": null,
+          "region": null,
+          "registryCredentials": null,
+          "requiredMountPath": null,
+          "restartPolicyMaxRetries": 10,
+          "restartPolicyType": "ON_FAILURE",
+          "runtime": "V2",
+          "sleepApplication": false,
+          "startCommand": "npm start",
+          "useLegacyStacker": false
+        }
+      }
+    ]
+  },
+  "source_sha256": {
+    "client/src/hooks/useInvestmentQuotes.test.jsx": "03a20e0b1c23ee71a134ae3bcb4dead60d8f63a70ba730d0b6a550e26f1d1507",
+    "server/src/db/migrations/020_account_scoped_import_files.sql": "21f5ba958704ca267068db7f8024ef465e8d5a8bc67d75df7fb7ed840c6b6cc7",
+    "client/src/hooks/useInvestmentQuotes.js": "dad60217568f4942723c1231b35f1760d07697ccc1f6d58e0b8731f22f228d09",
+    "client/src/i18n/locales/en.js": "d0e13d29938119299f354730fa592772969614efe248fde8ebde43a9d9818e32",
+    "client/src/i18n/locales/he.js": "e2b526c50ed76e52b25ac3c13fe3830d248e64e9dd70fa9c3dac31af09cf5896",
+    "client/src/pages/Import.jsx": "d37130a39fe2b866b42dbfa321a7f51bfb9ba90797bac19da26e63a70ff3db97",
+    "client/src/pages/Import.test.jsx": "c32f911d439f86776b5eae585eca2d4393f8dc0f2265040fac3ba8b1223e08cd",
+    "client/src/pages/Trades.jsx": "ebda214307bf743cc1d4190e8f35932dd19401013d92b96cd9c58f07dbcbf2ba",
+    "server/src/services/importHistoryService.js": "e71d3c7f5625f892c91b9c81340fbaf03e4254a8c735c8a53a26270bb8eb1c13",
+    "server/src/services/importHistoryService.test.js": "8763bf7d5431f81804e9b406cc81b081f0484d7bd7aa175945358829b2d27b31",
+    "server/src/services/marketDataService.js": "fcbbcce99f5b31186f118bdf1277cc4dc9eba56aad8dc730146ff069ae05585b",
+    "server/src/services/marketDataService.test.js": "92349fd1b6b86ea27e90f3b04bb567f4d87307814d26ca464862b2b896f2a1f5"
+  },
+  "verification": {
+    "prior_tests_reused": "21 server, 14 client; 21 Chrome scenarios and 15 pagination/localization tests in their recorded scopes",
+    "new_suites_run": false,
+    "historical_migrations_001_019": "unchanged from HEAD",
+    "catalogue_implementation": "absent from pending diff",
+    "package_version": "1.0.0",
+    "database_activity_this_handoff": "none",
+    "production_activity": "read-only metadata/configuration inspection only",
+    "version_fields_checked": 9,
+    "configuration_checks": [
+      "UTF-8/JSON",
+      "local Markdown links",
+      "evidence migration/source hashes",
+      "git diff --check",
+      "empty index",
+      "protected value/JWT exclusion",
+      "reviewed screenshot masking"
+    ]
+  },
+  "historical_evidence_notice": "Prior inventories/results describe their execution time. Owner-created Neon records now exist and are protected; no cleanup or synthetic-only assumption.",
+  "feature": {
+    "number": 7,
+    "title": "[Feature]: Manage a central company and broker catalogue through administrator settings",
+    "body_unchanged": true,
+    "status": "Backlog",
+    "priority": "P2 — Medium",
+    "milestone": null,
+    "dependencies": []
+  },
+  "issue_states": {
+    "1": "CLOSED/Done",
+    "2": "CLOSED/Done",
+    "3": "CLOSED/Done",
+    "4": "OPEN/Verify",
+    "5": "OPEN/Backlog",
+    "6": "OPEN/Backlog",
+    "7": "OPEN/Backlog"
+  },
+  "final_github_readback": [
+    {
+      "number": 1,
+      "state": "CLOSED",
+      "status": "Done",
+      "priority": "P1 — High",
+      "milestone": 1,
+      "labels": [
+        "chore",
+        "backend",
+        "database",
+        "railway"
+      ],
+      "dependencies": [],
+      "membership_count": 1
+    },
+    {
+      "number": 2,
+      "state": "CLOSED",
+      "status": "Done",
+      "priority": "P1 — High",
+      "milestone": 1,
+      "labels": [
+        "chore",
+        "backend",
+        "database"
+      ],
+      "dependencies": [
+        1
+      ],
+      "membership_count": 1
+    },
+    {
+      "number": 3,
+      "state": "CLOSED",
+      "status": "Done",
+      "priority": "P1 — High",
+      "milestone": 1,
+      "labels": [
+        "chore",
+        "database"
+      ],
+      "dependencies": [
+        2
+      ],
+      "membership_count": 1
+    },
+    {
+      "number": 4,
+      "state": "OPEN",
+      "status": "Verify",
+      "priority": "P1 — High",
+      "milestone": 1,
+      "labels": [
+        "chore",
+        "frontend",
+        "backend",
+        "database"
+      ],
+      "dependencies": [
+        3
+      ],
+      "membership_count": 1
+    },
+    {
+      "number": 5,
+      "state": "OPEN",
+      "status": "Backlog",
+      "priority": "P1 — High",
+      "milestone": 1,
+      "labels": [
+        "chore",
+        "backend",
+        "database",
+        "railway"
+      ],
+      "dependencies": [
+        4
+      ],
+      "membership_count": 1
+    },
+    {
+      "number": 6,
+      "state": "OPEN",
+      "status": "Backlog",
+      "priority": "P2 — Medium",
+      "milestone": 1,
+      "labels": [
+        "chore",
+        "backend",
+        "database",
+        "github",
+        "railway"
+      ],
+      "dependencies": [
+        5
+      ],
+      "membership_count": 1
+    },
+    {
+      "number": 7,
+      "state": "OPEN",
+      "status": "Backlog",
+      "priority": "P2 — Medium",
+      "milestone": null,
+      "labels": [
+        "feature",
+        "frontend",
+        "backend",
+        "database"
+      ],
+      "dependencies": [],
+      "membership_count": 1
+    }
+  ]
+}
