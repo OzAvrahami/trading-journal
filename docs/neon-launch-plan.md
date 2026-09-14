@@ -1,6 +1,55 @@
 # TJ-05 production execution and verification - 2026-09-13 / 2026-09-14
 
-## Current consolidated review checkpoint - 2026-09-14
+## Current release authorization - 2026-09-14
+
+The owner explicitly authorized proceeding with v1.1.0 and assigned unfinished
+backup/recovery work to [Establish independent production backups and verify recovery #8](https://github.com/OzAvrahami/trading-journal/issues/8).
+That task is Backlog / P2, without a release milestone or blocking dependency.
+The previous operational recovery release gate is superseded; the requirements
+are **deferred, not successfully tested**. No repeat owner decision is required.
+All new production and validation/recovery records remain protected.
+
+The deployed and production-verified implementation is
+[c6ad89638809e5ab350c3d7614b3baf902e2b3c7](https://github.com/OzAvrahami/trading-journal/commit/c6ad89638809e5ab350c3d7614b3baf902e2b3c7).
+All first-party versions are 1.1.0. TJ-01 through TJ-05 are closed/Done; TJ-06
+remains open/Verify only for the final documentation commit/deployment and Release
+publication verification. Feature #7 remains independently planned Backlog.
+The bounded observation and accepted test evidence remain valid; continuous
+monitoring, full-window PITR and comprehensive reconciliation are not claimed.
+
+The six existing documentation files form **one final release documentation commit**
+on main. The owner uses ordinary Git commands; no intermediate branch handoff or
+helper script is required. Main publication triggers both Railway services.
+After the owner pushes, verify the exact final SHA, documentation-only diff from
+c6ad89638809e5ab350c3d7614b3baf902e2b3c7 and both resulting running deployments before
+providing ordinary commands to tag that exact commit and publish with
+`docs/releases/v1.1.0.md`. The final SHA and Release publication are still pending.
+Preserve v1.0.0 and historical tags. After publication readback, close #6 as
+completed/Done and milestone 1 only if all its issues are complete. The independent
+recovery task and Feature #7 remain open outside that milestone.
+
+Earlier dated checkpoints below preserve discovery, preparation and test evidence.
+Their operational blockers, requests for a decision, stale versions/statuses and
+superseded publication instructions are historical, not current release gates.
+
+## Historical deployed verification - 2026-09-14
+
+The owner published [c6ad89638809e5ab350c3d7614b3baf902e2b3c7](https://github.com/OzAvrahami/trading-journal/commit/c6ad89638809e5ab350c3d7614b3baf902e2b3c7) with ordinary Git commands.
+Local main, remote main and the preparation branch match; the starting working tree
+was clean. Its exact 17-path/blob/mode inventory and parent match the original
+pinned consolidated review. Both Railway services run this commit successfully.
+Focused post-deployment database/authentication and pricing verification passed;
+provided two-source spoof/counter evidence is recorded without repeating it.
+TJ-06 stays open/Verify for remaining operational acceptance. TJ-05 is accepted/Done;
+Feature #7 remains Backlog and excluded. No release/tag has been published by this work.
+Earlier pending-publication wording below is dated history, superseded here.
+
+Use ordinary Git commands only for any documentation publication. The owner used
+ordinary Git for this deployment. Earlier script-based handoffs below are preserved
+as historical evidence and are obsolete; do not execute, repair or reuse them.
+
+
+## Historical consolidated review checkpoint - 2026-09-14
 
 TJ-05 is accepted/closed/Done. TJ-06 is open/Verify for the consolidated local
 rate-limit correction, tests, version 1.1.0 and release documentation. No new commit
@@ -674,7 +723,7 @@ following these local checks. Full parsed lockfiles compared to HEAD with only
 owned version fields normalized are identical; no dependency upgrade. Historical
 migrations 001-020 and v1.0.0 release evidence are unchanged.
 
-### Recovery acceptance matrix (no implicit waiver)
+### Historical recovery acceptance matrix (deferred to #8 by the later owner decision)
 
 | Requirement | Actual evidence | Remaining condition / consequence |
 | --- | --- | --- |
@@ -695,7 +744,7 @@ because production works. Neither choice authorizes paid services automatically.
 Do not ask for passwords, keys or tokens in chat. Until the decision and required
 verification are recorded, these are release blockers, not accepted known limits.
 
-### Publication sequence
+### Historical publication sequence (superseded by final release authorization)
 
 1. Owner reviews/stages the consolidated pinned inventory, commits and pushes only
    chore/tj-02-neon-preparation. No separate documentation commit is required.
@@ -715,3 +764,107 @@ verification are recorded, these are release blockers, not accepted known limits
 
 The local version bump is preparation, not publication or an operational waiver.
 TJ-06 remains open/Verify; its unmet acceptance checkboxes remain unchecked.
+
+
+## Published correction and bounded production verification - 2026-09-14
+
+### Git and running Railway readback
+
+Starting local branch main and HEAD c6ad89638809e5ab350c3d7614b3baf902e2b3c7,
+empty index and clean working tree. Both remote main and preparation branch match.
+Original pinned consolidated manifest verified 17/17 paths, Git blobs, 100644 modes,
+parent 1bc4373ea367ade9d28de2bdbd3110afcc4718fe and no changes outside its allowlist.
+Expected values were not regenerated from the new commit. No handoff scripts or Git
+publication were executed during this verification.
+
+| Service | Deployment | Actual running instance | SHA/status |
+| --- | --- | --- | --- |
+| API | da560dbb-d00d-4d27-9d98-2876b693f9c4 | 491da978-8fce-4306-b8ae-b70bd7f7760b | c6ad89638809e5ab350c3d7614b3baf902e2b3c7 / SUCCESS,RUNNING |
+| Client | 204a2c9d-c4f9-4a51-8892-be977358b7ba | edc2963a-b780-4d80-91ed-db3ae3e8735d | c6ad89638809e5ab350c3d7614b3baf902e2b3c7 / SUCCESS,RUNNING |
+
+Both deployments created 12:41:11.473Z; one current active deployment/instance each.
+Main-only repository triggers were read back with complete pagination; no PR
+environment trigger. An ordinary main push remains a deployment action.
+
+Inside the running API at **12:51:54.588Z**: version 1.1.0, actual application pool
+connected to trading_journal on ep-delicate-firefly-akbom07o.c-3.us-west-2.aws.neon.tech,
+session_user=tj_backend/current_user=tj_owner, search_path=public, TLSv1.3 authorized.
+Railway rate-limit mode=true. No credential, JWT or production variable was changed.
+
+### Supplied completed ingress evidence (not repeated)
+
+The owner supplied verified September 14 post-deployment evidence: cloud-source
+forged X-Real-IP/X-Forwarded-For/Forwarded requests returned remaining 297,296,295
+at 12:43:19-20Z; owner PC ordinary request 299 at 12:44:48Z and forged X-Real-IP 298
+at 12:44:57Z; cloud follow-up 294 at 12:46:31Z in its original window. This supports
+separate network-source buckets and continued counting despite forged headers for
+the tested ingress. Public client/health 200, CORS preflight 204 and missing-token
+refresh 401 with Secure/HttpOnly/SameSite=None cookie clearing were also supplied.
+These counters/preflight/missing-token probes were not rerun in this pass. No new
+IPv6-network or production saturation claim follows from these bounded observations.
+
+### Independently completed authenticated and retention checks
+
+**12:51:10.218Z-12:51:27.894Z**, direct production HTTPS using the two existing
+protected synthetic review identities; no new users or financial fixtures:
+
+- Login 200, /api/me 200 and own account lists 200 for A/B. A retained its account;
+  B remained empty and received 404 for A's account and portfolio.
+- Valid refresh 200 rotated each task session cookie; the refreshed access token
+  read the same identity. Logout 200 expired those task session cookies.
+- Actual responses retain Secure, HttpOnly, SameSite=None, path=/ and exact client
+  origin with Allow-Credentials=true. API flow verifies session restoration
+  semantics; it is not a new real-browser reload/cache suite.
+- Live production Finnhub AAPL 200, price 332.27, as-of 2026-09-11T20:00:00Z,
+  within the 96-hour policy at check. No key exposed. Unknown TJ05MANUAL 404;
+  existing USD manual portfolio cash 0/holdings 100/total 100/unrealized 0 matched
+  independent expected values, with no price/ledger write.
+- Read-only snapshots before/after: **all 20 table counts and sorted-row fingerprints
+  unchanged**, including schema_migrations and retained refresh rows. Preserved
+  3 users, 3 accounts, 103 trades, 2 import runs/155 import rows, 5 refresh rows and
+  existing investment records. Only the supported login/refresh/logout lifecycle
+  created/rotated/removed its own temporary sessions; no bulk cleanup or business write.
+
+Post-deployment log request interval **12:41:11Z-12:52:50.107383Z**: 33 API records
+(first 12:42:07.320062483Z, last 12:51:23.547913084Z) and 7 client records
+(first 12:42:37.404435179Z, last 12:42:37.950889503Z), below 2000-line cap.
+No ERR_ERL/trust-proxy/X-Forwarded-For warning or error-like line in either sample.
+Earlier 16h04m13s metrics are retained separately, not extended into a fictitious
+continuous observation window. No broad suite or counter experiment was repeated.
+
+### Accepted release scope and final publication verification - 2026-09-14
+
+The owner authorized proceeding with v1.1.0 and moved unfinished backup/recovery
+requirements to [independent task #8](https://github.com/OzAvrahami/trading-journal/issues/8). Its Backlog/P2 work has no release
+milestone or blocking dependency. The earlier operational matrix and requests for
+an owner choice are superseded as release gates, while all recorded test limits
+remain accurate. No deferred requirement is marked passed. Obsolete Supabase
+variables remain retained pending separate removal authorization.
+
+The technical production verification above is accepted at c6ad89638809e5ab350c3d7614b3baf902e2b3c7.
+TJ-05 stays accepted/Done. TJ-06 stays open/Verify until the final release commit,
+both resulting deployments and owner-created Release are verified. Feature #7 is
+independent Backlog. Neon stays Free and every new record remains protected.
+
+Owner publication sequence: review the six-file final documentation diff, stage
+only those files, commit once on the current main branch and push main normally.
+This triggers both Railway deployments. Do not repeat cutover, credentials,
+initialization, JWT rotation or the accepted counter experiment. Before tagging,
+verify the full pushed SHA/parent, only the six reviewed documentation changes,
+unchanged application/dependency/migration blobs and successful running API/client
+IDs at that final SHA. A documentation-only successor reuses the accepted tests;
+new failures or content changes require targeted investigation.
+
+After that verification, provide ordinary Git commands for an annotated v1.1.0
+tag at the exact verified final SHA and an ordinary `gh release create` command
+using `docs/releases/v1.1.0.md`, a stable non-draft release and Latest designation.
+No tag exists yet and no publication date/final SHA is invented. Read back the
+tag's resolved commit and Release state/notes before closing #6/Done and milestone 1
+(if every milestone issue is complete). Preserve all historical tags and v1.0.0.
+No helper script or intermediate documentation handoff is needed.
+
+Local credential-free summaries: .tmp/tj06-postdeploy-deployments.json,
+.tmp/tj06-postdeploy-logs-final.json, .tmp/tj06-postdeploy-api.json and
+.tmp/tj06-postdeploy-runtime.json. Private credentials remain outside Git. No new
+handoff script, production configuration change, resource mutation, commit/push,
+tag or Release was created by this verification.

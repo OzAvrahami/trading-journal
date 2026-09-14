@@ -11,9 +11,11 @@ No additional completed changes. Feature #7 remains independently planned and ex
 ## [1.1.0] - Prepared, unpublished
 
 Release date and final release commit are pending. All first-party package/lockfile
-versions are prepared at `1.1.0`; Railway verification of this new commit and operational
-acceptance gates remain open. See
-[release notes and publication gates](docs/releases/v1.1.0.md).
+versions are `1.1.0`; commit `c6ad89638809e5ab350c3d7614b3baf902e2b3c7` is deployed
+and bounded production verification passed. The owner authorized release on 2026-09-14;
+unfinished backup/recovery work is deferred to [independent task #8](https://github.com/OzAvrahami/trading-journal/issues/8),
+not marked successfully tested. Final commit/deployment and Release verification remain.
+See [release notes](docs/releases/v1.1.0.md) and [publication sequence](docs/neon-launch-plan.md).
 
 ### Fresh production initialization
 
@@ -47,11 +49,13 @@ acceptance gates remain open. See
 ### Fixes
 
 - TJ-06: separate rate-limit buckets using Railway's edge-overwritten X-Real-IP
-  only in an production Railway deployment, retaining socket identity
+  only in a production Railway deployment, retaining socket identity
   elsewhere. Ignore arbitrary forwarded chains, normalize mapped IPv4 and IPv6,
   group IPv6 by /64, and preserve the 300/20 request limits per 15 minutes.
   Express proxy trust and HTTPS cookie/CORS policy remain unchanged. Local
-  regression/security tests pass; verification after owner deployment is pending.
+  regression/security tests pass. After owner deployment, provided two-source counter
+  evidence supports independent buckets and resistance to forged forwarding headers;
+  focused production authentication/pricing checks passed with no sampled proxy warnings.
 
 - TJ-04: allow the same CSV file in different owned trading accounts while keeping
   duplicate-file protection within each account. Update the import preview and
@@ -62,6 +66,11 @@ acceptance gates remain open. See
   unavailable; currencies and ledger calculations are unchanged.
 - Translate the trade pagination summary into Hebrew and let its text follow the
   selected language direction; the previous summary always fell back to English.
+
+### Historical preparation snapshot - 2026-09-13 (superseded)
+
+The paragraph below preserves the pre-publication evidence; its deployment, version
+and pending-gate statements are not the current v1.1.0 state.
 
 TJ-02 is pushed at `2821435dc609ad85d3447cd22f799fb17a508968`; the TJ-04 fixes
 remain uncommitted for owner review. None is deployed or released. Isolated Neon

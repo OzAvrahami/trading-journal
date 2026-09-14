@@ -1,6 +1,51 @@
 # v1.1.0 — Neon Migration planning
 
-## Current consolidated v1.1.0 review - 2026-09-14
+## Current release authorization - 2026-09-14
+
+The owner explicitly authorized proceeding with v1.1.0 and assigned unfinished
+backup/recovery work to [Establish independent production backups and verify recovery #8](https://github.com/OzAvrahami/trading-journal/issues/8).
+That task is Backlog / P2, without a release milestone or blocking dependency.
+The previous operational recovery release gate is superseded; the requirements
+are **deferred, not successfully tested**. No repeat owner decision is required.
+All new production and validation/recovery records remain protected.
+
+The deployed and production-verified implementation is
+[c6ad89638809e5ab350c3d7614b3baf902e2b3c7](https://github.com/OzAvrahami/trading-journal/commit/c6ad89638809e5ab350c3d7614b3baf902e2b3c7).
+All first-party versions are 1.1.0. TJ-01 through TJ-05 are closed/Done; TJ-06
+remains open/Verify only for the final documentation commit/deployment and Release
+publication verification. Feature #7 remains independently planned Backlog.
+The bounded observation and accepted test evidence remain valid; continuous
+monitoring, full-window PITR and comprehensive reconciliation are not claimed.
+
+The six existing documentation files form **one final release documentation commit**
+on main. The owner uses ordinary Git commands; no intermediate branch handoff or
+helper script is required. Main publication triggers both Railway services.
+After the owner pushes, verify the exact final SHA, documentation-only diff from
+c6ad89638809e5ab350c3d7614b3baf902e2b3c7 and both resulting running deployments before
+providing ordinary commands to tag that exact commit and publish with
+`docs/releases/v1.1.0.md`. The final SHA and Release publication are still pending.
+Preserve v1.0.0 and historical tags. After publication readback, close #6 as
+completed/Done and milestone 1 only if all its issues are complete. The independent
+recovery task and Feature #7 remain open outside that milestone.
+
+Earlier dated checkpoints below preserve discovery, preparation and test evidence.
+Their operational blockers, requests for a decision, stale versions/statuses and
+superseded publication instructions are historical, not current release gates.
+
+## Historical deployed verification - 2026-09-14
+
+The owner published [c6ad89638809e5ab350c3d7614b3baf902e2b3c7](https://github.com/OzAvrahami/trading-journal/commit/c6ad89638809e5ab350c3d7614b3baf902e2b3c7) with ordinary Git commands.
+Local main, remote main and the preparation branch match; the starting working tree
+was clean. Its exact 17-path/blob/mode inventory and parent match the original
+pinned consolidated review. Both Railway services run this commit successfully.
+Focused post-deployment database/authentication and pricing verification passed;
+provided two-source spoof/counter evidence is recorded without repeating it.
+TJ-06 stays open/Verify for remaining operational acceptance. TJ-05 is accepted/Done;
+Feature #7 remains Backlog and excluded. No release/tag has been published by this work.
+Earlier pending-publication wording below is dated history, superseded here.
+
+
+## Historical consolidated v1.1.0 review - 2026-09-14
 
 
 The owner authorized the local proxy correction and one consolidated release review.
@@ -15,7 +60,7 @@ by this checkpoint. The six-file documentation-only handoff must not be used.
 
 
 Planning metadata began on 2026-09-10; dated evidence below is preserved.
-Current September14 state: TJ-01 through TJ-05 are accepted/closed and Done.
+Earlier September 14 preparation snapshot: TJ-01 through TJ-05 are accepted/closed and Done.
 TJ-04 publication is verified and TJ-05 owner production acceptance is received at
 implementation `1bc4373ea367ade9d28de2bdbd3110afcc4718fe`.
 TJ-06 is In Progress for stabilization/release preparation. Feature #7 remains
@@ -31,15 +76,15 @@ independently planned Backlog/P2, outside v1.1.0. No release is published yet.
 - Existing Project: [Trading Journal Development #12](https://github.com/users/OzAvrahami/projects/12).
 - Outcome: Trading Journal launches on a freshly initialized Neon PostgreSQL
   database using repository migrations, application-owned JWT authentication,
-  verified financial behavior/access controls, and Neon recovery for new records.
+  verified financial behavior/access controls. Unfinished independent backup/recovery
+  requirements are now tracked in #8 outside the release milestone.
 - Accepted owner decision (2026-09-10): inactive Supabase cannot be reactivated;
   all historical users, sessions and business records are intentionally discarded.
   No source access, backup, transfer or source comparison is required. This does
   not authorize provider-resource deletion or loss of records created on Neon.
 
-Package versions remain `1.0.0`. The target version is a planning decision;
-version changes and release preparation belong to TJ-06 after implementation
-and verification. The owner controls commits, pushes, tags, and publication.
+Package and lockfile versions are `1.1.0`. The GitHub Release remains unpublished.
+The owner controls the final documentation commit, push, tag and publication.
 
 ## Ordered backlog
 
@@ -55,12 +100,17 @@ Status and Priority live in native Project fields.
 | [TJ-03 / #3 — Initialize isolated empty Neon and verify security](https://github.com/OzAvrahami/trading-journal/issues/3) | database | Done | P1 — High | [TJ-02 / #2](https://github.com/OzAvrahami/trading-journal/issues/2) |
 | [TJ-04 / #4 — Verify workflows with deterministic fixtures](https://github.com/OzAvrahami/trading-journal/issues/4) | frontend, backend, database | Done | P1 — High | [TJ-03 / #3](https://github.com/OzAvrahami/trading-journal/issues/3) |
 | [TJ-05 / #5 — Launch separately initialized fresh production](https://github.com/OzAvrahami/trading-journal/issues/5) | backend, database, railway | Done | P1 — High | [TJ-04 / #4](https://github.com/OzAvrahami/trading-journal/issues/4) |
-| [TJ-06 / #6 — Stabilize operations and prepare v1.1.0](https://github.com/OzAvrahami/trading-journal/issues/6) | backend, database, github, railway | Done | P2 — Medium | [TJ-05 / #5](https://github.com/OzAvrahami/trading-journal/issues/5) |
+| [TJ-06 / #6 — Stabilize operations and prepare v1.1.0](https://github.com/OzAvrahami/trading-journal/issues/6) | backend, database, github, railway | Verify | P2 — Medium | [TJ-05 / #5](https://github.com/OzAvrahami/trading-journal/issues/5) |
 
 Each issue contains the problem, scope, acceptance checklist, verification
 requirements, baseline, and execution boundary. Dependencies are recorded both
 as real issue links in the bodies and native GitHub blocked-by relationships.
 The full acceptance criteria live in the linked issues.
+
+Independent follow-up: [#8 - Establish independent production backups and verify recovery](https://github.com/OzAvrahami/trading-journal/issues/8),
+Backlog / P2, `chore`, `backend`, `database`, `railway`; no milestone, due date or
+blocking dependency. It preserves unfinished off-device/key-custody, scheduling,
+retention/alerting, PITR and post-recovery-point reconciliation requirements.
 
 ## Fresh initialization gates
 
@@ -84,10 +134,11 @@ The full acceptance criteria live in the linked issues.
    never copy validation fixtures; control API/deployment writers, invalidate old
    sessions as reviewed, record deployment/database checks and owner onboarding.
    Supabase is not a fallback. Protect every new Neon record from its first write.
-6. **TJ-06 operations/release:** verify Neon recovery and retention/ownership,
-   stabilize, clean up only proven-unused settings without automatic resource
-   deletion, and prepare release/version changes only after implementation and
-   verification. Owner controls Git/deployment/publication.
+6. **TJ-06 release completion:** retain completed stabilization and production
+   verification, finalize documentation and verify the exact pushed release commit,
+   deployments and publication. The owner authorized release; unfinished recovery
+   requirements are deferred to #8, not marked passed. Unused Supabase variables
+   remain retained pending separate removal authorization.
 
 Actual isolated destination: `trading-journal` / `delicate-fire-79141899`,
 validation branch `br-green-cake-arg1asaf`, Oregon (`aws-us-west-2`), PostgreSQL
@@ -304,7 +355,7 @@ resources are untouched. Local HTTP is not production cross-site HTTPS cookie
 verification. No actual Finnhub connectivity, production launch, new SHA/version,
 Git publication or owner visual acceptance is claimed.
 
-## Current owner acceptance and final commit gate - 2026-09-13
+## Historical owner acceptance and final commit gate - 2026-09-13
 
 The owner completed application review and accepted the TJ-04 tests. Earlier
 pending-visual-acceptance statements above are historical and superseded. Completed

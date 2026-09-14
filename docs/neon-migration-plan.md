@@ -1,6 +1,51 @@
 # Neon fresh database initialization plan — TJ-01
 
-## Current consolidated v1.1.0 review - 2026-09-14
+## Current release authorization - 2026-09-14
+
+The owner explicitly authorized proceeding with v1.1.0 and assigned unfinished
+backup/recovery work to [Establish independent production backups and verify recovery #8](https://github.com/OzAvrahami/trading-journal/issues/8).
+That task is Backlog / P2, without a release milestone or blocking dependency.
+The previous operational recovery release gate is superseded; the requirements
+are **deferred, not successfully tested**. No repeat owner decision is required.
+All new production and validation/recovery records remain protected.
+
+The deployed and production-verified implementation is
+[c6ad89638809e5ab350c3d7614b3baf902e2b3c7](https://github.com/OzAvrahami/trading-journal/commit/c6ad89638809e5ab350c3d7614b3baf902e2b3c7).
+All first-party versions are 1.1.0. TJ-01 through TJ-05 are closed/Done; TJ-06
+remains open/Verify only for the final documentation commit/deployment and Release
+publication verification. Feature #7 remains independently planned Backlog.
+The bounded observation and accepted test evidence remain valid; continuous
+monitoring, full-window PITR and comprehensive reconciliation are not claimed.
+
+The six existing documentation files form **one final release documentation commit**
+on main. The owner uses ordinary Git commands; no intermediate branch handoff or
+helper script is required. Main publication triggers both Railway services.
+After the owner pushes, verify the exact final SHA, documentation-only diff from
+c6ad89638809e5ab350c3d7614b3baf902e2b3c7 and both resulting running deployments before
+providing ordinary commands to tag that exact commit and publish with
+`docs/releases/v1.1.0.md`. The final SHA and Release publication are still pending.
+Preserve v1.0.0 and historical tags. After publication readback, close #6 as
+completed/Done and milestone 1 only if all its issues are complete. The independent
+recovery task and Feature #7 remain open outside that milestone.
+
+Earlier dated checkpoints below preserve discovery, preparation and test evidence.
+Their operational blockers, requests for a decision, stale versions/statuses and
+superseded publication instructions are historical, not current release gates.
+
+## Historical deployed verification - 2026-09-14
+
+The owner published [c6ad89638809e5ab350c3d7614b3baf902e2b3c7](https://github.com/OzAvrahami/trading-journal/commit/c6ad89638809e5ab350c3d7614b3baf902e2b3c7) with ordinary Git commands.
+Local main, remote main and the preparation branch match; the starting working tree
+was clean. Its exact 17-path/blob/mode inventory and parent match the original
+pinned consolidated review. Both Railway services run this commit successfully.
+Focused post-deployment database/authentication and pricing verification passed;
+provided two-source spoof/counter evidence is recorded without repeating it.
+TJ-06 stays open/Verify for remaining operational acceptance. TJ-05 is accepted/Done;
+Feature #7 remains Backlog and excluded. No release/tag has been published by this work.
+Earlier pending-publication wording below is dated history, superseded here.
+
+
+## Historical consolidated v1.1.0 review - 2026-09-14
 
 
 The owner authorized the local proxy correction and one consolidated release review.
@@ -19,7 +64,7 @@ Baseline: [v1.0.0](https://github.com/OzAvrahami/trading-journal/releases/tag/v1
 `9434cda9b8b225b6615e31bad379c3de63d4ea4e`. Target:
 [v1.1.0 — Neon Migration](https://github.com/OzAvrahami/trading-journal/milestone/1).
 
-## Current execution checkpoint - 2026-09-14
+## Historical execution checkpoint - 2026-09-14
 
 TJ-01 through TJ-05 are accepted/closed and Done. Implementation
 `1bc4373ea367ade9d28de2bdbd3110afcc4718fe` is published on main and deployed to
