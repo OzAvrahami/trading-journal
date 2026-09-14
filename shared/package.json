@@ -1,6 +1,6 @@
 {
   "name": "@trading-journal/shared",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Shared schemas, constants and utilities",
   "main": "index.js",
   "type": "module",

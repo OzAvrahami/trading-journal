@@ -6,6 +6,26 @@ Historical tags are preserved and do not establish publication dates.
 
 ## [Unreleased]
 
+No additional completed changes. Feature #7 remains independently planned and excluded.
+
+## [1.1.0] - Prepared, unpublished
+
+Release date and final release commit are pending. All first-party package/lockfile
+versions are prepared at `1.1.0`; Railway verification of this new commit and operational
+acceptance gates remain open. See
+[release notes and publication gates](docs/releases/v1.1.0.md).
+
+### Fresh production initialization
+
+- Independently initialize empty Neon PostgreSQL 18 production using reviewed
+  migrations 001-020 and owner/migrator/backend roles with verified TLS/security.
+  This is a fresh start; historical Supabase users and data were not transferred.
+- Verify production HTTPS onboarding/authentication, live Finnhub/manual fallback
+  and isolated archive restoration; owner accepted production on 2026-09-14.
+- Preserve all new Neon records. Archive recovery is verified within its recorded
+  scope; off-device durability, unattended scheduling, full-window PITR and general
+  post-point reconciliation are not established.
+
 ### Maintenance and security
 
 - TJ-02: explicit verified-TLS PostgreSQL configuration, bounded connections and
@@ -25,6 +45,13 @@ Historical tags are preserved and do not establish publication dates.
   and focused local connection, migration, security and authentication tests.
 
 ### Fixes
+
+- TJ-06: separate rate-limit buckets using Railway's edge-overwritten X-Real-IP
+  only in an production Railway deployment, retaining socket identity
+  elsewhere. Ignore arbitrary forwarded chains, normalize mapped IPv4 and IPv6,
+  group IPv6 by /64, and preserve the 300/20 request limits per 15 minutes.
+  Express proxy trust and HTTPS cookie/CORS policy remain unchanged. Local
+  regression/security tests pass; verification after owner deployment is pending.
 
 - TJ-04: allow the same CSV file in different owned trading accounts while keeping
   duplicate-file protection within each account. Update the import preview and

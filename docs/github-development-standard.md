@@ -1,5 +1,19 @@
 # Trading Journal GitHub Development Standard
 
+## Current consolidated v1.1.0 review - 2026-09-14
+
+
+The owner authorized the local proxy correction and one consolidated release review.
+Eight new focused rate-limit/security tests and seven focused existing auth tests
+pass. All four first-party packages and four lockfiles are **1.1.0** with unchanged
+dependencies; migrations 001-020 bytes are unchanged. TJ-06 is **open/Verify** for
+review, with live deployment verification and unmet operational requirements still
+open. TJ-05 acceptance/Done and Feature #7 Backlog are unchanged. See
+[release notes](releases/v1.1.0.md) and [launch/recovery gates](neon-launch-plan.md).
+Earlier In Progress/version-deferral wording below is dated evidence superseded
+by this checkpoint. The six-file documentation-only handoff must not be used.
+
+
 This repository follows **Oz GitHub Development Standard v1**, adapted from
 [ProjectDeck's canonical standard](https://github.com/OzAvrahami/ProjectDeck/blob/9f0bbb27ce015c13c76dd7c7db1f162751d2bc60/docs/github-development-standard.md).
 The source revision is `9f0bbb27ce015c13c76dd7c7db1f162751d2bc60`, retrieved on
@@ -151,7 +165,7 @@ notes group Features, Enhancements, Bug Fixes, Maintenance, and Documentation an
 exclude duplicate, invalid, and wontfix items. The first baseline uses curated
 notes because no GitHub issues or pull requests existed at baseline preparation.
 
-## Activation and phase boundary
+## Historical activation and phase boundary (through September 13)
 
 The Issue Forms, blank-issue setting, and `.github/release.yml` were committed
 and pushed with the published baseline and are present on the default branch.
@@ -215,3 +229,27 @@ Owner acceptance of TJ-04 is received; keep it open/Verify until the exact pushe
 fix commit is verified against the reviewed inventory. Then close #4/Done and move
 #5/Ready after remaining criteria are satisfied. See the
 [handoff](validation/tj-04-handoff-2026-09-13.md) and [launch plan](neon-launch-plan.md).
+
+
+## Current production and release preparation - 2026-09-14
+
+TJ-01 through TJ-05 are closed/Done. TJ-04 exact publication verification and
+TJ-05 owner production acceptance are complete at implementation
+`1bc4373ea367ade9d28de2bdbd3110afcc4718fe`, now on main and both Railway services.
+Earlier pending-acceptance/publication wording is dated history, not a repeated gate.
+TJ-06 is open/In Progress; Feature #7 remains Backlog/P2 without a milestone.
+
+v1.1.0 [release content](releases/v1.1.0.md) is prepared but unpublished. Current
+versions remain `1.0.0` while the newly demonstrated proxy/rate-limit issue and explicit
+operational gates in the [launch plan](neon-launch-plan.md) are unresolved. After
+applicable implementation/verification, deliberately align all four first-party
+manifests and four lockfiles to `1.1.0`; preserve dependency versions and migrations.
+
+Owner commits/pushes the reviewed preparation branch first. Recheck its exact remote
+commit against the pinned reviewed path/blob/mode manifest. Updating main triggers
+both production services and is a separate owner deployment action; re-read triggers
+before that action. Verify final deployed release commit/readiness before tagging.
+The eventual v1.1.0 tag must point at the final reviewed/pushed release SHA containing
+version and release files, never merely the prior implementation SHA or moving main.
+Preserve v1.0.0 and all historical tags. No automated closing keywords before #6
+acceptance; do not infer release authorization from production acceptance of #5.

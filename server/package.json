@@ -1,6 +1,6 @@
 {
   "name": "@trading-journal/server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Trading Journal API",
   "main": "index.js",
   "type": "module",

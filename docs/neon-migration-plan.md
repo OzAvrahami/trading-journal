@@ -1,9 +1,35 @@
 # Neon fresh database initialization plan — TJ-01
 
+## Current consolidated v1.1.0 review - 2026-09-14
+
+
+The owner authorized the local proxy correction and one consolidated release review.
+Eight new focused rate-limit/security tests and seven focused existing auth tests
+pass. All four first-party packages and four lockfiles are **1.1.0** with unchanged
+dependencies; migrations 001-020 bytes are unchanged. TJ-06 is **open/Verify** for
+review, with live deployment verification and unmet operational requirements still
+open. TJ-05 acceptance/Done and Feature #7 Backlog are unchanged. See
+[release notes](releases/v1.1.0.md) and [launch/recovery gates](neon-launch-plan.md).
+Earlier In Progress/version-deferral wording below is dated evidence superseded
+by this checkpoint. The six-file documentation-only handoff must not be used.
+
+
 Revised on 2026-09-10 for [TJ-01 / #1](https://github.com/OzAvrahami/trading-journal/issues/1).
 Baseline: [v1.0.0](https://github.com/OzAvrahami/trading-journal/releases/tag/v1.0.0),
 `9434cda9b8b225b6615e31bad379c3de63d4ea4e`. Target:
 [v1.1.0 — Neon Migration](https://github.com/OzAvrahami/trading-journal/milestone/1).
+
+## Current execution checkpoint - 2026-09-14
+
+TJ-01 through TJ-05 are accepted/closed and Done. Implementation
+`1bc4373ea367ade9d28de2bdbd3110afcc4718fe` is published on main and deployed to
+both production services; owner production acceptance was received September14.
+TJ-06 is In Progress. [Launch/stabilization evidence](neon-launch-plan.md) and
+[release preparation](releases/v1.1.0.md) supersede earlier pending cloud/publication
+statements without rewriting their dated evidence. Versions remain `1.0.0` pending
+resolution/verification of the demonstrated proxy rate-limiting defect. New production
+records and all validation/recovery environments remain protected. Supabase is not
+a recovery destination. Feature #7 is outside this release.
 
 ## Accepted decision and scope
 
@@ -32,7 +58,7 @@ implementation boundary, while cloud and production remain unchanged. Packages/l
 changes are preserved. See [backlog](neon-migration-backlog.md) and
 [development standard](github-development-standard.md).
 
-## Current execution evidence - 2026-09-12
+## Historical execution evidence - 2026-09-12
 
 TJ-02 is owner-accepted, committed and pushed at
 `2821435dc609ad85d3447cd22f799fb17a508968` on

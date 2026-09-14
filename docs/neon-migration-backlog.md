@@ -1,10 +1,25 @@
 # v1.1.0 — Neon Migration planning
 
-Planning metadata created on 2026-09-10. This document records the authorized
-backlog and subsequent dated progress. v1.1.0 is not a published Release;
-TJ-02 is accepted/closed at `2821435dc609ad85d3447cd22f799fb17a508968`;
-TJ-03 is accepted/closed and Done. TJ-04 tests and owner application review are
-accepted; #4 is open/Verify pending exact pushed-fix verification. #5/#6 stay Backlog.
+## Current consolidated v1.1.0 review - 2026-09-14
+
+
+The owner authorized the local proxy correction and one consolidated release review.
+Eight new focused rate-limit/security tests and seven focused existing auth tests
+pass. All four first-party packages and four lockfiles are **1.1.0** with unchanged
+dependencies; migrations 001-020 bytes are unchanged. TJ-06 is **open/Verify** for
+review, with live deployment verification and unmet operational requirements still
+open. TJ-05 acceptance/Done and Feature #7 Backlog are unchanged. See
+[release notes](releases/v1.1.0.md) and [launch/recovery gates](neon-launch-plan.md).
+Earlier In Progress/version-deferral wording below is dated evidence superseded
+by this checkpoint. The six-file documentation-only handoff must not be used.
+
+
+Planning metadata began on 2026-09-10; dated evidence below is preserved.
+Current September14 state: TJ-01 through TJ-05 are accepted/closed and Done.
+TJ-04 publication is verified and TJ-05 owner production acceptance is received at
+implementation `1bc4373ea367ade9d28de2bdbd3110afcc4718fe`.
+TJ-06 is In Progress for stabilization/release preparation. Feature #7 remains
+independently planned Backlog/P2, outside v1.1.0. No release is published yet.
 
 ## Baseline and target
 
@@ -38,9 +53,9 @@ Status and Priority live in native Project fields.
 | [TJ-01 / #1 — Audit dependencies and define fresh initialization](https://github.com/OzAvrahami/trading-journal/issues/1) | backend, database, railway | Done | P1 — High | None |
 | [TJ-02 / #2 — Adapt connections and migration portability](https://github.com/OzAvrahami/trading-journal/issues/2) | backend, database | Done | P1 — High | [TJ-01 / #1](https://github.com/OzAvrahami/trading-journal/issues/1) |
 | [TJ-03 / #3 — Initialize isolated empty Neon and verify security](https://github.com/OzAvrahami/trading-journal/issues/3) | database | Done | P1 — High | [TJ-02 / #2](https://github.com/OzAvrahami/trading-journal/issues/2) |
-| [TJ-04 / #4 — Verify workflows with deterministic fixtures](https://github.com/OzAvrahami/trading-journal/issues/4) | frontend, backend, database | Verify | P1 — High | [TJ-03 / #3](https://github.com/OzAvrahami/trading-journal/issues/3) |
-| [TJ-05 / #5 — Launch separately initialized fresh production](https://github.com/OzAvrahami/trading-journal/issues/5) | backend, database, railway | Backlog | P1 — High | [TJ-04 / #4](https://github.com/OzAvrahami/trading-journal/issues/4) |
-| [TJ-06 / #6 — Stabilize operations and prepare v1.1.0](https://github.com/OzAvrahami/trading-journal/issues/6) | backend, database, github, railway | Backlog | P2 — Medium | [TJ-05 / #5](https://github.com/OzAvrahami/trading-journal/issues/5) |
+| [TJ-04 / #4 — Verify workflows with deterministic fixtures](https://github.com/OzAvrahami/trading-journal/issues/4) | frontend, backend, database | Done | P1 — High | [TJ-03 / #3](https://github.com/OzAvrahami/trading-journal/issues/3) |
+| [TJ-05 / #5 — Launch separately initialized fresh production](https://github.com/OzAvrahami/trading-journal/issues/5) | backend, database, railway | Done | P1 — High | [TJ-04 / #4](https://github.com/OzAvrahami/trading-journal/issues/4) |
+| [TJ-06 / #6 — Stabilize operations and prepare v1.1.0](https://github.com/OzAvrahami/trading-journal/issues/6) | backend, database, github, railway | Done | P2 — Medium | [TJ-05 / #5](https://github.com/OzAvrahami/trading-journal/issues/5) |
 
 Each issue contains the problem, scope, acceptance checklist, verification
 requirements, baseline, and execution boundary. Dependencies are recorded both
@@ -307,3 +322,19 @@ a milestone or dependency, and is not a Neon release blocker. Its invented TJ-07
 prefix was corrected to the Feature template convention. No catalogue code exists
 in this reviewed changeset. Cross-project memberships were corrected without
 changing Finance Tracker's legitimate Project #1 fields or the Neon issue sequence.
+
+## Production acceptance and TJ-06 stabilization - 2026-09-14
+
+Owner production acceptance is recorded; #5 is completed/Done. #6 moved through
+Ready to In Progress. [Launch/stabilization evidence](neon-launch-plan.md) records
+16h04m13s of bounded retrospective metrics, no sampled 5xx, current backend/TLS and
+new owner records, a refreshed protected archive and limited temporary-table
+reconciliation. Existing archive restores remain verified separately.
+
+A newly reproduced Railway proxy/rate-limiter configuration defect blocks release.
+Off-device backup custody/cadence, formally agreed observation scope and comprehensive
+post-point recovery remain explicit unchecked requirements. Do not reinterpret them
+as successful tests. Prepared [v1.1.0 notes](releases/v1.1.0.md) and changelog describe
+completed work only. Version bump is deferred while that technical gate remains;
+all versions are `1.0.0`. The future final release commit must be reviewed/pushed and
+verified before owner-controlled main deployment, tagging and publication.

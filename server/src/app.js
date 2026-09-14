@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import { rateLimit } from 'express-rate-limit';
+import { createRateLimiters } from './middleware/rateLimits.js';
 
 import authRoutes from './routes/auth.js';
 import meRoutes from './routes/me.js';
@@ -44,22 +44,10 @@ app.use(cookieParser());
 // Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// Global rate limit
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: { code: 'RATE_LIMIT', message: 'Too many requests, please try again later.' } },
-});
+// Keep Express proxy trust disabled. Only the deployment-specific rate-limit
+// identity uses Railway's overwritten client-IP header; cookies/CORS are unchanged.
+const { globalLimiter, authLimiter } = createRateLimiters();
 app.use('/api', globalLimiter);
-
-// Stricter limit for auth routes
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: { code: 'RATE_LIMIT', message: 'Too many auth attempts, please try again later.' } },
-});
 
 // Health check (no auth required)
 app.get('/api/health', (_req, res) => {
