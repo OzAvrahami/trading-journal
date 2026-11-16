@@ -6,6 +6,7 @@ import { EmptyState, ErrorState } from '../ui/States.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
 import { formatPct, formatR, formatSignedCurrency, pnlColor, rawCurrency } from '../../utils/formatters.js';
 import { useTranslation } from 'react-i18next';
+import { FinancialCoverage } from '../trades/FinancialCoverage.jsx';
 
 export const ANALYTICS_DIMENSIONS = [
   { key: 'market', label: 'Market', labelKey: 'common.market' },
@@ -64,6 +65,7 @@ function BreakdownDetails({ rows }) {
               <th scope="col" className="px-2 py-2 text-end font-medium">{t('analytics.winsLosses')}</th>
               <th scope="col" className="px-2 py-2 text-end font-medium">{t('common.winRate')}</th>
               <th scope="col" className="px-2 py-2 text-end font-medium">{t('common.netPnl')}</th>
+              <th scope="col" className="px-2 py-2 text-end font-medium">{t('common.grossPnl')}</th>
               <th scope="col" className="px-2 py-2 text-end font-medium">{t('common.averageR')}</th>
             </tr>
           </thead>
@@ -75,6 +77,7 @@ function BreakdownDetails({ rows }) {
                 <td className="px-2 py-2 text-end font-mono text-secondary" dir="ltr">{row.winners} / {row.losers}</td>
                 <td className="px-2 py-2 text-end font-mono text-secondary" dir="ltr">{formatPct(row.winRate)}</td>
                 <td className={`px-2 py-2 text-end font-mono ${pnlColor(row.pnlNet)}`} dir="ltr">{formatSignedCurrency(row.pnlNet)}</td>
+                <td className="px-2 py-2 text-end font-mono" dir="ltr">{formatSignedCurrency(row.pnlGross)}</td>
                 <td className="px-2 py-2 text-end font-mono text-secondary" dir="ltr">{formatR(row.avgRMultiple)}</td>
               </tr>
             ))}
@@ -106,7 +109,7 @@ function BreakdownDetails({ rows }) {
 export function AnalyticsBreakdown({ data, accounts, by, onByChange, isLoading, isFetching, error, onRetry }) {
   const { t } = useTranslation();
   const rows = prepareBreakdownRows(data, by, accounts);
-  const plottedRows = rows.slice(0, 10);
+  const plottedRows = rows.filter(row => row.pnlNet != null).slice(0, 10);
   const selectedDimension = ANALYTICS_DIMENSIONS.find((dimension) => dimension.key === by);
   const selectedLabel = selectedDimension ? t(selectedDimension.labelKey) : by;
 
@@ -134,6 +137,7 @@ export function AnalyticsBreakdown({ data, accounts, by, onByChange, isLoading, 
 
       {isFetching && !isLoading && <p className="mt-3 text-xs text-muted" role="status">{t('analytics.refreshingDimension')}</p>}
       <div className="mt-4">
+        <FinancialCoverage count={rows.reduce((sum, row) => sum + (row.unknownNetCount || 0), 0)} />
         {isLoading ? (
           <Skeleton className="h-72 w-full" label={t('analytics.loadingDimension')} />
         ) : error ? (

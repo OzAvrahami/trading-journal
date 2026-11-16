@@ -4,6 +4,7 @@ import { EmptyState, ErrorState } from '../ui/States.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
 import { formatCurrency, formatPct, rawCurrency } from '../../utils/formatters.js';
 import { useTranslation } from 'react-i18next';
+import { FinancialCoverage } from '../trades/FinancialCoverage.jsx';
 
 export const BREAKDOWN_OPTIONS = ['strategy', 'symbol', 'timeframe', 'direction', 'account', 'company'];
 
@@ -29,7 +30,8 @@ function axisCurrency(value) {
 export function BreakdownChart({ data, accounts = [], by, onByChange, isLoading = false, error, onRetry }) {
   const { t } = useTranslation();
   const accountMap = Object.fromEntries(accounts.map(account => [account.id, account]));
-  const chartData = (data ?? []).map(row => {
+  const unknownNetCount = (data ?? []).reduce((sum, row) => sum + (row.unknownNetCount || 0), 0);
+  const chartData = (data ?? []).filter(row => row.pnlNet != null).map(row => {
     const account = by === 'account' ? accountMap[row.label] : null;
     return { ...row, displayLabel: account ? (account.accountName || `${account.company} ${account.accountNumber}`) : (row.label || 'Unknown') };
   });
@@ -57,6 +59,7 @@ export function BreakdownChart({ data, accounts = [], by, onByChange, isLoading 
       </div>
 
       <div className="mt-4">
+        <FinancialCoverage count={unknownNetCount} />
         {isLoading ? (
           <Skeleton className="h-56 w-full" label={t('analytics.loadingBreakdown')} />
         ) : error ? (

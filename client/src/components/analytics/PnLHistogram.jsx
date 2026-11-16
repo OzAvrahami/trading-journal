@@ -3,6 +3,7 @@ import { Card } from '../ui/Card.jsx';
 import { EmptyState, ErrorState } from '../ui/States.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
 import { useTranslation } from 'react-i18next';
+import { FinancialCoverage } from '../trades/FinancialCoverage.jsx';
 
 function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -15,10 +16,11 @@ function ChartTooltip({ active, payload }) {
   );
 }
 
-export function PnLHistogram({ data, isLoading = false, error, onRetry }) {
+export function PnLHistogram({ data, unknownNetCount = 0, isLoading = false, error, onRetry }) {
   const { t } = useTranslation();
   if (isLoading) return <Skeleton className="h-[19rem] w-full" label={t('analytics.loadingDistribution')} />;
   if (error) return <ErrorState title={t('analytics.distributionFailed')} detail={t('analytics.distributionFailedDetail')} available={t('analytics.dashboardAvailable')} onRetry={onRetry} />;
+  if (unknownNetCount) return <FinancialCoverage count={unknownNetCount} />;
   if (!data?.length) return <EmptyState title={t('analytics.noDistribution')} detail={t('analytics.noDistributionDetail')} />;
 
   const totalTrades = data.reduce((sum, bucket) => sum + (bucket.count ?? 0), 0);

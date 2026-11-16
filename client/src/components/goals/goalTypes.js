@@ -48,6 +48,7 @@ export const GOAL_STATES = {
 };
 
 export const UNAVAILABLE_REASONS = {
+  get unknown_trade_net() { return i18n.t('capture.netUnavailable', { count: '' }); },
   get no_closed_trades() { return i18n.t('goals.no_closed_trades'); },
   get no_r_data() { return i18n.t('goals.no_r_data'); },
   get no_eligible_rule_checks() { return i18n.t('goals.no_eligible_rule_checks'); },

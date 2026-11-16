@@ -34,6 +34,13 @@ function FinancialValue({ value, formatter, className = '' }) {
   return <ValueIndicator value={value} className={className}>{formatter(value)}</ValueIndicator>;
 }
 
+function TradeNetValue({ trade }) {
+  const { t } = useTranslation();
+  return trade.status === 'closed' && trade.pnlNet == null
+    ? <span className="text-xs">{t('capture.unknown')}<br />{t('common.grossPnl')}: <bdi>{formatSignedCurrency(trade.pnlGross)}</bdi></span>
+    : <FinancialValue value={trade.pnlNet} formatter={formatSignedCurrency} />;
+}
+
 function SortHeader({ label, field, sort, order, onSort, className = '' }) {
   const { t } = useTranslation();
   const active = sort === field;
@@ -147,7 +154,7 @@ export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
                   <td className="px-3 py-2.5 text-end font-mono tabular-nums text-primary" dir="ltr">{formatCurrency(trade.entryPrice)}</td>
                   <td className="hidden px-3 py-2.5 text-end font-mono tabular-nums text-primary compact:table-cell" dir="ltr">{formatCurrency(trade.exitPrice)}</td>
                   <td className="px-3 py-2.5 text-end font-mono tabular-nums text-secondary" dir="ltr">{trade.quantity ?? '—'}</td>
-                  <td className="px-3 py-2.5 text-end"><FinancialValue value={trade.pnlNet} formatter={formatSignedCurrency} /></td>
+                  <td className="px-3 py-2.5 text-end"><TradeNetValue trade={trade} /></td>
                   <td className="hidden px-3 py-2.5 text-end compact:table-cell"><FinancialValue value={trade.rMultiple} formatter={formatR} /></td>
                   <td className="hidden px-3 py-2.5 text-end font-mono tabular-nums text-secondary wide:table-cell" dir="ltr">{formatDuration(trade.durationMinutes)}</td>
                   <td className="px-3 py-2.5"><StatusBadge status={trade.status} /></td>
@@ -174,7 +181,7 @@ export function TradeTable({ trades, accounts = [], sort, order, onSort }) {
                     </div>
                     <p className="mt-1 truncate text-xs text-secondary">{accountLabel(trade.accountId, accounts)}</p>
                   </div>
-                  <FinancialValue value={trade.pnlNet} formatter={formatSignedCurrency} className="text-sm font-semibold" />
+                  <TradeNetValue trade={trade} />
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
                   <div><dt className="text-muted">{t('common.entry')}</dt><dd className="mt-1 text-secondary" dir="ltr">{formatDatetime(trade.entryDatetime, { timezone })}</dd></div>

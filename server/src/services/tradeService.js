@@ -51,9 +51,9 @@ export function computeFields(fields) {
 
   if (exitPrice != null) {
     pnlGross = calcPnl(direction, entryPrice, exitPrice, quantity, pointValue);
-    pnlNet = parseFloat((pnlGross - parseFloat(fees || 0)).toFixed(4));
+    pnlNet = fees === null ? null : parseFloat((pnlGross - parseFloat(fees || 0)).toFixed(4));
 
-    if (riskAmount && parseFloat(riskAmount) !== 0) {
+    if (pnlNet !== null && riskAmount && parseFloat(riskAmount) !== 0) {
       rMultiple = parseFloat((pnlNet / parseFloat(riskAmount)).toFixed(4));
     }
   }
@@ -80,7 +80,8 @@ function mapTrade(row) {
     entryPrice:      parseFloat(row.entry_price),
     exitPrice:       row.exit_price != null ? parseFloat(row.exit_price) : null,
     quantity:        parseFloat(row.quantity),
-    fees:            parseFloat(row.fees),
+    fees:            row.fees == null ? null : parseFloat(row.fees),
+    sourceManaged:   Boolean(row.source_managed),
     strategy:        row.strategy,
     setup:           row.setup,
     strategyId:      row.strategy_id ?? null,
@@ -218,6 +219,9 @@ export async function updateTrade(userId, tradeId, data) {
   // Fetch existing trade to merge with patch data
   const existing = await getTrade(userId, tradeId);
   await validateAccountOwnership(userId, existing.accountId);
+  if (existing.sourceManaged && ['exitDatetime','exitPrice','quantity','fees'].some(k => data[k] !== undefined)) {
+    throw createError('CAPTURE_SOURCE_FIELDS_LOCKED', 'Source execution values are managed by capture reconciliation. Edit annotations only.', 409);
+  }
 
   const strategyIdChanged = data.strategyId !== undefined;
   const setupIdChanged = data.setupId !== undefined;
@@ -239,6 +243,16 @@ export async function updateTrade(userId, tradeId, data) {
   const setupSnapshot = classification.setup && setupLinkChanged
     ? classification.setup.name
     : data.setup !== undefined ? data.setup : existing.setup;
+
+  if (existing.sourceManaged) {
+    const result = await pool.query(`UPDATE trades SET strategy=$3,setup=$4,strategy_id=$5,setup_id=$6,
+      timeframe=$7,risk_amount=$8,stop_loss=$9,take_profit=$10,notes=$11,emotions=$12,screenshot_links=$13
+      WHERE id=$1 AND user_id=$2 RETURNING *`, [tradeId,userId,strategySnapshot,setupSnapshot,finalStrategyId,finalSetupId,
+      ...['timeframe','riskAmount','stopLoss','takeProfit','notes'].map(k => data[k] !== undefined ? data[k] : existing[k]),
+      JSON.stringify(data.emotions !== undefined ? data.emotions : existing.emotions),
+      data.screenshotLinks !== undefined ? data.screenshotLinks : existing.screenshotLinks]);
+    return mapTrade(result.rows[0]);
+  }
 
   const merged = {
     direction:    existing.direction,

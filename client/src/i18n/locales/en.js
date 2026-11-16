@@ -342,4 +342,56 @@ Object.assign(en.errors, {
 
 Object.assign(en.trades, { showing: 'Showing {{from}}–{{to}} of {{total}} trades' });
 
+en.capture = {
+  inputType: 'Import source', legacyCsv: 'Broker CSV (existing import)', packageOption: 'Saved collector capture (preview only)',
+  file: 'Capture package (.capture.json)', targetHelp: 'Choose your internal Journal account explicitly. The external Tradovate account is not an internal account ID.',
+  title: 'Source-aware capture preview', previewOnly: 'Preview only. No transactions will be imported.',
+  externalAccount: 'External source account', target: 'Selected Journal account', period: 'Report calendar dates (inclusive)', captured: 'CSV captured at (UTC)',
+  offset: 'Verified source offset', requestedZone: 'Requested IANA timezone', periodHelp: 'Midnight at the report offset through midnight after the final date. This is a calendar report, not a trading-session total.',
+  timeEvidence: '{{count}} of {{total}} source rows matched a controlled comparison at another offset. UTC instants and economics agree.',
+  partialComparison: 'Some source rows are absent from the comparison. Different offsets shift date-window boundaries.',
+  financialTitle: 'Separate source financial summary', sourcedFees: 'Sourced aggregate trading fees', aggregateNet: 'Reconciled aggregate net',
+  coverage: 'Same external account, environment and calendar interval; {{rows}} source rows and {{fills}} unique fills. Cash History reconciles by contract, timestamp and event counts.',
+  allocation: 'Fees remain unallocated. Cash transaction IDs are not fill IDs; matching event counts do not establish trade-level fee assignments.',
+  financialTimes: 'Summary / Cash History captured at (UTC):', adjustments: 'Other cash adjustments (excluded from trading net):',
+  financialMissing: 'No matching financial summary is attached. Currency, aggregate fees and net are unknown. Trade gross P&L remains available.',
+  unknown: 'Unknown (unallocated)', candidates: 'Preview candidates', commitDisabled: 'Preview only — import disabled',
+  provenance: 'Evidence and provenance', integrityLimit: 'Hashes check file integrity and reconciliation, not authenticity. No raw report HTML is rendered.',
+};
+en.captureErrors = {
+  CAPTURE_METADATA_INVALID: 'Capture version, offset or provenance metadata is missing or invalid.',
+  CAPTURE_METADATA_CONFLICT: 'The capture account, interval or report metadata contradicts its request.',
+  CAPTURE_OFFSET_REQUIRED: 'A verified offset and controlled timestamp comparison are required.',
+  CAPTURE_OFFSET_CONFLICT: 'Timestamp comparison or outgoing offset contradicts the capture metadata.',
+  CAPTURE_HASH_MISMATCH: 'Capture bytes do not match their recorded hash.', CAPTURE_TIMESTAMP_INVALID: 'A source timestamp or numeric offset is invalid.',
+  CAPTURE_CSV_INVALID: 'Capture CSV columns or rows are invalid.', CAPTURE_FINANCIAL_INVALID: 'Required source financial fields are missing or malformed.',
+  CAPTURE_FINANCIAL_CONFLICT: 'Financial evidence does not reconcile with this exact CSV and report scope.',
+  CAPTURE_FINANCIAL_COVERAGE: 'Financial evidence does not establish matching execution coverage.',
+  CAPTURE_TARGET_REQUIRED: 'Select an internal Journal account.', CAPTURE_PREVIEW_ONLY: 'Collector captures are preview-only.', ACCOUNT_NOT_FOUND: 'The selected active account is not available to you.',
+};
+
+Object.assign(en.capture, {
+  updatedGroups: 'Extended {{count}} existing trade groups; user annotations were preserved.',
+  unionPreview: 'The candidate table includes previously saved members of these groups. The separate financial summary covers only this report, including executions already imported.',
+  netUnavailable_one: '{{count}} closed trade has unknown net P&L. Incomplete net totals and related metrics are unavailable.',
+  netUnavailable_other: '{{count}} closed trades have unknown net P&L. Incomplete net totals and related metrics are unavailable.',
+  packageOption: 'Saved collector capture', confirmHelp: 'Review source coverage and the target account before confirming. Trade fees and net remain unknown.',
+  persistedTitle: 'Saved source capture',
+  persisted: 'Saved source evidence. This report snapshot is not an account-wide or trading-session total; overlapping snapshots must not be added.',
+  reconciliation: 'Capture reconciliation', planCounts: '{{inserted}} new groups · {{updated}} groups extended · {{unchanged}} unchanged groups',
+  confirmMapping: 'I confirm that this external account belongs in the selected Journal account. Keep unallocated trade fees and net unknown.',
+  confirmImport: 'Confirm capture import', netUnavailable: '{{count}} closed trades have unknown net P&L. Net totals and dependent metrics are incomplete and are not shown as complete totals.',
+  sourceLocked: 'Execution fields are managed by source reconciliation. You can edit notes, classification and other annotations.',
+});
+Object.assign(en.captureErrors, {
+  CAPTURE_LEGACY_LINEAGE_MISSING: 'An existing trade in this symbol has no reliable execution lineage. Resolve its identity before importing.',
+  CAPTURE_LEGACY_OVERLAP: 'Legacy trades share source executions. Resolve the overlap explicitly; historical fees and timestamps will not be changed automatically.',
+  CAPTURE_ACCOUNT_MAPPING_CONFLICT: 'The external or internal account already has a different mapping. Resolve it before importing.',
+  CAPTURE_EXECUTION_CONFLICT: 'A known execution pair has different source values. Review the source correction.',
+  CAPTURE_GROUP_CONFLICT: 'Source members contradict an existing opening group.',
+  CAPTURE_DELETED_TRADE: 'This source group was previously deleted. Resolve its identity before restoring it.',
+  CAPTURE_TRADE_CHANGED: 'Stored execution values differ from source evidence. Resolve the changes before importing.',
+  CAPTURE_CURRENCY_CONFLICT: 'Source currency differs from the selected account currency.',
+  CAPTURE_ACCOUNT_INACTIVE: 'Choose an active internal account.',
+});
 export default en;

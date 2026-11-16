@@ -1,3 +1,4 @@
+import { FinancialCoverage } from '../components/trades/FinancialCoverage.jsx';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Link, useNavigate, useParams } from 'react-router-dom';
@@ -152,7 +153,7 @@ export default function DailyReview() {
           {summaryQuery.isLoading ? <div className="grid gap-3 grid-cols-2 wide:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-24" label={t('dailyReview.loadingMetric')} />)}</div>
           : summaryQuery.isError ? <ErrorState title={t('dailyReview.metricsLoadFailed')} detail={t('dailyReview.tradesRulesReviewAvailable')} onRetry={summaryQuery.refetch} />
             : <div className="grid grid-cols-2 gap-3 wide:grid-cols-4">
-              <Metric label={t('common.netPnl')} value={summary?.pnlNet} financial />
+              <FinancialCoverage count={summary?.unknownNetCount} gross={summary?.pnlGross} /><Metric label={t('common.netPnl')} value={summary?.pnlNet} financial />
               <Metric label={t('dailyReview.closedTrades')} value={summary?.closedTrades} detail={summary ? `${summary.winners} · ${summary.losers} · ${summary.breakeven}` : null} />
               <Metric label={t('common.winRate')} value={summary?.winRate == null ? null : `${summary.winRate.toFixed(1)}%`} />
               <Metric label={t('dailyReview.adherence')} value={adherence == null ? null : `${adherence.toFixed(1)}%`} />

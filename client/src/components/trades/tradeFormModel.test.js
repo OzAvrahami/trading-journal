@@ -10,6 +10,14 @@ const base = {
 };
 
 describe('canonical trade form model', () => {
+  it('keeps unknown source fees blank and submits annotation-only edits', () => {
+    const mapped=mapTradeToFormValues({sourceManaged:true,fees:null},'UTC');
+    expect(mapped.fees).toBe('');expect(mapped.sourceManaged).toBe(true);
+    const payload=normalizeTradePayload({...base,sourceManaged:true,fees:''},{timezone:'UTC',isEdit:true});
+    expect(payload.notes).toBe('waited');
+    for(const key of ['fees','quantity','exitDatetime','exitPrice'])expect(payload).not.toHaveProperty(key);
+    expect(validateTradeForm({...base,sourceManaged:true,fees:''},{timezone:'UTC',isEdit:true})).not.toHaveProperty('fees');
+  });
   it('persists and announces the shared presentation preference without changing Trade data', () => {
     const events = [];
     window.addEventListener(TRADE_FORM_MODE_EVENT, (event) => events.push(event.detail), { once: true });

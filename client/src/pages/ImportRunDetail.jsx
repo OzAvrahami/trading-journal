@@ -6,6 +6,7 @@ import { getImportRun } from '../api/imports.js';
 import { formatDatetime, formatNumber } from '../utils/formatters.js';
 import { Spinner } from '../components/ui/Spinner.jsx';
 import { useUserTimezone } from '../hooks/useUserTimezone.js';
+import CaptureSummary from '../components/imports/CaptureSummary.jsx';
 
 const FILTERS = ['all', 'imported', 'skipped', 'failed'];
 const ROW_PAGE_SIZE = 50;
@@ -29,6 +30,7 @@ export default function ImportRunDetail() {
   const run = query.data;
   const rows = run.rows;
   return <div className="space-y-6">
+    {run.source && <CaptureSummary source={run.source} targetLabel={run.account?.name || run.account?.company} persisted />}
     <Link to="/import" className="inline-flex min-h-11 items-center text-sm font-medium text-action">{t('importHistory.back')}</Link>
     <section className="card space-y-4" aria-labelledby="run-summary"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 id="run-summary" className="text-lg font-semibold" dir="auto">{run.originalFilename}</h2><p className="text-sm text-muted">{t('importHistory.noRawFile')}</p></div><span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(run.status)}`}>{t(`importHistory.status.${run.status}`)}</span></div>
       <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">{[

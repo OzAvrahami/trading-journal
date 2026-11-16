@@ -13,9 +13,9 @@ test('unbalanced/unsupported transaction control fails closed', () => {
 });
 test('reviewed historical and forward migrations load in order without nested transaction control', async () => {
   const migrations = await loadMigrations(new URL('./migrations/', import.meta.url));
-  assert.equal(migrations.length, 19);
+  assert.equal(migrations.length, 21);
   assert.equal(migrations[0].filename, '001_init.sql');
-  assert.equal(migrations.at(-1).filename, '019_harden_creator_defaults.sql');
+  assert.equal(migrations.at(-1).filename, '021_capture_persistence.sql');
   for (const migration of migrations) {
     assert.match(migration.checksum, /^[a-f0-9]{64}$/);
     assert.ok(migration.statements.length);

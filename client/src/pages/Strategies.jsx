@@ -1,3 +1,4 @@
+import { FinancialCoverage } from '../components/trades/FinancialCoverage.jsx';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, ArrowCounterClockwise, PencilSimple, Plus } from '@phosphor-icons/react';
@@ -21,7 +22,7 @@ function Metric({ label, value, format = formatNumber, direction = 'ltr' }) {
 function Performance({ item }) {
   const { t } = useTranslation();
   return (
-    <dl className="grid grid-cols-2 gap-3 adaptive:grid-cols-4 wide:grid-cols-7">
+    <div><FinancialCoverage count={item.unknownNetCount} gross={item.pnlGross} /><dl className="grid grid-cols-2 gap-3 adaptive:grid-cols-4 wide:grid-cols-7">
       <Metric label={t('strategies.closedTrades')} value={item.closedTrades} />
       <Metric label={t('strategies.openTrades')} value={item.openTrades} />
       <Metric label={t('strategies.outcomes')} value={t('strategies.outcomeRecord', { winners: item.winners, losers: item.losers, breakeven: item.breakeven })} format={(value) => value} direction="auto" />
@@ -29,7 +30,7 @@ function Performance({ item }) {
       <Metric label={t('common.winRate')} value={item.winRate} format={formatPct} />
       <Metric label={t('common.averageR')} value={item.averageR} format={formatR} />
       <Metric label={t('common.profitFactor')} value={item.profitFactor} format={(value) => formatNumber(value, { maximumFractionDigits: 2 })} />
-    </dl>
+    </dl></div>
   );
 }
 
@@ -50,7 +51,7 @@ function LegacyRows({ title, rows }) {
       {rows.length ? <div className="grid gap-2 adaptive:grid-cols-2">{rows.map((row, index) => (
         <div key={`${row.value ?? 'unclassified'}-${index}`} className="rounded-md border border-default bg-surface-raised p-3">
           <div className="flex items-start justify-between gap-3"><span className="font-medium text-primary" dir="auto">{row.value || t('strategies.unclassified')}</span><span className="whitespace-nowrap font-mono text-xs text-muted" dir="ltr">{t('strategies.tradeCount', { count: row.tradeCount })}</span></div>
-          <dl className="mt-3 grid grid-cols-3 gap-2"><Metric label={t('strategies.closedTrades')} value={row.closedTrades} /><Metric label={t('common.netPnl')} value={row.pnlNet} format={formatSignedCurrency} /><Metric label={t('common.winRate')} value={row.winRate} format={formatPct} /></dl>
+          <FinancialCoverage count={row.unknownNetCount} gross={row.pnlGross} /><dl className="mt-3 grid grid-cols-3 gap-2"><Metric label={t('strategies.closedTrades')} value={row.closedTrades} /><Metric label={t('common.netPnl')} value={row.pnlNet} format={formatSignedCurrency} /><Metric label={t('common.winRate')} value={row.winRate} format={formatPct} /></dl>
         </div>
       ))}</div> : <p className="text-sm text-muted">{t('strategies.noLegacyValues')}</p>}
     </div>

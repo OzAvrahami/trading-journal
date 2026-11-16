@@ -215,10 +215,10 @@ export default function Dashboard() {
         </>
       ) : (
         <>
-          <EquityCurve data={equityQuery.data?.data} isLoading={equityQuery.isLoading} error={equityQuery.error} onRetry={equityQuery.refetch} />
+          <EquityCurve unknownNetCount={equityQuery.data?.unknownNetCount} data={equityQuery.data?.data} isLoading={equityQuery.isLoading} error={equityQuery.error} onRetry={equityQuery.refetch} />
           <div className="grid grid-cols-1 gap-4 compact:grid-cols-2">
             <TradingCalendar qParams={qParams} timezone={timezone} />
-            <PnLHistogram data={distributionQuery.data?.buckets} isLoading={distributionQuery.isLoading} error={distributionQuery.error} onRetry={distributionQuery.refetch} />
+            <PnLHistogram unknownNetCount={distributionQuery.data?.unknownNetCount} data={distributionQuery.data?.buckets} isLoading={distributionQuery.isLoading} error={distributionQuery.error} onRetry={distributionQuery.refetch} />
           </div>
           <BreakdownChart
             data={breakdownQuery.data?.data}

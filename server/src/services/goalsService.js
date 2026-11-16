@@ -119,6 +119,7 @@ export async function queryTradeGoalMetrics(queryable, userId, goals, timezone =
      )
      SELECT ranges.goal_id,
             COUNT(t.id)::int AS closed_count,
+            COUNT(t.id) FILTER (WHERE t.pnl_net IS NULL)::int AS unknown_net_count,
             COUNT(t.id) FILTER (WHERE t.pnl_net > 0)::int AS winners,
             SUM(t.pnl_net) AS net_pnl,
             COUNT(t.r_multiple)::int AS r_count,
@@ -179,6 +180,9 @@ export async function queryJournalGoalMetrics(queryable, userId, goals) {
 function metricResult(goal, raw, sourceFailed) {
   if (sourceFailed) {
     return { currentValue: null, hasData: false, sourceDataCount: 0, unavailableReason: 'source_unavailable' };
+  }
+  if (['net_pnl', 'win_rate', 'average_r'].includes(goal.metricKey) && Number(raw?.unknown_net_count || 0)) {
+    return { currentValue: null, hasData: false, sourceDataCount: count(raw.closed_count), unavailableReason: 'unknown_trade_net' };
   }
   if (goal.metricKey === 'net_pnl') {
     const closed = count(raw?.closed_count);

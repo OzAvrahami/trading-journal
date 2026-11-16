@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { FinancialCoverage } from '../trades/FinancialCoverage.jsx';
 import { Card } from '../ui/Card.jsx';
 import { ValueIndicator } from '../ui/ValueIndicator.jsx';
 import { formatCurrency, formatPct, formatR, formatSignedCurrency } from '../../utils/formatters.js';
@@ -42,6 +43,7 @@ export function SummaryCards({ data }) {
 
   return (
     <section aria-label={t('analytics.summary')} className="space-y-3">
+      <FinancialCoverage count={Math.max(data.unknownNetCount || 0, today.unknownNetCount || 0, wtd.unknownNetCount || 0, mtd.unknownNetCount || 0)} gross={totals.pnlGross} currency={data.currency} />
       <div className="grid grid-cols-2 gap-3 compact:grid-cols-4">
         <MetricCard label={t('dashboard.dailyPnl')} value={formatSignedCurrency(today.pnlNet, moneyOptions)} pnlValue={today.pnlNet} unavailable={!monetaryAvailable} detail={tradeCount(today.tradesCount ?? 0, false, t)} />
         <MetricCard label={t('dashboard.wtd')} value={formatSignedCurrency(wtd.pnlNet, moneyOptions)} pnlValue={wtd.pnlNet} unavailable={!monetaryAvailable} detail={tradeCount(wtd.tradesCount ?? 0, false, t)} />

@@ -33,7 +33,7 @@ function mapLinkedPortfolio(portfolio) {
 export function mapAccount(row, linkedPortfolio = null) {
   const closedTrades = number(row.closed_trades);
   const winners = number(row.winners);
-  const pnlNet = round(row.pnl_net, 2) ?? 0;
+  const pnlNet = Number(row.unknown_net_count || 0) ? null : round(row.pnl_net, 2) ?? 0;
   const openingBalance = round(row.opening_balance, 2) ?? 0;
   return {
     id: row.id,
@@ -58,11 +58,13 @@ export function mapAccount(row, linkedPortfolio = null) {
     losers: number(row.losers),
     breakeven: number(row.breakeven),
     pnlNet,
-    totalFees: round(row.total_fees, 2) ?? 0,
-    winRate: closedTrades > 0 ? round(winners / closedTrades) : null,
-    averageR: row.average_r == null ? null : round(row.average_r),
-    profitFactor: closedTrades > 0 ? calculateProfitFactor(row.gross_profit, row.gross_loss) : null,
-    trackedBalance: round(openingBalance + pnlNet, 2),
+    unknownNetCount: Number(row.unknown_net_count || 0),
+    pnlGross: row.pnl_gross == null ? null : round(row.pnl_gross, 2),
+    totalFees: Number(row.unknown_fee_count || 0) ? null : round(row.total_fees, 2) ?? 0,
+    winRate: !Number(row.unknown_net_count || 0) && closedTrades > 0 ? round(winners / closedTrades) : null,
+    averageR: Number(row.unknown_net_count || 0) || row.average_r == null ? null : round(row.average_r),
+    profitFactor: !Number(row.unknown_net_count || 0) && closedTrades > 0 ? calculateProfitFactor(row.gross_profit, row.gross_loss) : null,
+    trackedBalance: pnlNet == null ? null : round(openingBalance + pnlNet, 2),
     lastTradeAt: row.last_trade_at ?? null,
     currency: row.base_currency || 'USD',
     currencies: [row.base_currency || 'USD'],
@@ -79,6 +81,9 @@ const ACCOUNT_METRICS_SQL = `WITH trade_metrics AS (
   SELECT account_id,
     COUNT(*)::int AS trades_count,
     COUNT(*) FILTER (WHERE status = 'closed')::int AS closed_trades,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net IS NULL)::int AS unknown_net_count,
+      COUNT(*) FILTER (WHERE fees IS NULL)::int AS unknown_fee_count,
+      SUM(pnl_gross) FILTER (WHERE status = 'closed') AS pnl_gross,
     COUNT(*) FILTER (WHERE status = 'open')::int AS open_trades,
     COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net > 0)::int AS winners,
     COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net < 0)::int AS losers,
@@ -101,7 +106,7 @@ SELECT a.*,
   COALESCE(tm.breakeven, 0) AS breakeven,
   COALESCE(tm.pnl_net, 0) AS pnl_net,
   COALESCE(tm.total_fees, 0) AS total_fees,
-  tm.average_r, tm.gross_profit, tm.gross_loss, tm.last_trade_at
+  tm.unknown_net_count, tm.unknown_fee_count, tm.pnl_gross, tm.average_r, tm.gross_profit, tm.gross_loss, tm.last_trade_at
 FROM trading_accounts a
 LEFT JOIN trade_metrics tm ON tm.account_id = a.id
 LEFT JOIN investment_portfolios ip ON ip.trading_account_id = a.id AND ip.user_id = a.user_id`;

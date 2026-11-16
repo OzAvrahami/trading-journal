@@ -1,3 +1,4 @@
+import { FinancialCoverage } from '../components/trades/FinancialCoverage.jsx';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bank } from '@phosphor-icons/react';
@@ -200,6 +201,7 @@ export default function Analytics() {
             onRetry={summaryQuery.refetch}
           />
 
+          <FinancialCoverage count={summaryQuery.data?.unknownNetCount} gross={summaryQuery.data?.totals?.pnlGross} currency={summaryQuery.data?.currency} />
           {mixedCurrencies && <div role="status" className="rounded-lg border border-information bg-information-soft p-3 text-sm text-secondary"><p className="font-semibold text-primary">{t('analytics.mixedCurrencies')}</p><p className="mt-1">{t('analytics.mixedCurrenciesDetail')}</p></div>}
 
           {noClosedTrades ? (

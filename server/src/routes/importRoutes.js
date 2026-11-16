@@ -3,10 +3,13 @@ import multer from 'multer';
 import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
-import { parseImport } from '../services/importService.js';
+import { parseImport, previewRow } from '../services/importService.js';
 import { executeImportRun, findSuccessfulDuplicate, getImportRun, listImportRuns } from '../services/importHistoryService.js';
 import { IMPORTERS } from '../importers/index.js';
 import { createError } from '../middleware/errorHandler.js';
+import { parseCapturePackage } from '../services/captureService.js';
+import { validateAccountOwnership } from '../services/accountService.js';
+import { planCapture, publicCapturePlan } from '../services/capturePersistence.js';
 
 const router = Router();
 
@@ -21,10 +24,10 @@ const upload = multer({
     fieldSize: 10 * 1024,
   },
   fileFilter(_req, file, cb) {
-    if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) {
+    if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv') || file.originalname.toLowerCase().endsWith('.capture.json')) {
       cb(null, true);
     } else {
-      cb(createError('INVALID_FILE', 'Only CSV files are accepted.', 400));
+      cb(createError('INVALID_FILE', 'Only CSV or .capture.json files are accepted.', 400));
     }
   },
 });
@@ -108,6 +111,22 @@ router.post('/parse', requireAuth, upload.single('file'), async (req, res, next)
       throw createError('IMPORT_INVALID_FILE', 'The uploaded filename must contain 1 to 255 characters.', 400);
     }
 
+    const isCapture = originalFilename.toLowerCase().endsWith('.capture.json');
+    if (isCapture || req.body.format === 'capture') {
+      if (!isCapture || broker !== 'tradovate') throw createError('CAPTURE_METADATA_INVALID', 'Select Tradovate and a .capture.json package.', 400);
+      const target = z.string().uuid().safeParse(req.body.accountId);
+      if (!target.success) throw createError('CAPTURE_TARGET_REQUIRED', 'Select an internal target account for this preview.', 400);
+      await validateAccountOwnership(req.user.id, target.data, { requireActive: true });
+      const parsed = await parseCapturePackage(req.file.buffer);
+      const planned = await planCapture(req.user.id, target.data, parsed);
+      const plan = publicCapturePlan(planned);
+      const sessionId = randomUUID();
+      storeSession(req.user.id, sessionId, { capture: parsed, targetAccountId: target.data,
+        fileSha256: createHash('sha256').update(req.file.buffer).digest('hex'), originalFilename, fileSizeBytes: req.file.size });
+      return res.json({ sessionId, preview: planned.groups ? planned.groups.slice(0,20).map(g => previewRow(g.row)) : parsed.preview, stats: { ...parsed.stats, tradesToImport: plan.inserted }, source: parsed.source, plan,
+        previewOnly: false, targetAccountId: target.data, duplicateRun: null,
+        file: { originalFilename, fileSizeBytes: req.file.size } });
+    }
     const { preview, stats, rows, sourceRows } = await parseImport(broker, req.file.buffer);
     const fileSha256 = createHash('sha256').update(req.file.buffer).digest('hex');
     const duplicateRun = await findSuccessfulDuplicate(req.user.id, fileSha256);

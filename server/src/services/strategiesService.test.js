@@ -65,10 +65,10 @@ describe('managed performance and ownership', () => {
       assert.match(sql, /setup_id IS NULL/);
       assert.match(sql, /user_id = \$1/);
       assert.deepEqual(params, [userId]);
-      return { rows: [{ kind: 'strategy', value: 'Legacy ORB', trade_count: 2, closed_trades: 2, winners: 1, pnl_net: '10' }] };
+      return { rows: [{ kind: 'strategy', value: 'Legacy ORB', unknownNetCount: 0, pnlGross: null, trade_count: 2, closed_trades: 2, winners: 1, pnl_net: '10' }] };
     } };
     const result = await listLegacyClassifications(userId, queryable);
-    assert.deepEqual(result.strategies[0], { value: 'Legacy ORB', tradeCount: 2, closedTrades: 2, pnlNet: 10, winRate: 0.5 });
+    assert.deepEqual(result.strategies[0], { value: 'Legacy ORB', unknownNetCount: 0, pnlGross: null, tradeCount: 2, closedTrades: 2, pnlNet: 10, winRate: 0.5 });
   });
 });
 

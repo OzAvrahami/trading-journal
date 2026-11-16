@@ -76,7 +76,7 @@ describe('analytics validation and safe dimensions', () => {
     assert.match(captured.sql, /t\.status = 'closed'/);
     assert.deepEqual(captured.params, [userId, '2026-08-01', 'Asia/Jerusalem']);
     assert.deepEqual(result.data[0], {
-      key: 'momentum', label: 'momentum', tradesCount: 2, winners: 1, losers: 1,
+      key: 'momentum', label: 'momentum', unknownNetCount: 0, pnlGross: null, tradesCount: 2, winners: 1, losers: 1,
       winRate: 0.5, pnlNet: 25.5, avgRMultiple: 0.75,
     });
   });
@@ -127,7 +127,7 @@ describe('R-multiple distribution', () => {
     });
     assert.match(captured.sql, /t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
-    assert.match(captured.sql, /t\.r_multiple IS NOT NULL/);
+    assert.doesNotMatch(captured.sql, /t\.r_multiple IS NOT NULL/); // Include unknown net/R to measure coverage.
     assert.match(captured.sql, /t\.account_id = \$5/);
     assert.doesNotMatch(captured.sql, /ta\.company/);
     assert.deepEqual(captured.params, [userId, '2026-08-01', 'Asia/Jerusalem', '2026-08-04', accountId]);
@@ -142,7 +142,7 @@ describe('R-multiple distribution', () => {
     assert.match(captured.sql, /JOIN trading_accounts ta/);
     assert.match(captured.sql, /ta\.company = \$2/);
     assert.deepEqual(captured.params, [userId, 'broker a']);
-    assert.deepEqual(result, { totalTrades: 0, buckets: [] });
+    assert.deepEqual(result, { unknownNetCount: 0, totalTrades: 0, buckets: [] });
   });
 });
 
@@ -229,7 +229,7 @@ describe('currency-correct Analytics', () => {
 describe('dollar-PnL distribution', () => {
   test('returns the established empty response for no qualifying data', async () => {
     pool.query = async () => ({ rows: [] });
-    assert.deepEqual(await getDistribution(userId, {}), { buckets: [] });
+    assert.deepEqual(await getDistribution(userId, {}), { unknownNetCount: 0, buckets: [] });
   });
 
   test('places one value and identical values in one exact bucket', () => {
@@ -263,7 +263,7 @@ describe('dollar-PnL distribution', () => {
     const captured = calls.find(call => /FROM trades t/.test(call.sql));
     assert.match(captured.sql, /t\.user_id = \$1/);
     assert.match(captured.sql, /t\.status = 'closed'/);
-    assert.match(captured.sql, /t\.pnl_net IS NOT NULL/);
+    assert.doesNotMatch(captured.sql, /t\.pnl_net IS NOT NULL/); // Unknown net must not disappear before coverage is checked.
     assert.deepEqual(captured.params, [userId, '2026-08-01', 'Asia/Jerusalem', accountId]);
     assert.ok(Array.isArray(result.buckets));
     assert.deepEqual(Object.keys(result.buckets[0]), ['range', 'min', 'max', 'count']);

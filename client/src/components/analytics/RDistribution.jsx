@@ -3,6 +3,7 @@ import { Card } from '../ui/Card.jsx';
 import { EmptyState, ErrorState } from '../ui/States.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
 import { useTranslation } from 'react-i18next';
+import { FinancialCoverage } from '../trades/FinancialCoverage.jsx';
 
 export const R_BUCKET_ORDER = [
   'lte_neg_2', 'neg_2_to_neg_1_5', 'neg_1_5_to_neg_1', 'neg_1_to_neg_0_5', 'neg_0_5_to_0',
@@ -38,6 +39,7 @@ export function RDistribution({ data, isLoading, isFetching, error, onRetry }) {
   if (error) return <ErrorState title={t('analytics.rFailed')} detail={t('analytics.rFailedDetail')} available={t('analytics.rAvailable')} onRetry={onRetry} />;
 
   const buckets = orderRBuckets(data?.buckets);
+  if (data?.unknownNetCount) return <FinancialCoverage count={data.unknownNetCount} />;
   const totalTrades = data?.totalTrades ?? buckets.reduce((sum, bucket) => sum + (bucket.count ?? 0), 0);
   if (!totalTrades || !buckets.length) {
     return <EmptyState title={t('analytics.rUnavailable')} detail={t('analytics.rUnavailableDetail')} />;

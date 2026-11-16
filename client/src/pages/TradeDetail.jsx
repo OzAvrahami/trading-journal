@@ -1,3 +1,4 @@
+import { FinancialCoverage } from '../components/trades/FinancialCoverage.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowSquareOut, PencilSimple, Trash } from '@phosphor-icons/react';
@@ -197,6 +198,7 @@ export default function TradeDetail() {
         </div>
       </Card>
 
+      <FinancialCoverage count={trade.status === 'closed' && trade.pnlNet == null ? 1 : 0} gross={trade.pnlGross} />
       <Card aria-labelledby="financial-summary-heading">
         <h2 id="financial-summary-heading" className="mb-3 text-sm font-semibold text-primary">{t('trades.financialResult')}</h2>
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">

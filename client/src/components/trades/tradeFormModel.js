@@ -60,11 +60,12 @@ export function createTradeFormValues({ user, timezone, accountId = '' } = {}) {
 export function mapTradeToFormValues(trade, timezone) {
   const emotions = trade?.emotions && typeof trade.emotions === 'object' && !Array.isArray(trade.emotions) ? trade.emotions : {};
   return {
+    sourceManaged: Boolean(trade?.sourceManaged),
     accountId: trade?.accountId || '', symbol: text(trade?.symbol), market: trade?.market || 'stocks',
     direction: trade?.direction || 'long', status: trade?.status || (trade?.exitDatetime ? 'closed' : 'open'),
     entryDatetime: instantToLocalDateTime(trade?.entryDatetime, timezone),
     exitDatetime: instantToLocalDateTime(trade?.exitDatetime, timezone),
-    entryPrice: trade?.entryPrice ?? '', exitPrice: trade?.exitPrice ?? '', quantity: trade?.quantity ?? '', fees: trade?.fees ?? 0,
+    entryPrice: trade?.entryPrice ?? '', exitPrice: trade?.exitPrice ?? '', quantity: trade?.quantity ?? '', fees: trade?.fees ?? '',
     strategy: text(trade?.strategy), setup: text(trade?.setup), strategyId: trade?.strategyId || '', setupId: trade?.setupId || '', timeframe: text(trade?.timeframe),
     riskAmount: trade?.riskAmount ?? '', stopLoss: trade?.stopLoss ?? '', takeProfit: trade?.takeProfit ?? '', notes: text(trade?.notes),
     emotionPre: text(emotions.pre), emotionDuring: text(emotions.during), emotionPost: text(emotions.post),
@@ -81,7 +82,7 @@ export function validateTradeForm(values, { timezone, isEdit = false, t = (key) 
   if (!localDateTimeToInstant(values.entryDatetime, timezone)) errors.entryDatetime = t('trades.validation.entryRequired');
   if (!(numeric(values.entryPrice) > 0)) errors.entryPrice = t('trades.validation.positiveNumber');
   if (!(numeric(values.quantity) > 0)) errors.quantity = t('trades.validation.positiveNumber');
-  if (numeric(values.fees) == null || numeric(values.fees) < 0) errors.fees = t('trades.validation.nonnegativeNumber');
+  if (!values.sourceManaged && (numeric(values.fees) == null || numeric(values.fees) < 0)) errors.fees = t('trades.validation.nonnegativeNumber');
 
   optionalNumbers.forEach((field) => {
     if (values[field] !== '' && values[field] != null && !(numeric(values[field]) > 0)) errors[field] = t('trades.validation.positiveNumber');
@@ -121,7 +122,7 @@ export function normalizeTradePayload(values, { timezone, isEdit = false } = {})
     emotions: Object.keys(emotions).length ? emotions : null, screenshotLinks: links.length ? links : null,
   };
   if (!isEdit) return payload;
-  return Object.fromEntries(mutableFields.map((key) => [key, payload[key]]));
+  return Object.fromEntries(mutableFields.filter(key => !values.sourceManaged || !['exitDatetime','exitPrice','quantity','fees'].includes(key)).map((key) => [key, payload[key]]));
 }
 
 export function accountDisplayLabel(account) {

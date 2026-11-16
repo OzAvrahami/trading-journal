@@ -74,7 +74,7 @@ function buildPeriodQuery(userId, { accountId, company, includeExcludedAccounts 
   addTimestampDateRange({ conditions: conds, params, column: 't.entry_datetime', from, to, timezone });
 
   return {
-    sql: `SELECT COUNT(*) AS cnt, COALESCE(SUM(t.pnl_net), 0) AS pnl
+    sql: `SELECT COUNT(*) AS cnt, COUNT(*) FILTER (WHERE t.pnl_net IS NULL) AS unknown_net_count, COALESCE(SUM(t.pnl_net), 0) AS pnl
           FROM trades t${join} WHERE ${conds.join(' AND ')}`,
     params,
   };
@@ -93,7 +93,9 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
   const [mainRes, todayRes, wtdRes, mtdRes] = await Promise.all([
     queryable.query(`
       SELECT
-        COUNT(*)                                                          AS total,
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE t.status = 'closed' AND t.pnl_net IS NULL) AS unknown_net_count,
+        COUNT(*) FILTER (WHERE t.fees IS NULL) AS unknown_fee_count,
         COUNT(*) FILTER (WHERE t.status = 'closed')                      AS closed,
         COUNT(*) FILTER (WHERE t.status = 'open')                        AS open,
         COUNT(*) FILTER (WHERE t.status = 'closed' AND t.pnl_net > 0)   AS winners,
@@ -117,6 +119,10 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
   const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
   const r = mainRes.rows[0];
+  const unknownNetCount = Number(r.unknown_net_count || 0);
+  const unknownFeeCount = Number(r.unknown_fee_count || 0);
+  const net = value => unknownNetCount ? null : value;
+  const periodNet = row => Number(row.unknown_net_count || 0) ? null : money(fmt2(row.pnl));
   const closed  = parseInt(r.closed)  || 0;
   const winners = parseInt(r.winners) || 0;
   const losers  = parseInt(r.losers)  || 0;
@@ -136,32 +142,33 @@ export async function getSummary(userId, { from, to, accountId, company }, timez
     timezone,
     ...currencyResponse(currencyMeta),
     period: { from: from || null, to: to || null },
+    unknownNetCount, unknownFeeCount,
     totals: {
       tradesTotal:        parseInt(r.total) || 0,
       tradesClosed:       closed,
       tradesOpen:         parseInt(r.open) || 0,
       winners,
       losers,
-      winRate:            fmt4(winRate),
-      pnlNet:             money(fmt2(r.pnl_net_sum)),
+      winRate:            net(fmt4(winRate)),
+      pnlNet:             net(money(fmt2(r.pnl_net_sum))),
       pnlGross:           money(fmt2(r.pnl_gross_sum)),
-      totalFees:          money(fmt2(r.fees_sum)),
-      avgWin:             money(fmt2(avgWin)),
-      avgLoss:            money(fmt2(avgLoss)),
-      expectancy:         money(expectancy != null ? fmt2(expectancy) : null),
-      profitFactor:       profitFactor != null ? fmt4(profitFactor) : null,
-      avgRMultiple:       fmt4(r.avg_r),
+      totalFees:          unknownFeeCount ? null : money(fmt2(r.fees_sum)),
+      avgWin:             net(money(fmt2(avgWin))),
+      avgLoss:            net(money(fmt2(avgLoss))),
+      expectancy:         net(money(expectancy != null ? fmt2(expectancy) : null)),
+      profitFactor:       net(profitFactor != null ? fmt4(profitFactor) : null),
+      avgRMultiple:       net(fmt4(r.avg_r)),
       avgDurationMinutes: r.avg_duration ? Math.round(parseFloat(r.avg_duration)) : null,
     },
-    today: { pnlNet: money(fmt2(todayRes.rows[0].pnl)), tradesCount: parseInt(todayRes.rows[0].cnt) },
-    wtd:   { pnlNet: money(fmt2(wtdRes.rows[0].pnl)),   tradesCount: parseInt(wtdRes.rows[0].cnt) },
-    mtd:   { pnlNet: money(fmt2(mtdRes.rows[0].pnl)),   tradesCount: parseInt(mtdRes.rows[0].cnt) },
+    today: { pnlNet: periodNet(todayRes.rows[0]), unknownNetCount: Number(todayRes.rows[0].unknown_net_count || 0), tradesCount: parseInt(todayRes.rows[0].cnt) },
+    wtd:   { pnlNet: periodNet(wtdRes.rows[0]), unknownNetCount: Number(wtdRes.rows[0].unknown_net_count || 0),   tradesCount: parseInt(wtdRes.rows[0].cnt) },
+    mtd:   { pnlNet: periodNet(mtdRes.rows[0]), unknownNetCount: Number(mtdRes.rows[0].unknown_net_count || 0),   tradesCount: parseInt(mtdRes.rows[0].cnt) },
   };
 }
 
 export function calculateExpectancy(totalNetPnl, closedTrades) {
   const count = Number(closedTrades);
-  if (!Number.isFinite(count) || count <= 0) return null;
+  if (!Number.isFinite(count) || count <= 0 || totalNetPnl == null) return null;
   return Number(totalNetPnl || 0) / count;
 }
 
@@ -170,12 +177,15 @@ export async function getDaySummary(userId, date, timezone = DEFAULT_TIMEZONE, q
   const result = await queryable.query(`
     WITH day_trades AS (
       SELECT t.id, t.symbol, t.direction, t.account_id, t.entry_datetime,
-             t.exit_datetime, t.status, t.pnl_net, t.fees
+             t.exit_datetime, t.status, t.pnl_net, t.pnl_gross, t.fees
       FROM trades t
       WHERE ${where}
     )
     SELECT
       COUNT(*) FILTER (WHERE status = 'closed')::int AS closed_trades,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net IS NULL)::int AS unknown_net_count,
+      COUNT(*) FILTER (WHERE fees IS NULL)::int AS unknown_fee_count,
+      SUM(pnl_gross) FILTER (WHERE status = 'closed') AS pnl_gross,
       COUNT(*) FILTER (WHERE status = 'open')::int AS open_trades,
       COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net > 0)::int AS winners,
       COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net < 0)::int AS losers,
@@ -196,22 +206,24 @@ export async function getDaySummary(userId, date, timezone = DEFAULT_TIMEZONE, q
   const currencyMeta = await getScopeCurrencyMetadata(userId, {}, queryable);
   const row = result.rows[0];
   const closedTrades = Number(row.closed_trades ?? 0);
+  const unknownNetCount = Number(row.unknown_net_count || 0);
   const winners = Number(row.winners ?? 0);
   const mapIdentity = (trade) => trade ? { ...trade, pnlNet: Number(trade.pnlNet) } : null;
   return {
     date,
     timezone,
     ...currencyResponse(currencyMeta),
-    closedTrades,
+    closedTrades, unknownNetCount,
+    pnlGross: currencyMeta.monetaryTotalsAvailable && row.pnl_gross != null ? Number(row.pnl_gross) : null,
     openTrades: Number(row.open_trades ?? 0),
     winners,
     losers: Number(row.losers ?? 0),
     breakeven: Number(row.breakeven ?? 0),
-    pnlNet: closedTrades && currencyMeta.monetaryTotalsAvailable ? Number(row.pnl_net) : null,
-    totalFees: currencyMeta.monetaryTotalsAvailable ? Number(row.total_fees ?? 0) : null,
-    winRate: closedTrades ? Number(((winners / closedTrades) * 100).toFixed(2)) : null,
-    bestTrade: currencyMeta.monetaryTotalsAvailable ? mapIdentity(row.best_trade) : null,
-    worstTrade: currencyMeta.monetaryTotalsAvailable ? mapIdentity(row.worst_trade) : null,
+    pnlNet: closedTrades && !unknownNetCount && currencyMeta.monetaryTotalsAvailable ? Number(row.pnl_net) : null,
+    totalFees: !Number(row.unknown_fee_count || 0) && currencyMeta.monetaryTotalsAvailable ? Number(row.total_fees ?? 0) : null,
+    winRate: closedTrades && !unknownNetCount ? Number(((winners / closedTrades) * 100).toFixed(2)) : null,
+    bestTrade: !unknownNetCount && currencyMeta.monetaryTotalsAvailable ? mapIdentity(row.best_trade) : null,
+    worstTrade: !unknownNetCount && currencyMeta.monetaryTotalsAvailable ? mapIdentity(row.worst_trade) : null,
   };
 }
 
@@ -224,7 +236,7 @@ export async function getEquityCurve(userId, { from, to, accountId, company }, t
   const { params, where, join } = parts;
 
   const result = await queryable.query(`
-    SELECT ${dateExpression} AS date, SUM(t.pnl_net) AS daily_pnl
+    SELECT ${dateExpression} AS date, SUM(t.pnl_net) AS daily_pnl, COUNT(*) FILTER (WHERE t.pnl_net IS NULL) AS unknown_net_count
     FROM trades t${join}
     WHERE ${where} AND t.status = 'closed'
     GROUP BY ${dateExpression}
@@ -233,9 +245,11 @@ export async function getEquityCurve(userId, { from, to, accountId, company }, t
   const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
   let cumulative = 0;
+  const unknownNetCount = result.rows.reduce((sum, row) => sum + Number(row.unknown_net_count || 0), 0);
   return {
     ...currencyResponse(currencyMeta),
-    data: currencyMeta.monetaryTotalsAvailable ? result.rows.map(row => {
+    unknownNetCount,
+    data: currencyMeta.monetaryTotalsAvailable && !unknownNetCount ? result.rows.map(row => {
       const daily = parseFloat(parseFloat(row.daily_pnl).toFixed(2));
       cumulative = parseFloat((cumulative + daily).toFixed(2));
       return { date: mapPostgresDate(row.date), dailyPnl: daily, cumulativePnl: cumulative };
@@ -255,6 +269,7 @@ export async function getCalendar(userId, { from, to, accountId, company }, time
     SELECT
       ${dateExpression} AS date,
       SUM(t.pnl_net) AS pnl_net,
+      SUM(t.pnl_gross) AS pnl_gross, COUNT(*) FILTER (WHERE t.pnl_net IS NULL) AS unknown_net_count,
       COUNT(*) AS trades_count
     FROM trades t${join}
     WHERE ${where} AND t.status = 'closed'
@@ -265,9 +280,12 @@ export async function getCalendar(userId, { from, to, accountId, company }, time
 
   return {
     ...currencyResponse(currencyMeta),
+    unknownNetCount: result.rows.reduce((sum, row) => sum + Number(row.unknown_net_count || 0), 0),
     days: result.rows.map(row => ({
       date: mapPostgresDate(row.date),
-      pnlNet: currencyMeta.monetaryTotalsAvailable ? parseFloat(parseFloat(row.pnl_net).toFixed(2)) : null,
+      unknownNetCount: Number(row.unknown_net_count || 0),
+      pnlGross: row.pnl_gross == null ? null : Number(row.pnl_gross),
+      pnlNet: !Number(row.unknown_net_count || 0) && currencyMeta.monetaryTotalsAvailable ? parseFloat(parseFloat(row.pnl_net).toFixed(2)) : null,
       tradesCount: Number(row.trades_count),
     })),
   };
@@ -280,17 +298,18 @@ export async function getDistribution(userId, { from, to, accountId, company }, 
 
   const result = await queryable.query(`
     SELECT t.pnl_net FROM trades t${join}
-    WHERE ${where} AND t.status = 'closed' AND t.pnl_net IS NOT NULL
+    WHERE ${where} AND t.status = 'closed'
     ORDER BY t.pnl_net
   `, params);
   const currencyMeta = await getScopeCurrencyMetadata(userId, { accountId, company, tradingAnalyticsOnly: !accountId }, queryable);
 
-  const values = result.rows.map(r => parseFloat(r.pnl_net));
-  return { ...currencyResponse(currencyMeta), buckets: currencyMeta.monetaryTotalsAvailable ? bucketPnlValues(values) : [] };
+  const unknownNetCount = result.rows.filter(r => r.pnl_net === null).length;
+  const values = result.rows.filter(r => r.pnl_net != null).map(r => parseFloat(r.pnl_net));
+  return { ...currencyResponse(currencyMeta), unknownNetCount, buckets: currencyMeta.monetaryTotalsAvailable && !unknownNetCount ? bucketPnlValues(values) : [] };
 }
 
 export function bucketPnlValues(rawValues) {
-  const values = rawValues.map(Number).filter(Number.isFinite);
+  const values = rawValues.filter(value => value != null).map(Number).filter(Number.isFinite);
   if (values.length === 0) return [];
 
   const minVal = Math.min(...values);
@@ -360,8 +379,8 @@ export function bucketRValues(values) {
 export async function getRDistribution(userId, { from, to, accountId, company }, timezone = DEFAULT_TIMEZONE, queryable = pool) {
   const { params, where, join } = buildQueryParts(userId, { from, to, accountId, company }, timezone);
   const result = await queryable.query(`
-    SELECT t.r_multiple FROM trades t${join}
-    WHERE ${where} AND t.status = 'closed' AND t.r_multiple IS NOT NULL
+    SELECT t.r_multiple, t.pnl_net FROM trades t${join}
+    WHERE ${where} AND t.status = 'closed'
     ORDER BY t.r_multiple ASC
   `, params);
 
@@ -369,7 +388,8 @@ export async function getRDistribution(userId, { from, to, accountId, company },
     .filter((row) => row.r_multiple != null)
     .map((row) => Number(row.r_multiple))
     .filter(Number.isFinite);
-  return { totalTrades: values.length, buckets: bucketRValues(values) };
+  const unknownNetCount = result.rows.filter(r => r.pnl_net === null).length;
+  return { unknownNetCount, totalTrades: values.length, buckets: unknownNetCount ? [] : bucketRValues(values) };
 }
 
 // ---- Breakdown by dimension -------------------------------------------------
@@ -417,7 +437,9 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
   const result = await queryable.query(`
     SELECT
       ${col}                                                     AS dimension_key,
-      COUNT(*)                                                   AS trades_count,
+      COUNT(*) AS trades_count,
+      COUNT(*) FILTER (WHERE t.pnl_net IS NULL) AS unknown_net_count,
+      SUM(t.pnl_gross) AS pnl_gross,
       COUNT(*) FILTER (WHERE t.pnl_net > 0)                     AS winners,
       COUNT(*) FILTER (WHERE t.pnl_net < 0)                     AS losers,
       COALESCE(SUM(t.pnl_net), 0)                               AS pnl_net,
@@ -431,6 +453,7 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
 
   return {
     by,
+    unknownNetCount: result.rows.reduce((sum, row) => sum + Number(row.unknown_net_count || 0), 0),
     ...currencyResponse(currencyMeta),
     data: result.rows.map(r => {
       const count   = parseInt(r.trades_count) || 0;
@@ -441,11 +464,13 @@ export async function getBreakdown(userId, { by = 'strategy', from, to, accountI
         key:          weekday?.key || rawKey,
         label:        weekday?.label || (rawKey === 'unknown' ? 'Unknown' : rawKey),
         tradesCount:  count,
+        unknownNetCount: Number(r.unknown_net_count || 0),
+        pnlGross: currencyMeta.monetaryTotalsAvailable && r.pnl_gross != null ? Number(r.pnl_gross) : null,
         winners,
         losers:       parseInt(r.losers) || 0,
-        winRate:      count > 0 ? parseFloat((winners / count).toFixed(4)) : 0,
-        pnlNet:       currencyMeta.monetaryTotalsAvailable ? parseFloat(parseFloat(r.pnl_net || 0).toFixed(2)) : null,
-        avgRMultiple: r.avg_r != null ? parseFloat(parseFloat(r.avg_r).toFixed(4)) : null,
+        winRate:      Number(r.unknown_net_count || 0) ? null : count > 0 ? parseFloat((winners / count).toFixed(4)) : 0,
+        pnlNet:       !Number(r.unknown_net_count || 0) && currencyMeta.monetaryTotalsAvailable ? parseFloat(parseFloat(r.pnl_net || 0).toFixed(2)) : null,
+        avgRMultiple: !Number(r.unknown_net_count || 0) && r.avg_r != null ? parseFloat(parseFloat(r.avg_r).toFixed(4)) : null,
       };
     }),
   };

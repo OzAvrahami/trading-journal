@@ -7,10 +7,12 @@ import api from './client.js';
  * @param {File}   file   - the CSV File object from <input type="file">
  * @returns {{ sessionId: string, preview: object[], stats: object }}
  */
-export async function parseImport(broker, file) {
+export async function parseImport(broker, file, { format, accountId } = {}) {
   const formData = new FormData();
   formData.append('broker', broker);
   formData.append('file', file);
+  if (format) formData.append('format', format);
+  if (accountId) formData.append('accountId', accountId);
 
   const { data } = await api.post('/api/imports/parse', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

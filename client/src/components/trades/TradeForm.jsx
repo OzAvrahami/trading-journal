@@ -116,6 +116,7 @@ export function TradeForm({
     </Field>
   );
   const coreLocked = isEdit;
+  const sourceLocked = Boolean(initialValues.sourceManaged);
   const selectableAccounts = isEdit ? accounts : accounts.filter((account) => account.status === 'active');
   const strategyOptions = managedStrategies.filter((strategy) => strategy.isActive || strategy.id === strategyId);
   const setupOptions = managedSetups.filter((setup) => setup.strategyId === strategyId && (setup.isActive || setup.id === setupId));
@@ -214,25 +215,25 @@ export function TradeForm({
             <select {...props} className="input min-h-11" disabled={coreLocked}>{DIRECTIONS.map((direction) => <option key={direction} value={direction}>{t(`status.${direction}`)}</option>)}</select>
           ), { required: true })}
           {field('status', t('common.status'), (props) => (
-            <select {...props} className="input min-h-11"><option value="open">{t('status.open')}</option><option value="closed">{t('status.closed')}</option></select>
+            <select {...props} disabled={sourceLocked} className="input min-h-11"><option value="open">{t('status.open')}</option><option value="closed">{t('status.closed')}</option></select>
           ), { required: true, help: t('trades.statusHelp') })}
         </div>
       </Section>
 
       <Section id={`${formId}-entry`} title={t('trades.sections.entry')}>
         <div className={grid}>
-          {field('entryDatetime', t('trades.entryDatetime'), (props) => <input {...props} type="datetime-local" className="input min-h-11" dir="ltr" disabled={coreLocked} />, { required: true, help: t('trades.timezoneHelp', { timezone }) })}
+          {field('entryDatetime', t('trades.entryDatetime'), (props) => <input {...props} type="datetime-local" className="input min-h-11" dir="ltr" disabled={coreLocked} />, { required: true, help: sourceLocked ? t('capture.sourceLocked') : t('trades.timezoneHelp', { timezone }) })}
           {field('entryPrice', t('common.entryPrice'), (props) => <input {...props} type="number" inputMode="decimal" step="any" className="input min-h-11" dir="ltr" disabled={coreLocked} />, { required: true })}
-          {field('quantity', t('common.quantity'), (props) => <input {...props} type="number" inputMode="decimal" step="any" className="input min-h-11" dir="ltr" />, { required: true })}
-          {field('fees', t('common.fees'), (props) => <input {...props} type="number" inputMode="decimal" min="0" step="any" className="input min-h-11" dir="ltr" />, { required: true })}
+          {field('quantity', t('common.quantity'), (props) => <input {...props} type="number" inputMode="decimal" step="any" className="input min-h-11" dir="ltr" readOnly={sourceLocked} />, { required: true })}
+          {field('fees', t('common.fees'), (props) => <input {...props} type="number" inputMode="decimal" min="0" step="any" className="input min-h-11" dir="ltr" readOnly={sourceLocked} />, { required: true })}
         </div>
       </Section>
 
       {status === 'closed' && (
         <Section id={`${formId}-exit`} title={t('trades.sections.exit')} detail={t('trades.closedTradeHelp')}>
           <div className="grid gap-4 adaptive:grid-cols-2">
-            {field('exitDatetime', t('trades.exitDatetime'), (props) => <input {...props} type="datetime-local" className="input min-h-11" dir="ltr" />, { required: true, help: t('trades.timezoneHelp', { timezone }) })}
-            {field('exitPrice', t('common.exitPrice'), (props) => <input {...props} type="number" inputMode="decimal" step="any" className="input min-h-11" dir="ltr" />, { required: true })}
+            {field('exitDatetime', t('trades.exitDatetime'), (props) => <input {...props} type="datetime-local" className="input min-h-11" dir="ltr" readOnly={sourceLocked} />, { required: true, help: sourceLocked ? t('capture.sourceLocked') : t('trades.timezoneHelp', { timezone }) })}
+            {field('exitPrice', t('common.exitPrice'), (props) => <input {...props} type="number" inputMode="decimal" step="any" className="input min-h-11" dir="ltr" readOnly={sourceLocked} />, { required: true })}
           </div>
         </Section>
       )}

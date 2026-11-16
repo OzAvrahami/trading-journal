@@ -1,3 +1,4 @@
+import { FinancialCoverage } from '../trades/FinancialCoverage.jsx';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '../../api/analytics.js';
@@ -25,7 +26,7 @@ export function buildCalendarDays(from, to, pnlByDate) {
   let current = from;
   while (current && current <= to) {
     const existing = pnlByDate.get(current);
-    days.push({ date: current, pnlNet: existing?.pnlNet ?? 0, tradesCount: existing?.tradesCount ?? 0 });
+    days.push({ date: current, pnlNet: existing ? existing.pnlNet : 0, tradesCount: existing?.tradesCount ?? 0 });
     current = addDaysToDateKey(current, 1);
   }
   return days;
@@ -78,7 +79,7 @@ export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOn
   const days = buildCalendarDays(calendarParams.from, calendarParams.to, pnlByDate);
   const grid = buildCalendarGrid(days, calendarParams.from);
   const today = localTodayKey(new Date(), timezone);
-  const total = apiDays.reduce((sum, day) => sum + Number(day.pnlNet ?? 0), 0);
+  const total = apiDays.some(day => day.pnlNet == null && day.tradesCount > 0) ? null : apiDays.reduce((sum, day) => sum + Number(day.pnlNet ?? 0), 0);
   const tradingDays = apiDays.filter(day => Number(day.tradesCount ?? 0) > 0).length;
   const monthParts = dateKeyParts(calendarParams.from);
   const monthLabel = formatDateKey(calendarParams.from, { month: 'long', year: 'numeric' });
@@ -94,6 +95,7 @@ export function TradingCalendar({ qParams, timezone = DEFAULT_TIMEZONE, errorsOn
       </div>
 
       {query.isFetching && !query.isLoading && <p className="mt-2 text-xs text-muted" role="status">{t('analytics.refreshingCalendar')}</p>}
+      <FinancialCoverage count={query.data?.unknownNetCount} />
       {tradingDays === 0 && <p className="mt-3 rounded-md border border-dashed border-strong bg-surface-raised p-3 text-sm text-secondary">{t('analytics.noCalendarTrades')}</p>}
 
       <div className="mt-4" role="grid" aria-label={`Daily realized PnL for ${monthLabel}`}>

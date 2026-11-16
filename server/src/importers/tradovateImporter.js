@@ -1,8 +1,10 @@
 import { parse } from 'csv-parse/sync';
 import { createError } from '../middleware/errorHandler.js';
 import { toNum, toISO, durationToMinutes } from '../utils/importUtils.js';
+import { sourceTimestamp } from '../utils/sourceTimestamp.js';
 
-// Tradovate charges $0.95 per contract as shown in the UI (Fees & Comm / Contracts).
+// Legacy CSV estimate retained for compatibility; not a source-reported fee.
+// Source-aware capture previews bypass this rate and leave trade fees unknown.
 // IMPORTANT: CSV `qty` is per-side (one leg). A round-trip trade of 1 contract
 // has qty=1 in the CSV but counts as 2 in the Tradovate UI "Contracts" total.
 // Full fee per CSV row = qty * 2 * FEE_PER_CONTRACT.
@@ -59,8 +61,9 @@ function aggregateExecutions(executions) {
   const entryValue = executions.reduce((sum, execution) => sum + execution.entryPrice * execution.quantity, 0);
   const exitValue = executions.reduce((sum, execution) => sum + execution.exitPrice * execution.quantity, 0);
   const pnlGross = round(executions.reduce((sum, execution) => sum + execution.pnlGross, 0));
-  const fees = round(executions.reduce((sum, execution) => sum + execution.fees, 0));
-  const pnlNet = round(pnlGross - fees);
+  const fees = executions.some(execution => execution.fees === null) ? null
+    : round(executions.reduce((sum, execution) => sum + execution.fees, 0));
+  const pnlNet = fees === null ? null : round(pnlGross - fees);
   const entryDatetime = executions.reduce(
     (earliest, execution) => execution.entryDatetime < earliest ? execution.entryDatetime : earliest,
     first.entryDatetime,
@@ -78,6 +81,7 @@ function aggregateExecutions(executions) {
     _rowIndex: first.rowIndex,
     _sourceIdentifier: first.sourceMembers[0].sourceIdentifier,
     _sourceMembers: sourceMembers,
+    ...(first.sourceAware ? { _requiresCapturePersistence: true } : {}),
     symbol: first.symbol,
     market: 'futures',
     direction: first.direction,
@@ -119,7 +123,8 @@ function aggregateExecutions(executions) {
  * Returns one normalized logical Trade candidate per validated opening fill.
  * Physical source-row lineage remains private in `_sourceMembers` for import history.
  */
-export function parseTradovate(csvBuffer) {
+export function parseTradovate(csvBuffer, { sourceOffsetMinutes } = {}) {
+  const sourceAware = sourceOffsetMinutes !== undefined;
   const records = parse(csvBuffer, {
     columns: true,
     skip_empty_lines: true,
@@ -138,24 +143,26 @@ export function parseTradovate(csvBuffer) {
     const sellPrice = toNum(row.sellPrice);
     const qty       = toNum(row.qty);
     const pnlGross  = toNum(row.pnl);
-    const fees      = parseFloat((qty * 2 * FEE_PER_CONTRACT).toFixed(2));
-    const pnlNet    = parseFloat((pnlGross - fees).toFixed(2));
+    const fees      = sourceAware ? null : parseFloat((qty * 2 * FEE_PER_CONTRACT).toFixed(2));
+    const pnlNet    = fees === null ? null : parseFloat((pnlGross - fees).toFixed(2));
+
+    const boughtDatetime = sourceAware ? sourceTimestamp(row.boughtTimestamp, sourceOffsetMinutes) : toISO(row.boughtTimestamp);
+    const soldDatetime = sourceAware ? sourceTimestamp(row.soldTimestamp, sourceOffsetMinutes) : toISO(row.soldTimestamp);
 
     // Direction is determined by execution order: whichever leg happened first is the opening leg.
-    const soldMs   = new Date(row.soldTimestamp).getTime();
-    const boughtMs = new Date(row.boughtTimestamp).getTime();
+    const soldMs   = new Date(sourceAware ? soldDatetime : row.soldTimestamp).getTime();
+    const boughtMs = new Date(sourceAware ? boughtDatetime : row.boughtTimestamp).getTime();
     const direction = soldMs < boughtMs ? 'short' : 'long';
 
     // For shorts: SELL opened the position (entry) and BUY closed it (exit).
     // For longs:  BUY opened the position (entry) and SELL closed it (exit).
-    const boughtDatetime = toISO(row.boughtTimestamp);
-    const soldDatetime = toISO(row.soldTimestamp);
     const entryDatetime = direction === 'short' ? soldDatetime   : boughtDatetime;
     const exitDatetime  = direction === 'short' ? boughtDatetime : soldDatetime;
     const entryPrice    = direction === 'short' ? sellPrice                  : buyPrice;
     const exitPrice     = direction === 'short' ? buyPrice                   : sellPrice;
 
     const execution = {
+      sourceAware,
       rowIndex,
       buyFillId,
       sellFillId,

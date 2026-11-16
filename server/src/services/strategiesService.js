@@ -26,10 +26,12 @@ function mapMetrics(row) {
     winners,
     losers: count(row.losers),
     breakeven: count(row.breakeven),
-    pnlNet: round(row.pnl_net, 2) ?? 0,
-    winRate: closedTrades > 0 ? round(winners / closedTrades, 4) : null,
-    averageR: row.average_r == null ? null : round(row.average_r, 4),
-    profitFactor: closedTrades > 0 ? calculateProfitFactor(row.gross_profit, row.gross_loss) : null,
+    unknownNetCount: Number(row.unknown_net_count || 0),
+    pnlGross: row.pnl_gross == null ? null : round(row.pnl_gross, 2),
+    pnlNet: Number(row.unknown_net_count || 0) ? null : round(row.pnl_net, 2) ?? 0,
+    winRate: !Number(row.unknown_net_count || 0) && closedTrades > 0 ? round(winners / closedTrades, 4) : null,
+    averageR: Number(row.unknown_net_count || 0) || row.average_r == null ? null : round(row.average_r, 4),
+    profitFactor: !Number(row.unknown_net_count || 0) && closedTrades > 0 ? calculateProfitFactor(row.gross_profit, row.gross_loss) : null,
   };
 }
 
@@ -86,6 +88,9 @@ const STRATEGY_LIST_SQL = `WITH setup_counts AS (
 ), trade_metrics AS (
   SELECT strategy_id,
          COUNT(*) FILTER (WHERE status = 'closed')::int AS closed_trades,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net IS NULL)::int AS unknown_net_count,
+      COUNT(*) FILTER (WHERE fees IS NULL)::int AS unknown_fee_count,
+      SUM(pnl_gross) FILTER (WHERE status = 'closed') AS pnl_gross,
          COUNT(*) FILTER (WHERE status = 'open')::int AS open_trades,
          COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net > 0)::int AS winners,
          COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net < 0)::int AS losers,
@@ -104,7 +109,7 @@ SELECT s.*, COALESCE(sc.setup_count, 0) AS setup_count,
        COALESCE(tm.losers, 0) AS losers,
        COALESCE(tm.breakeven, 0) AS breakeven,
        COALESCE(tm.pnl_net, 0) AS pnl_net,
-       tm.average_r, tm.gross_profit, tm.gross_loss
+       tm.unknown_net_count, tm.unknown_fee_count, tm.pnl_gross, tm.average_r, tm.gross_profit, tm.gross_loss
 FROM strategies s
 LEFT JOIN setup_counts sc ON sc.strategy_id = s.id
 LEFT JOIN trade_metrics tm ON tm.strategy_id = s.id
@@ -139,6 +144,9 @@ export async function listStrategies(userId, { includeArchived = false } = {}, q
 const SETUP_LIST_SQL = `WITH trade_metrics AS (
   SELECT setup_id,
          COUNT(*) FILTER (WHERE status = 'closed')::int AS closed_trades,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net IS NULL)::int AS unknown_net_count,
+      COUNT(*) FILTER (WHERE fees IS NULL)::int AS unknown_fee_count,
+      SUM(pnl_gross) FILTER (WHERE status = 'closed') AS pnl_gross,
          COUNT(*) FILTER (WHERE status = 'open')::int AS open_trades,
          COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net > 0)::int AS winners,
          COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net < 0)::int AS losers,
@@ -156,7 +164,7 @@ SELECT su.*, s.name AS strategy_name,
        COALESCE(tm.losers, 0) AS losers,
        COALESCE(tm.breakeven, 0) AS breakeven,
        COALESCE(tm.pnl_net, 0) AS pnl_net,
-       tm.average_r, tm.gross_profit, tm.gross_loss
+       tm.unknown_net_count, tm.unknown_fee_count, tm.pnl_gross, tm.average_r, tm.gross_profit, tm.gross_loss
 FROM setups su
 JOIN strategies s ON s.id = su.strategy_id AND s.user_id = su.user_id
 LEFT JOIN trade_metrics tm ON tm.setup_id = su.id
@@ -175,18 +183,21 @@ export async function listLegacyClassifications(userId, queryable = pool) {
     `WITH strategy_values AS (
        SELECT lower(btrim(COALESCE(strategy, ''))) AS grouping_key,
               COALESCE(NULLIF(btrim(strategy), ''), '') AS display_value,
-              status, pnl_net, entry_datetime
+              status, pnl_net, pnl_gross, fees, entry_datetime
        FROM trades WHERE user_id = $1 AND strategy_id IS NULL
      ), setup_values AS (
        SELECT lower(btrim(COALESCE(setup, ''))) AS grouping_key,
               COALESCE(NULLIF(btrim(setup), ''), '') AS display_value,
-              status, pnl_net, entry_datetime
+              status, pnl_net, pnl_gross, fees, entry_datetime
        FROM trades WHERE user_id = $1 AND setup_id IS NULL
      )
      SELECT kind, grouping_key,
             (array_agg(display_value ORDER BY entry_datetime DESC, display_value ASC))[1] AS value,
             COUNT(*)::int AS trade_count,
             COUNT(*) FILTER (WHERE status = 'closed')::int AS closed_trades,
+      COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net IS NULL)::int AS unknown_net_count,
+      COUNT(*) FILTER (WHERE fees IS NULL)::int AS unknown_fee_count,
+      SUM(pnl_gross) FILTER (WHERE status = 'closed') AS pnl_gross,
             COUNT(*) FILTER (WHERE status = 'closed' AND pnl_net > 0)::int AS winners,
             COALESCE(SUM(pnl_net) FILTER (WHERE status = 'closed'), 0) AS pnl_net
      FROM (
@@ -205,8 +216,10 @@ export async function listLegacyClassifications(userId, queryable = pool) {
       value: row.value || null,
       tradeCount: count(row.trade_count),
       closedTrades,
-      pnlNet: round(row.pnl_net, 2) ?? 0,
-      winRate: closedTrades > 0 ? round(winners / closedTrades, 4) : null,
+      unknownNetCount: Number(row.unknown_net_count || 0),
+      pnlGross: row.pnl_gross == null ? null : round(row.pnl_gross, 2),
+      pnlNet: Number(row.unknown_net_count || 0) ? null : round(row.pnl_net, 2) ?? 0,
+      winRate: !Number(row.unknown_net_count || 0) && closedTrades > 0 ? round(winners / closedTrades, 4) : null,
     };
   };
   return {

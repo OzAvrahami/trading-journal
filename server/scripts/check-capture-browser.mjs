@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { withBrowser } from '../../../trading-data-sync/src/browser.js';
+
+const root=resolve('test-results/capture');
+const {target}=JSON.parse(await readFile(root+'/sandbox.json','utf8'));
+const results={checks:[],pageErrors:[]};
+await withBrowser(async browser=>{
+  const page=await browser.newPage();await page.setViewport({width:1440,height:1000});
+  page.on('pageerror',error=>results.pageErrors.push(error.message));
+  await page.setRequestInterception(true);
+  page.on('request',req=>new URL(req.url()).hostname==='127.0.0.1'?req.continue():req.abort());
+  const goto=async path=>{await page.goto('http://127.0.0.1:4179'+path);};
+  const click=async text=>{const h=await page.evaluateHandle(text=>[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===text),text);assert.ok(h.asElement(),text);await h.asElement().click();await h.dispose();};
+  const api=async(path,body,method)=>page.evaluate(async({path,body,method})=>{
+    const {accessToken}=await (await fetch('/api/auth/refresh',{method:'POST'})).json();
+    const res=await fetch('/api'+path,{method:method||'GET',headers:{Authorization:`Bearer ${accessToken}`,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    return {status:res.status,body:res.headers.get('content-type')?.includes('json')?await res.json():await res.text()};
+  },{path,body,method});
+  async function preview(){
+    await goto('/import');await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent==='Tradovate'));
+    if(await page.$('button[lang=en]'))await page.click('button[lang=en]');
+    await click('Tradovate');await page.select('select','capture');
+    await page.select('#capture-account',target);await (await page.$('input[type=file]')).uploadFile(root+'/synthetic.capture.json');await click('Upload and preview');await page.waitForSelector('#capture-heading');
+    assert.equal(await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Confirm capture import').disabled),true);
+  }
+  await preview();await page.screenshot({path:root+'/confirmation-en.png'});
+  await page.click('input[type=checkbox]');await click('Confirm capture import');
+  await page.waitForFunction(()=>document.body.innerText.includes('Import complete'));
+  results.checks.push('explicit confirmation persisted synthetic capture');
+  let trades=(await api('/trades?accountId='+target)).body.data;assert.equal(trades.length,1);const trade=trades[0];
+  assert.equal(trade.fees,null);assert.equal(trade.pnlNet,null);assert.equal(trade.pnlGross,30);
+  const runs=(await api('/imports/runs')).body.runs;const run=runs[0];
+  await goto('/import/history/'+run.id);await page.waitForSelector('#capture-heading');
+  await page.screenshot({path:root+'/history-en.png'});
+  assert.equal((await api('/imports/runs/'+run.id)).body.source.financial.net,18);
+  await preview();await page.click('input[type=checkbox]');await click('Confirm capture import');await page.waitForFunction(()=>document.body.innerText.includes('Import complete'));
+  assert.equal((await api('/trades?accountId='+target)).body.data.length,1);assert.equal((await api('/imports/runs')).body.runs.length,runs.length);results.checks.push('repeat UI import adds no trades or run');
+  const exportCsv=(await api('/trades/export?accountId='+target)).body;
+  const [head,row]=exportCsv.split('\n').map(l=>l.split(','));assert.equal(row[head.indexOf('fees')],'');assert.equal(row[head.indexOf('pnlNet')],'');assert.equal(row[head.indexOf('pnlGross')],'30');results.checks.push('CSV export leaves unknown fees/net blank');
+  assert.equal((await api('/trades/'+trade.id,{fees:0},'PATCH')).status,409);
+  await goto('/trades/'+trade.id+'/edit');await page.waitForSelector('textarea');
+  await page.focus('textarea[name=notes]');await page.keyboard.down('Control');await page.keyboard.press('A');await page.keyboard.up('Control');await page.type('textarea[name=notes]','Synthetic annotation remains');
+  await click('Save changes');await page.waitForFunction(()=>!location.pathname.endsWith('/edit'));
+  const saved=(await api('/trades/'+trade.id)).body;assert.equal(saved.notes,'Synthetic annotation remains');assert.equal(saved.fees,null);assert.equal(saved.pnlGross,30);results.checks.push('annotation edit preserves source values and unknown fees');
+  await goto('/trades/'+trade.id);await page.waitForFunction(()=>document.body.innerText.includes('unknown net P&L'));await page.screenshot({path:root+'/trade-en.png'});
+  await goto('/');await page.waitForFunction(()=>document.body.innerText.includes('unknown net P&L'));await page.screenshot({path:root+'/dashboard-en.png'});
+  const summary=(await api('/analytics/summary?accountId='+target)).body;assert.equal(summary.totals.pnlNet,null);assert.equal(summary.totals.pnlGross,30);results.checks.push('dashboard reports incomplete net and available gross');
+  await goto('/accounts/'+target);await page.waitForFunction(()=>document.body.innerText.includes('unknown net P&L'));await page.screenshot({path:root+'/account-en.png'});
+  await page.click('button[lang=he]');await page.waitForFunction(()=>document.documentElement.dir==='rtl');await new Promise(r=>setTimeout(r,900));await page.screenshot({path:root+'/account-he.png'});
+  await goto('/import/history/'+run.id);await page.waitForSelector('#capture-heading');await page.screenshot({path:root+'/history-he.png'});
+  await page.setViewport({width:390,height:844});await new Promise(r=>setTimeout(r,900));
+  await page.$eval('#capture-heading',el=>el.closest('section').querySelector('h3').scrollIntoView());await page.screenshot({path:root+'/history-he-mobile.png'});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);results.checks.push('Hebrew RTL and mobile report coverage');
+  await goto('/trades');await page.waitForFunction(()=>document.body.innerText.includes('לא ידוע')&&document.body.innerText.includes('ברוטו'));
+  await page.screenshot({path:root+'/trades-he-mobile.png'});results.checks.push('mobile trade list shows unknown net and separate gross');
+},{headless:true,root});
+assert.deepEqual(results.pageErrors,[]);
+await writeFile(root+'/browser-checks.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results));

@@ -1,6 +1,8 @@
 import { getImporter } from '../importers/index.js';
 import { buildDedupKey } from '../utils/importUtils.js';
 import pool from '../db/client.js';
+import { createError } from '../middleware/errorHandler.js';
+import { captureDedupKey } from '../utils/captureIdentity.js';
 
 const PREVIEW_LIMIT = 20;
 const BATCH_SIZE = 400;
@@ -26,7 +28,7 @@ function expandSourceRows(row) {
   }));
 }
 
-function previewRow(row) {
+export function previewRow(row) {
   const { _sourceMembers, ...preview } = row;
   return preview;
 }
@@ -35,9 +37,9 @@ function previewRow(row) {
  * Parse a CSV buffer for the given broker, run in-file deduplication,
  * and return a preview plus stats. Does NOT write to the database.
  */
-export async function parseImport(broker, csvBuffer) {
+export async function parseImport(broker, csvBuffer, options = {}) {
   const parse = getImporter(broker);
-  const logicalRows = parse(csvBuffer);
+  const logicalRows = parse(csvBuffer, options);
 
   // Level 1: within-file dedup
   const seen = new Set();
@@ -45,7 +47,7 @@ export async function parseImport(broker, csvBuffer) {
   const sourceRows = [];
 
   for (const row of logicalRows) {
-    const key = buildDedupKey(row);
+    const key = options.sourceIdentity ? captureDedupKey(options.sourceIdentity, row) : buildDedupKey(row);
     const withinFileDuplicate = seen.has(key);
     row._dedupKey = key;
     row._withinFileDuplicate = withinFileDuplicate;
@@ -88,6 +90,7 @@ export async function parseImport(broker, csvBuffer) {
  *   3. Batch-insert the new rows under the given accountId.
  */
 export async function commitImport(userId, rows, accountId, queryable = pool) {
+  if (rows.some(row => row._requiresCapturePersistence)) throw createError('CAPTURE_PERSISTENCE_REQUIRED', 'Source candidates require the verified capture persistence flow.', 409);
   // Level 2: check which keys already exist in the DB for this account
   const incomingKeys = rows.map(r => r._dedupKey);
 

@@ -1,6 +1,7 @@
 import pool from '../db/client.js';
 import { createError } from '../middleware/errorHandler.js';
 import { commitImport } from './importService.js';
+import { executeCaptureImport, captureLock, guardLegacyCaptureOverlap } from './capturePersistence.js';
 
 const SUCCESS_STATUSES = ['completed', 'completed_with_errors'];
 
@@ -97,7 +98,14 @@ export async function getImportRun(userId, runId, { rowLimit = 100, rowOffset = 
      AND ($3::text IS NULL OR status = $3 OR ($3 = 'failed' AND status IN ('failed_validation','failed_insert')))`,
     [userId, runId, rowStatus ?? null],
   );
-  return { ...mapImportRun(result.rows[0], { includeMapping: true }), rows: rows.rows.map(mapImportRow), rowTotal: number(count.rows[0]?.total), rowLimit, rowOffset };
+  let source = null;
+  if (result.rows[0].source_type === 'tradovate-capture') {
+    const saved = await queryable.query(`SELECT c.provenance, f.evidence FROM source_captures c
+      JOIN capture_accounts m ON m.id=c.mapping_id LEFT JOIN capture_financial_snapshots f ON f.id=c.financial_snapshot_id
+      WHERE c.import_run_id=$1 AND m.user_id=$2`, [runId,userId]);
+    if (saved.rows[0]) source = { ...saved.rows[0].provenance, financial: saved.rows[0].evidence ? { ...saved.rows[0].evidence, ...saved.rows[0].provenance.financialObservation } : null };
+  }
+  return { ...mapImportRun(result.rows[0], { includeMapping: true }), ...(source ? { source } : {}), rows: rows.rows.map(mapImportRow), rowTotal: number(count.rows[0]?.total), rowLimit, rowOffset };
 }
 
 function duplicateError(run) {
@@ -124,6 +132,7 @@ async function insertRowResults(client, runId, userId, rowResults) {
 }
 
 export async function executeImportRun(userId, session, accountId, queryable = pool) {
+  if (session.capture) return executeCaptureImport(userId, session, accountId, queryable);
   const duplicate = await findSuccessfulDuplicate(userId, session.fileSha256, queryable, accountId);
   if (duplicate) throw duplicateError(duplicate);
 
@@ -145,6 +154,8 @@ export async function executeImportRun(userId, session, accountId, queryable = p
   try {
     client = await queryable.connect();
     await client.query('BEGIN');
+    await captureLock(client, userId);
+    await guardLegacyCaptureOverlap(userId, accountId, session, client);
     const committed = await commitImport(userId, session.rows, accountId, client);
     const insertedByKey = new Map(committed.insertedTrades.map(item => [item.dedupKey, item.id]));
     const duplicateKeys = new Set(committed.duplicateKeys);
@@ -211,8 +222,7 @@ export async function executeImportRun(userId, session, accountId, queryable = p
       const raced = await findSuccessfulDuplicate(userId, session.fileSha256, queryable, accountId);
       if (raced) throw duplicateError(raced);
     }
-    error.code = 'IMPORT_FATAL_ERROR';
-    error.statusCode = 500;
+    if (error.code !== 'CAPTURE_LEGACY_OVERLAP') { error.code = 'IMPORT_FATAL_ERROR'; error.statusCode = 500; }
     error.details = { runId };
     throw error;
   } finally {

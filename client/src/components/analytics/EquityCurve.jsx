@@ -8,6 +8,7 @@ import { Skeleton } from '../ui/Skeleton.jsx';
 import { formatCurrency, formatSignedCurrency, rawCurrency } from '../../utils/formatters.js';
 import { formatDateKey } from '../../utils/dateOnly.js';
 import { useTranslation } from 'react-i18next';
+import { FinancialCoverage } from '../trades/FinancialCoverage.jsx';
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -27,7 +28,7 @@ function axisCurrency(value) {
   return rawCurrency(value, { notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 });
 }
 
-export function EquityCurve({ data, isLoading = false, error, onRetry }) {
+export function EquityCurve({ data, unknownNetCount = 0, isLoading = false, error, onRetry }) {
   const { t } = useTranslation();
   if (isLoading) {
     return <Skeleton className="h-[23rem] w-full" label={t('analytics.loadingEquity')} />;
@@ -37,6 +38,7 @@ export function EquityCurve({ data, isLoading = false, error, onRetry }) {
     return <ErrorState title={t('analytics.equityFailed')} detail={t('analytics.equityFailedDetail')} available={t('analytics.dashboardAvailable')} onRetry={onRetry} />;
   }
 
+  if (unknownNetCount) return <FinancialCoverage count={unknownNetCount} />;
   if (!data?.length) {
     return <EmptyState title={t('analytics.noEquity')} detail={t('analytics.noEquityDetail')} />;
   }

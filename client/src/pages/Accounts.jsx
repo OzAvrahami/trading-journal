@@ -1,3 +1,4 @@
+import { FinancialCoverage } from '../components/trades/FinancialCoverage.jsx';
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -37,7 +38,8 @@ function AccountCard({ account, onView, onEdit, onLifecycle, onDefault, onPartic
   const investmentReady = account.includeInInvestmentValue && account.investmentSetupComplete;
   return <Card as="article" className="min-w-0 space-y-4">
     <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-base font-semibold text-primary" dir="auto">{account.accountName || account.company}</h3><p className="mt-1 truncate text-xs text-muted" dir="auto">{account.company}</p><p className="mt-1 font-mono text-xs text-secondary" dir="ltr">{account.accountNumber}</p></div><div className="flex flex-wrap justify-end gap-1"><Badge>{t(`status.${account.status}`)}</Badge>{account.isDefault && <Badge variant="positive"><CheckCircle size={13} aria-hidden="true" />{t('accounts.defaultAccount')}</Badge>}</div></div>
-    <dl className="grid grid-cols-2 gap-3 text-sm adaptive:grid-cols-3">
+    <FinancialCoverage count={account.unknownNetCount} gross={account.pnlGross} currency={account.baseCurrency} />
+      <dl className="grid grid-cols-2 gap-3 text-sm adaptive:grid-cols-3">
       <div><dt className="text-xs text-muted">{investmentReady ? t('portfolio.totalValue') : t('accounts.trackedBalance')}</dt><dd className="mt-1 font-mono" dir="ltr">{investmentReady ? money(investment.totalValue, account.baseCurrency) : money(account.trackedBalance, account.baseCurrency)}</dd></div>
       <div><dt className="text-xs text-muted">{investmentReady ? t('portfolio.cashBalance') : t('common.netPnl')}</dt><dd className="mt-1 font-mono" dir="ltr">{investmentReady ? money(investment.cashBalance, account.baseCurrency) : money(account.pnlNet, account.baseCurrency, true)}</dd></div>
       <div><dt className="text-xs text-muted">{investmentReady ? t('portfolio.positions') : t('accounts.closedOpen')}</dt><dd className="mt-1 font-mono" dir="ltr">{investmentReady ? formatNumber(investment.positionCount) : `${account.closedTrades} / ${account.openTrades}`}</dd></div>
