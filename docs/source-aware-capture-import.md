@@ -296,4 +296,6 @@ no combined aggregate net across reports; source integrity is not cryptographic
 authenticity. Reconciliation currently loads the mapped account's execution
 ledger into memory, so large ledgers need performance work before broad rollout.
 The existing 5 MB upload, 20-row preview and in-process session/expiry limits remain.
-No scheduling, delivery integration, production migration or deployment was added.
+The persistence milestone added no scheduling, delivery integration, production
+migration or deployment. Subsequent CLI delivery reuses these unchanged routes;
+see [Journal delivery acceptance](journal-delivery.md).
